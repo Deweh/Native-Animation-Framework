@@ -1,0 +1,47 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="DynamicTicker" itemID="645516f9-000001ff" linkageExportForAS="true" linkageClassName="DynamicTicker" lastModified="1690831464" lastUniqueIdentifier="3">
+  <timeline>
+    <DOMTimeline name="DynamicTicker">
+      <layers>
+        <DOMLayer name="Layer 2" color="#9933CC" locked="true" current="true" isSelected="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="TickerButton" name="lBtn_mc" centerPoint3DX="60.35" centerPoint3DY="17.5">
+                  <matrix>
+                    <Matrix tx="42.6"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="17.75" y="17.5"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+                <DOMSymbolInstance libraryItemName="TickerSelectionButton" name="mBtn_mc" centerPoint3DX="141.3" centerPoint3DY="17.5">
+                  <matrix>
+                    <Matrix tx="91.3"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="50" y="17.5"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+                <DOMSymbolInstance libraryItemName="TickerButton" name="rBtn_mc" centerPoint3DX="222.3" centerPoint3DY="17.5">
+                  <matrix>
+                    <Matrix tx="204.55"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="17.75" y="17.5"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="BG" color="#4FFF4F" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements/>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

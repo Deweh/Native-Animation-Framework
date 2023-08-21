@@ -1,0 +1,77 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="MenuListItem" itemID="63e3573c-000001f8" linkageExportForAS="true" linkageClassName="MenuListItem" lastModified="1683138008" lastUniqueIdentifier="7">
+  <timeline>
+    <DOMTimeline name="MenuListItem">
+      <layers>
+        <DOMLayer name="Buttons" color="#9933CC" current="true" isSelected="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="TickerButton" name="leftTickerBtn_mc" centerPoint3DX="298.7" centerPoint3DY="19.45" isVisible="false">
+                  <matrix>
+                    <Matrix tx="281.2" ty="1.95"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="17.5" y="17.5"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+                <DOMSymbolInstance libraryItemName="TickerButton" name="rightTickerBtn_mc" centerPoint3DX="447.2" centerPoint3DY="19.7" isVisible="false">
+                  <matrix>
+                    <Matrix tx="429.7" ty="2.2"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="17.5" y="17.5"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+                <DOMSymbolInstance libraryItemName="TickerSelectionButton" name="mainTickerBtn_mc" centerPoint3DX="373.7" centerPoint3DY="20" isVisible="false">
+                  <matrix>
+                    <Matrix tx="323.7" ty="2.5"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="50" y="17.5"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Content" color="#9933CC" locked="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMDynamicText name="item_tf" width="456" height="30.45">
+                  <matrix>
+                    <Matrix tx="7" ty="4.5"/>
+                  </matrix>
+                  <textRuns>
+                    <DOMTextRun>
+                      <characters></characters>
+                      <textAttrs>
+                        <DOMTextAttrs aliasText="false" lineSpacing="0" lineHeight="30" size="25" bitmapSize="500" face="RobotoCondensed-Bold" fillColor="#FFFFFF"/>
+                      </textAttrs>
+                    </DOMTextRun>
+                  </textRuns>
+                </DOMDynamicText>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Background" color="#4FFF4F" locked="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="MenuListItemBackground" name="background_mc" centerPoint3DX="235" centerPoint3DY="20" isVisible="false">
+                  <matrix>
+                    <Matrix d="0.79998779296875"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="235" y="25"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

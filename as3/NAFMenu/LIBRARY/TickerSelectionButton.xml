@@ -1,0 +1,42 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="TickerSelectionButton" itemID="64527947-00000256" linkageExportForAS="true" linkageClassName="TickerSelectionButton" lastModified="1683138742" lastUniqueIdentifier="1">
+  <timeline>
+    <DOMTimeline name="TickerSelectionButton">
+      <layers>
+        <DOMLayer name="Text" color="#9933CC" current="true" isSelected="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMDynamicText name="mainText_tf" width="96" height="31">
+                  <matrix>
+                    <Matrix tx="2" ty="2"/>
+                  </matrix>
+                  <textRuns>
+                    <DOMTextRun>
+                      <characters>0</characters>
+                      <textAttrs>
+                        <DOMTextAttrs alignment="center" aliasText="false" lineSpacing="0" lineHeight="30" size="25" bitmapSize="500" face="RobotoCondensed-Bold" fillColor="#FFFFFF"/>
+                      </textAttrs>
+                    </DOMTextRun>
+                  </textRuns>
+                </DOMDynamicText>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="BG" color="#4FFF4F" locked="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="MiscSymbols/TickerSelectionBG" name="mainBG_mc" centerPoint3DX="51.5" centerPoint3DY="17.2" isVisible="false">
+                  <transformationPoint>
+                    <Point x="51.5" y="17.2"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

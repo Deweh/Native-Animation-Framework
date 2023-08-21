@@ -1,0 +1,102 @@
+{
+  "configurePresets": [
+    {
+      "binaryDir": "${sourceDir}/build",
+      "errors": {
+        "deprecated": true
+      },
+      "hidden": true,
+      "name": "cmake-dev",
+      "warnings": {
+        "deprecated": true,
+        "dev": true
+      }
+    },
+    {
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "STRING",
+          "value": "$env{VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        },
+        "VCPKG_OVERLAY_PORTS": {
+          "type": "STRING",
+          "value": "${sourceDir}/cmake/ports/"
+        }
+      },
+      "hidden": true,
+      "name": "vcpkg"
+    },
+    {
+      "cacheVariables": {
+        "Boost_USE_STATIC_LIBS": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "Boost_USE_STATIC_RUNTIME": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "CMAKE_EXE_LINKER_FLAGS_RELEASE": {
+          "type": "STRING",
+          "value": "/DEBUG:FASTLINK"
+        },
+        "CMAKE_MSVC_RUNTIME_LIBRARY": {
+          "type": "STRING",
+          "value": "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+        },
+        "VCPKG_TARGET_TRIPLET": {
+          "type": "STRING",
+          "value": "x64-windows-static-md"
+        }
+      },
+      "hidden": true,
+      "name": "windows"
+    },
+    {
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        },
+        "CMAKE_CONFIGURATION_TYPES": {
+          "type": "STRING",
+          "value": "Debug"
+        },
+        "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /WX /external:W0 /bigobj"
+      },
+      "generator": "Visual Studio 17 2022",
+      "inherits": [
+        "cmake-dev",
+        "vcpkg",
+        "windows"
+      ],
+      "name": "vs2022-windows-vcpkg_Debug",
+      "displayName": "x64 Debug",
+      "toolset": "v143"
+    },
+    {
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Release"
+        },
+        "CMAKE_CONFIGURATION_TYPES": {
+          "type": "STRING",
+          "value": "Release"
+        },
+        "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /WX /external:W0",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /DNDEBUG"
+      },
+      "generator": "Visual Studio 17 2022",
+      "inherits": [
+        "cmake-dev",
+        "vcpkg",
+        "windows"
+      ],
+      "name": "vs2022-windows-vcpkg_Release",
+      "displayName": "x64 Release",
+      "toolset": "v143"
+    }
+  ],
+  "version": 2
+}

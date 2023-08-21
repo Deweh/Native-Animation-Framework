@@ -1,0 +1,17 @@
+{
+	"modName": "NAF",
+	"displayName": "Native Animation Framework",
+	"minMcmVersion": 2,
+	"content":
+	[
+		{
+		  "id": "NAFMenuHotkey",
+		  "text": "Menu Hotkey",
+		  "type": "hotkey",
+		  "help": "The hotkey for opening the main NAF menu.",
+		  "valueOptions": {
+		    "allowModifierKeys": true
+		  }
+		}
+	]
+}

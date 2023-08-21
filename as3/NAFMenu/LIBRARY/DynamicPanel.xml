@@ -1,0 +1,21 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="DynamicPanel" itemID="63e92b79-00000432" linkageExportForAS="true" linkageClassName="DynamicPanel" lastModified="1676497777">
+  <timeline>
+    <DOMTimeline name="DynamicPanel">
+      <layers>
+        <DOMLayer name="Layer 1" color="#4FFF4F" current="true" isSelected="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="PanelBackground" name="bgPanel_mc" selected="true" centerPoint3DX="149.65" centerPoint3DY="75">
+                  <transformationPoint>
+                    <Point x="149.65" y="75"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

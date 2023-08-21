@@ -1,0 +1,14 @@
+{
+  "modName": "NAF",
+  "keybinds": [
+    {
+      "id": "NAFMenuHotkey",
+      "desc": "Native Animation Framework - NAF Menu Hotkey",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "NAF",
+        "function": "ToggleMenu"
+      }
+    }
+  ]
+}

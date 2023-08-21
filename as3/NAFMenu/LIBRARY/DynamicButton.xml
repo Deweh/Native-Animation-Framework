@@ -1,0 +1,58 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="DynamicButton" itemID="63ec0243-000001f2" linkageExportForAS="true" linkageClassName="DynamicButton" lastModified="1690831859">
+  <timeline>
+    <DOMTimeline name="DynamicButton">
+      <layers>
+        <DOMLayer name="Text" color="#FF800A" current="true" isSelected="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMDynamicText name="btnText_tf" selected="true" width="276" height="30" lineType="multiline">
+                  <matrix>
+                    <Matrix tx="2" ty="6.65"/>
+                  </matrix>
+                  <textRuns>
+                    <DOMTextRun>
+                      <characters>Button</characters>
+                      <textAttrs>
+                        <DOMTextAttrs alignment="center" aliasText="false" leftMargin="20" lineHeight="30" rightMargin="10" size="25" bitmapSize="500" face="RobotoCondensed-Bold" fillColor="#FFFFFF"/>
+                      </textAttrs>
+                    </DOMTextRun>
+                  </textRuns>
+                </DOMDynamicText>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Background" color="#9933CC" locked="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="ButtonBackground" name="btnBg_mc" centerPoint3DX="-140" centerPoint3DY="21" isVisible="false">
+                  <matrix>
+                    <Matrix d="0.840011596679688"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="-140" y="25"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Outline" color="#4FFF4F" locked="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="ButtonOutline" name="btnOutline_mc" centerPoint3DX="140" centerPoint3DY="21">
+                  <transformationPoint>
+                    <Point x="140" y="21"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

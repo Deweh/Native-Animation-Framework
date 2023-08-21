@@ -1,0 +1,40 @@
+<DOMDocument xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" backgroundColor="#999999" width="1920" height="1080" currentTimeline="1" xflVersion="2.2" creatorInfo="Adobe Flash Professional CS6" platform="Windows" versionInfo="Saved by Adobe Flash Windows 12.0 build 481" majorVersion="12" buildNumber="481" viewAngle3D="122.353661987282" nextSceneIdentifier="2" playOptionsPlayLoop="false" playOptionsPlayPages="false" playOptionsPlayFrameActions="false">
+     <folders>
+          <DOMFolderItem name="Fonts" itemID="566dc49b-00000065" isExpanded="true"/>
+     </folders>
+     <fonts>
+          <DOMFontItem name="Fonts/$DebugTextFont" itemID="566f277e-0000016f" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$DebugTextFont" linkageURL="fonts_console.swf" font="Consolas" size="14" id="9" sourceLastImported="1450125182"/>
+          <DOMFontItem name="Fonts/$ConsoleFont" itemID="566f276b-0000016c" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$ConsoleFont" linkageURL="fonts_console.swf" font="ArialNarrow" size="14" id="8" sourceLastImported="1450125163"/>
+          <DOMFontItem name="Fonts/$Terminal_Font" itemID="566f2747-00000169" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$Terminal_Font" linkageURL="fonts_en.swf" font="Share-TechMono" size="14" id="7" sourceLastImported="1450125127"/>
+          <DOMFontItem name="Fonts/$BRODY" itemID="566f272b-00000166" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$BRODY" linkageURL="fonts_en.swf" font="Brody" size="14" id="6" sourceLastImported="1640106730"/>
+          <DOMFontItem name="Fonts/$Controller_Buttons_inverted" itemID="566f26e1-00000163" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$Controller_Buttons_inverted" linkageURL="fonts_en.swf" font="Controller--Buttons-inverted" size="14" id="5" sourceLastImported="1450125025"/>
+          <DOMFontItem name="Fonts/$Controller_Buttons" itemID="566f26ce-00000160" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$Controller_Buttons" linkageURL="fonts_en.swf" font="Controller--Buttons" size="0" id="4" sourceLastImported="1450125006"/>
+          <DOMFontItem name="Fonts/$HandwrittenFont" itemID="566f2677-0000015d" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$HandwrittenFont" linkageURL="fonts_en.swf" font="Handwritten_Institute" size="14" id="3" sourceLastImported="1450124919"/>
+          <DOMFontItem name="Fonts/$MAIN_Font_Bold" itemID="61e668ba-00000296" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$MAIN_Font_Bold" linkageURL="fonts_en.swf" font="RobotoCondensed-Bold" size="0" id="2" sourceLastImported="1640106779" embedRanges="1|2|4|3"/>
+          <DOMFontItem name="Fonts/$MAIN_Font" itemID="61acf173-00000503" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$MAIN_Font" linkageURL="fonts_en.swf" font="RobotoCondensed" size="0" id="1" sourceLastImported="1640106770" embedRanges="1|2|4|3"/>
+     </fonts>
+     <symbols>
+          <Include href="NAFHUD.xml" itemID="64753b79-0000027b" lastModified="1685404537"/>
+     </symbols>
+     <timelines>
+          <DOMTimeline name="Scene 1">
+               <layers>
+                    <DOMLayer name="Layer 1" color="#4FFF4F" current="true" isSelected="true">
+                         <frames>
+                              <DOMFrame index="0" keyMode="9728">
+                                   <elements>
+                                        <DOMSymbolInstance libraryItemName="NAFHUD" name="Menu_mc" centerPoint3DX="960" centerPoint3DY="540">
+                                             <transformationPoint>
+                                                  <Point x="960" y="540"/>
+                                             </transformationPoint>
+                                        </DOMSymbolInstance>
+                                   </elements>
+                              </DOMFrame>
+                         </frames>
+                    </DOMLayer>
+               </layers>
+          </DOMTimeline>
+     </timelines>
+     <PrinterSettings/>
+     <publishHistory/>
+</DOMDocument>

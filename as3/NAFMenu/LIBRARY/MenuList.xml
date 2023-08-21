@@ -1,0 +1,75 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="MenuList" itemID="63e350db-000001e1" linkageExportForAS="true" linkageClassName="MenuList" lastModified="1683140302">
+  <timeline>
+    <DOMTimeline name="MenuList">
+      <layers>
+        <DOMLayer name="Work Layer" color="#FF800A" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements/>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Elements" color="#9933CC" current="true" isSelected="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMDynamicText name="title_tf" width="391" height="48.8" lineType="multiline">
+                  <matrix>
+                    <Matrix tx="56.25" ty="-23"/>
+                  </matrix>
+                  <textRuns>
+                    <DOMTextRun>
+                      <characters>NAF</characters>
+                      <textAttrs>
+                        <DOMTextAttrs alignment="center" aliasText="false" lineHeight="48" size="40" bitmapSize="800" face="RobotoCondensed-Bold" fillColor="#FFFFFF"/>
+                      </textAttrs>
+                    </DOMTextRun>
+                  </textRuns>
+                </DOMDynamicText>
+                <DOMSymbolInstance libraryItemName="BoxContainer" name="itemsContainer_mc" centerPoint3DX="253.3" centerPoint3DY="497.05">
+                  <matrix>
+                    <Matrix tx="18.3" ty="47.05"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="235" y="450"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+                <DOMDynamicText name="scrollMessage_tf" width="498" height="27.9" lineType="multiline">
+                  <matrix>
+                    <Matrix tx="3" ty="974"/>
+                  </matrix>
+                  <textRuns>
+                    <DOMTextRun>
+                      <characters>Use [Mouse Wheel] or [Up/Down Arrows] to Scroll</characters>
+                      <textAttrs>
+                        <DOMTextAttrs alignment="center" aliasText="false" lineHeight="24" size="20" bitmapSize="400" face="RobotoCondensed-Bold" fillColor="#FFFFFF"/>
+                      </textAttrs>
+                    </DOMTextRun>
+                  </textRuns>
+                </DOMDynamicText>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Background" color="#4FFF4F" locked="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMShape>
+                  <fills>
+                    <FillStyle index="1">
+                      <SolidColor alpha="0.6"/>
+                    </FillStyle>
+                  </fills>
+                  <edges>
+                    <Edge fillStyle1="1" edges="!10100 0|10100 19400!10100 19400|0 19400!0 19400|0 0!0 0|10100 0"/>
+                  </edges>
+                </DOMShape>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

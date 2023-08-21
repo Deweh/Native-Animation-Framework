@@ -1,0 +1,98 @@
+<DOMDocument xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" backgroundColor="#999999" width="1920" height="1080" frameRate="30" currentTimeline="1" xflVersion="2.980" creatorInfo="Adobe Animate" platform="Windows" versionInfo="Saved by Animate Windows 21.0 build 35450" majorVersion="21" buildNumber="35450" viewAngle3D="122.353661987282" vanishingPoint3DX="960" vanishingPoint3DY="540" nextSceneIdentifier="2" playOptionsPlayLoop="false" playOptionsPlayPages="false" playOptionsPlayFrameActions="false" autoSaveHasPrompted="true" filetypeGUID="DD0DDBBF-5BEF-45B2-9F24-A3048D2A676F" fileGUID="99FAE8DB3C37EB4E8FA667683808922E">
+     <folders>
+          <DOMFolderItem name="Fonts" itemID="566dc49b-00000065"/>
+          <DOMFolderItem name="MiscSymbols" itemID="6452677c-0000022e"/>
+     </folders>
+     <fonts>
+          <DOMFontItem name="Fonts/$DebugTextFont" itemID="566f277e-0000016f" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$DebugTextFont" linkageURL="fonts_console.swf" font="Consolas" size="14" id="4" sourceLastImported="1450125182"/>
+          <DOMFontItem name="Fonts/$ConsoleFont" itemID="566f276b-0000016c" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$ConsoleFont" linkageURL="fonts_console.swf" font="ArialNarrow" size="14" id="5" sourceLastImported="1450125163"/>
+          <DOMFontItem name="Fonts/$Terminal_Font" itemID="566f2747-00000169" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$Terminal_Font" linkageURL="fonts_en.swf" font="Share-TechMono" size="14" id="6" sourceLastImported="1450125127"/>
+          <DOMFontItem name="Fonts/$BRODY" itemID="566f272b-00000166" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$BRODY" linkageURL="fonts_en.swf" font="Brody" size="14" id="7" sourceLastImported="1640106730"/>
+          <DOMFontItem name="Fonts/$Controller_Buttons_inverted" itemID="566f26e1-00000163" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$Controller_Buttons_inverted" linkageURL="fonts_en.swf" font="Controller--Buttons-inverted" size="14" id="8" sourceLastImported="1450125025"/>
+          <DOMFontItem name="Fonts/$Controller_Buttons" itemID="566f26ce-00000160" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$Controller_Buttons" linkageURL="fonts_en.swf" font="Controller--Buttons" size="0" id="9" sourceLastImported="1450125006"/>
+          <DOMFontItem name="Fonts/$HandwrittenFont" itemID="566f2677-0000015d" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$HandwrittenFont" linkageURL="fonts_en.swf" font="Handwritten_Institute" size="14" id="10" sourceLastImported="1450124919"/>
+          <DOMFontItem name="Fonts/$MAIN_Font_Bold" itemID="61e668ba-00000296" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$MAIN_Font_Bold" linkageURL="fonts_en.swf" font="RobotoCondensed-Bold" size="0" id="11" sourceLastImported="1640106779" embedRanges="1|2|4|3"/>
+          <DOMFontItem name="Fonts/$MAIN_Font" itemID="61acf173-00000503" linkageImportForRS="true" linkageExportInFirstFrame="false" linkageClassName="$MAIN_Font" linkageURL="fonts_en.swf" font="RobotoCondensed" size="0" id="12" sourceLastImported="1640106770" embedRanges="1|2|4|3"/>
+     </fonts>
+     <symbols>
+          <Include href="BoxContainer.xml" loadImmediate="false" itemID="63e35605-000001f3" lastModified="1675916930"/>
+          <Include href="BracketCap.xml" loadImmediate="false" itemID="63e8c1cb-00000386" lastModified="1676198347"/>
+          <Include href="BracketLength.xml" loadImmediate="false" itemID="63e8c153-00000382" lastModified="1676198227"/>
+          <Include href="ButtonBackground.xml" loadImmediate="false" itemID="63ec034d-000001f8" lastModified="1676497258"/>
+          <Include href="ButtonOutline.xml" loadImmediate="false" itemID="645455bd-000001fb" lastModified="1683248573"/>
+          <Include href="DynamicButton.xml" itemID="63ec0243-000001f2" lastModified="1690831859"/>
+          <Include href="DynamicInfo.xml" itemID="645524cc-00000215" lastModified="1690831435"/>
+          <Include href="DynamicPanel.xml" itemID="63e92b79-00000432" lastModified="1676497777"/>
+          <Include href="DynamicText.xml" itemID="63ec046f-000001fc" lastModified="1676498233"/>
+          <Include href="DynamicTicker.xml" itemID="645516f9-000001ff" lastModified="1690831464"/>
+          <Include href="EntryBox.xml" itemID="6451b3be-0000020d" lastModified="1683077143"/>
+          <Include href="HorizontalBracket.xml" itemID="63e8c840-00000425" lastModified="1676200267"/>
+          <Include href="MenuList.xml" itemID="63e350db-000001e1" lastModified="1683140302"/>
+          <Include href="MenuListItem.xml" itemID="63e3573c-000001f8" lastModified="1683138008"/>
+          <Include href="MenuListItemBackground.xml" loadImmediate="false" itemID="63e35bad-000001fd" lastModified="1675844525"/>
+          <Include href="MiscSymbols/TickerBG.xml" loadImmediate="false" itemID="6452677c-0000022c" lastModified="1683139182"/>
+          <Include href="MiscSymbols/TickerSelectionBG.xml" loadImmediate="false" itemID="645267d2-00000239" lastModified="1683139224"/>
+          <Include href="NAFMenu.xml" itemID="63e35054-000001dc" lastModified="1683302371"/>
+          <Include href="PanelBackground.xml" loadImmediate="false" itemID="63e92b90-00000436" lastModified="1676497183"/>
+          <Include href="TextBackground.xml" loadImmediate="false" itemID="63ec04fe-00000200" lastModified="1676497811"/>
+          <Include href="TickerButton.xml" itemID="64527258-0000023d" lastModified="1683125530"/>
+          <Include href="TickerSelectionButton.xml" itemID="64527947-00000256" lastModified="1683138742"/>
+     </symbols>
+     <timelines>
+          <DOMTimeline name="Scene 1">
+               <layers>
+                    <DOMLayer name="Layer 1" color="#4FFF4F" current="true" isSelected="true">
+                         <frames>
+                              <DOMFrame index="0" keyMode="9728">
+                                   <elements>
+                                        <DOMShape>
+                                             <strokes>
+                                                  <StrokeStyle index="1">
+                                                       <SolidStroke scaleMode="normal" weight="5">
+                                                            <fill>
+                                                                 <SolidColor color="#E8E8E8" alpha="0"/>
+                                                            </fill>
+                                                       </SolidStroke>
+                                                  </StrokeStyle>
+                                             </strokes>
+                                             <edges>
+                                                  <Edge strokeStyle="1" edges="!0 21541|0 0!0 0|38329 0"/>
+                                             </edges>
+                                        </DOMShape>
+                                        <DOMSymbolInstance libraryItemName="NAFMenu" name="Menu_mc" centerPoint3DX="960" centerPoint3DY="540">
+                                             <transformationPoint>
+                                                  <Point x="960" y="540"/>
+                                             </transformationPoint>
+                                        </DOMSymbolInstance>
+                                   </elements>
+                              </DOMFrame>
+                         </frames>
+                    </DOMLayer>
+               </layers>
+          </DOMTimeline>
+     </timelines>
+     <scripts/>
+     <PrinterSettings/>
+     <publishHistory>
+          <PublishItem publishSize="7782" publishTime="1683302387"/>
+          <PublishItem publishSize="7782" publishTime="1683302378"/>
+          <PublishItem publishSize="7790" publishTime="1683302345"/>
+          <PublishItem publishSize="7791" publishTime="1683302339"/>
+          <PublishItem publishSize="2337" publishTime="1683302298"/>
+          <PublishItem publishSize="2337" publishTime="1683302279"/>
+          <PublishItem publishSize="2337" publishTime="1683302257"/>
+          <PublishItem publishSize="7128" publishTime="1683245112"/>
+          <PublishItem publishSize="7042" publishTime="1683139331"/>
+          <PublishItem publishSize="7019" publishTime="1683138752"/>
+          <PublishItem publishSize="7021" publishTime="1683138749"/>
+          <PublishItem publishSize="7049" publishTime="1683138497"/>
+          <PublishItem publishSize="7037" publishTime="1683138491"/>
+          <PublishItem publishSize="6084" publishTime="1683079836"/>
+          <PublishItem publishSize="6081" publishTime="1683079831"/>
+          <PublishItem publishSize="6062" publishTime="1683078836"/>
+          <PublishItem publishSize="6061" publishTime="1683078833"/>
+          <PublishItem publishSize="6062" publishTime="1683078682"/>
+          <PublishItem publishSize="6061" publishTime="1683078628"/>
+          <PublishItem publishSize="6060" publishTime="1683078626"/>
+     </publishHistory>
+</DOMDocument>

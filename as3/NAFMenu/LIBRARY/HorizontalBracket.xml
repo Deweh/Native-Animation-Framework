@@ -1,0 +1,48 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="HorizontalBracket" itemID="63e8c840-00000425" linkageExportForAS="true" linkageClassName="HorizontalBracket" lastModified="1676200267" lastUniqueIdentifier="3">
+  <timeline>
+    <DOMTimeline name="HorizontalBracket">
+      <layers>
+        <DOMLayer name="Caps" color="#9933CC" current="true" isSelected="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="BracketCap" name="brTopCap_mc" centerPoint3DX="17.55" centerPoint3DY="1.5">
+                  <matrix>
+                    <Matrix a="0.0360870361328125"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="486.3" y="1.5"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+                <DOMSymbolInstance libraryItemName="BracketCap" name="brBtmCap_mc" centerPoint3DX="17.55" centerPoint3DY="98.5">
+                  <matrix>
+                    <Matrix a="0.0360870361328125" ty="97"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="486.3" y="1.5"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Length" color="#4FFF4F" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="BracketLength" name="brLength_mc" centerPoint3DX="1.5" centerPoint3DY="50">
+                  <matrix>
+                    <Matrix d="0.10308837890625"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="1.5" y="485"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

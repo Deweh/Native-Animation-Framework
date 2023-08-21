@@ -1,0 +1,42 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="DynamicText" itemID="63ec046f-000001fc" linkageExportForAS="true" linkageClassName="DynamicText" lastModified="1676498233">
+  <timeline>
+    <DOMTimeline name="DynamicText">
+      <layers>
+        <DOMLayer name="Content" color="#9933CC" current="true" isSelected="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMDynamicText name="txt_tf" width="96" height="24">
+                  <matrix>
+                    <Matrix tx="12" ty="8.2"/>
+                  </matrix>
+                  <textRuns>
+                    <DOMTextRun>
+                      <characters>Test Text</characters>
+                      <textAttrs>
+                        <DOMTextAttrs aliasText="false" lineHeight="24" size="20" bitmapSize="400" face="RobotoCondensed-Bold" fillColor="#FFFFFF"/>
+                      </textAttrs>
+                    </DOMTextRun>
+                  </textRuns>
+                </DOMDynamicText>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Background" color="#4FFF4F" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="TextBackground" name="txtBg_mc" centerPoint3DX="-140" centerPoint3DY="20">
+                  <transformationPoint>
+                    <Point x="-140" y="20"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

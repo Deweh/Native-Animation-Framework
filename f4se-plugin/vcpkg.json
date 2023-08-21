@@ -1,0 +1,13 @@
+{
+  "name": "nativeanimationframework",
+  "version-string": "1.0.0",
+  "description": "-",
+  "homepage": "https://github.com/Deweh/Native-Animation-Framework",
+  "license": "GPLv3",
+  "dependencies": [
+    "boost-stl-interfaces",
+    "fmt",
+    "mmio",
+    "spdlog"
+  ]
+}
