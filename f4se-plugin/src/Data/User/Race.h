@@ -28,7 +28,7 @@ namespace Data
 			m(&out.requiresForceLoop, false, true, false, "", "requiresForceLoop");
 			m(&out.startEvent, std::optional<std::string>(std::nullopt), true, false, "", "startEvent");
 			m(&out.stopEvent, std::optional<std::string>(std::nullopt), true, false, "", "stopEvent");
-			m(&out.graph, std::optional<std::string>(std::nullopt), true, false, "", "stopEvent");
+			m(&out.graph, std::optional<std::string>(std::nullopt), true, false, "", "graph");
 
 			return m;
 		}
