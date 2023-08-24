@@ -99,9 +99,15 @@ namespace Data
 		inline static IDMap<Furniture> Furnitures;
 		inline static IDMap<PositionTree> PositionTrees;
 
-		static std::unordered_set<RE::TESBoundObject*> GetApplicableFurniture(AnimationFilter filter, bool excludeHiddenPositions = false) {
+		struct ApplicableFurniture
+		{
+			std::unordered_set<RE::TESBoundObject*> forms;
+			std::unordered_set<const RE::BGSKeyword*> keywords;
+		};
+
+		static ApplicableFurniture GetApplicableFurniture(AnimationFilter filter, bool excludeHiddenPositions = false) {
 			std::unique_lock _l{ reloadLock };
-			std::unordered_set<RE::TESBoundObject*> result;
+			ApplicableFurniture result;
 
 			const auto locations = GetFilteredPositions(filter, excludeHiddenPositions, false, nullptr, true);
 			const std::unordered_set<std::string> locSet(locations.begin(), locations.end());
@@ -110,7 +116,11 @@ namespace Data
 				auto furn = Furnitures.get_ptr(loc);
 				if (furn != nullptr) {
 					for (auto& form : furn->forms) {
-						result.insert(form.get());
+						result.forms.insert(form.get());
+					}
+					for (auto& kw : furn->keywords) {
+						if (auto kwForm = RE::TESForm::GetFormByEditorID<RE::BGSKeyword>(kw); kwForm != nullptr)
+							result.keywords.insert(kwForm);
 					}
 				}
 			}
@@ -168,10 +178,21 @@ namespace Data
 				RE::TESBoundObject* targetObj = furnRefr->data.objectReference;
 
 				for (auto& f : Furnitures) {
+					bool found = false;
 					for (auto& obj : f.second.second->forms) {
 						if (obj.get() == targetObj) {
 							locations.insert(f.first);
+							found = true;
 							break;
+						}
+					}
+					if (!found) {
+						for (auto& kw : f.second.second->keywords) {
+							auto kwForm = RE::TESForm::GetFormByEditorID<RE::BGSKeyword>(kw);
+							if (kwForm != nullptr && furnRefr->HasKeyword(kwForm)) {
+								locations.insert(f.first);
+								break;
+							}
 						}
 					}
 				}

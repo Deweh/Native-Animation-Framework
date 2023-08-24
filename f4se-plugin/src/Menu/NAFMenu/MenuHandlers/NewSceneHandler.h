@@ -17,7 +17,7 @@ namespace Menu::NAF
 		std::vector<SerializableActorHandle> cachedActors;
 		std::vector<SerializableActorHandle> selectedActors;
 
-		std::unordered_set<RE::TESBoundObject*> cachedFurniture;
+		Data::Global::ApplicableFurniture cachedFurniture;
 		std::vector<RE::ObjectRefHandle> cachedLocations;
 		RE::ObjectRefHandle selectedLocation;
 		std::vector<std::string> cachedPositions;
@@ -80,7 +80,22 @@ namespace Menu::NAF
 					}
 
 					auto distMap = GameUtil::GenerateRefDistMap<RE::TESObjectREFR>([&](RE::TESObjectREFR* r) {
-						return (!GameUtil::RefIsDisabled(r) && cachedFurniture.contains(r->data.objectReference));
+						if (GameUtil::RefIsDisabled(r))
+							return false;
+
+						bool isMatch = cachedFurniture.forms.contains(r->data.objectReference);
+						if (!isMatch && cachedFurniture.keywords.size() > 0) {
+							RE::BSScrapArray<const RE::BGSKeyword*> kws;
+							r->CollectAllKeywords(kws, nullptr);
+							for (auto kw : kws) {
+								if (cachedFurniture.keywords.contains(kw)) {
+									isMatch = true;
+									break;
+								}
+							}
+						}
+
+						return isMatch;
 					}, actors);
 
 					cachedLocations.clear();

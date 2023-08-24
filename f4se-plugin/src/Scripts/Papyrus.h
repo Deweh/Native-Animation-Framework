@@ -22,6 +22,7 @@ namespace Papyrus
 		PAPYRUS_BIND(StopScene);
 		PAPYRUS_BIND(SetScenePosition);
 		PAPYRUS_BIND(GetSceneActors);
+		PAPYRUS_BIND(GetSceneHKXs);
 		PAPYRUS_BIND(SetSceneSpeed);
 		PAPYRUS_BIND(GetSceneSpeed);
 		PAPYRUS_BIND(GetSceneFromActor);

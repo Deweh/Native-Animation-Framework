@@ -245,6 +245,14 @@ namespace Papyrus::NAF
 		return result;
 	}
 
+	std::vector<std::string> GetSceneHKXs(std::monostate, SceneId a_id) {
+		std::vector<std::string> result;
+		Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
+			result = scn->QCachedHKXStrings();
+		});
+		return result;
+	}
+
 	void SetSceneSpeed(std::monostate, SceneId a_id, float a_speed) {
 		auto sceneId = UnpackSceneId(a_id);
 		Scene::SceneManager::VisitScene(sceneId, [&](Scene::IScene* scn) {

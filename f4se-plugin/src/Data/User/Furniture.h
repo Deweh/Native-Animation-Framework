@@ -12,12 +12,31 @@ namespace Data
 
 			std::string source;
 			std::string form;
+			std::string kw;
 			m.GetArray([&](XMLUtil::Mapper& m) {
-				m(&source, ""s, true, true, "Furniture node has no 'source' attribute!", "source");
-				m(&form, ""s, true, true, "Furniture node has no 'form' attribute!", "form");
+				source.clear();
+				form.clear();
+				kw.clear();
+				bool hasOne = false;
 
-				if (m)
+				m(&source, ""s, true, false, "", "source");
+				m(&form, ""s, true, false, "", "form");
+
+				if (!source.empty() || !form.empty()) {
 					out.forms.emplace_back(source, form);
+					hasOne = true;
+				}
+
+				m(&kw, ""s, true, false, "", "keyword");
+
+				if (!kw.empty()) {
+					out.keywords.emplace_back(kw);
+					hasOne = true;
+				}
+
+				if (!hasOne) {
+					m.CustomFail("Furniture node has no applicable attributes!");
+				}
 
 				return m;
 			}, "furniture", "Furniture group has no 'furniture' nodes!");
@@ -28,6 +47,7 @@ namespace Data
 			return m;
 		}
 
+		std::vector<std::string> keywords;
 		std::vector<LinkableForm<RE::TESBoundObject>> forms;
 		std::optional<std::string> startAnim;
 		std::optional<std::string> stopAnim;

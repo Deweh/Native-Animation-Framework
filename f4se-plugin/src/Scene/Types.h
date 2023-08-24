@@ -82,4 +82,15 @@ namespace Scene
 		}
 		return result;
 	}
+
+	std::vector<SerializableActorHandle> GetActorHandlesInOrder(const SceneActorsMap& actors) {
+		std::vector<SerializableActorHandle> result;
+		result.resize(actors.size());
+		for (auto& iter : actors) {
+			if (auto i = GetProperty<uint64_t>(iter.second, kOrder); i.has_value() && i.value() < result.size()) {
+				result[i.value()] = iter.first;
+			}
+		}
+		return result;
+	}
 }

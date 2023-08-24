@@ -207,6 +207,25 @@ namespace Scene
 			return settings.autoAdvance;
 		}
 
+		virtual std::vector<std::string> QCachedHKXStrings() override {
+			std::vector<std::string> result;
+			auto order = GetActorHandlesInOrder(actors);
+			result.resize(order.size());
+
+			for (size_t i = 0; i < order.size(); i++) {
+				const auto& hndl = order[i];
+				if (auto iter = cachedIdlesMap.find(hndl); iter != cachedIdlesMap.end()) {
+					if (iter->second.dynIdle.has_value()) {
+						result[i] = Utility::StringToLower(iter->second.dynIdle.value());
+					} else if (auto idl = iter->second.regularIdle.get(); idl != nullptr) {
+						result[i] = Utility::StringToLower(idl->animFileName);
+					}
+				}
+			}
+
+			return result;
+		}
+
 		virtual bool PushQueuedControlSystem() override {
 			if (queuedSystem != nullptr) {
 				auto lastId = controlSystem->QAnimationID();

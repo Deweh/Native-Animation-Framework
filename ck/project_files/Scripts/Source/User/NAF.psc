@@ -87,6 +87,11 @@ Bool Function SetScenePosition(SceneId akScene, String akPosition) Native Global
 ;Returns all actors in akScene. If the scene does not exist, an empty array will be returned.
 Actor[] Function GetSceneActors(SceneId akScene) Native Global
 
+;Returns the HKX paths for the current animations playing on each actor in the scene.
+;The array is returned in the same order as GetSceneActors.
+;Paths are returned as all-lowercase for easy comparison.
+String[] Function GetSceneHKXs(SceneId akScene) Native Global
+
 ;Sets the speed multipler for akScene. 100.0 is normal speed.
 ;The speed multiplier only affects animation speed, it does not affect the scene duration.
 ;If the provided SceneId does not point to any currently running scene, nothing will happen.

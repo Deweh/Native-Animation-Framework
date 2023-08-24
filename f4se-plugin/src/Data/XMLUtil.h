@@ -25,6 +25,11 @@ namespace Data {
 					logger::warn("[{} - Char:{}] {}", GetFileName(), currentNode.offset_debug(), errMsg);
 			}
 
+			void CustomFail(const std::string_view& errMsg) {
+				successful = false;
+				LogError(errMsg);
+			}
+
 			std::string_view GetFileName() const {
 				return fileName;
 			}

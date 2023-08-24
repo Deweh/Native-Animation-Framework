@@ -84,6 +84,12 @@ public:
 			[](unsigned char c) { return (char)std::tolower(c); });
 	}
 
+	static std::string StringToLower(std::string_view str) {
+		std::string res(str);
+		TransformStringToLower(res);
+		return res;
+	}
+
 	static std::string StringToLower(std::string str)
 	{
 		std::transform(str.begin(), str.end(), str.begin(),

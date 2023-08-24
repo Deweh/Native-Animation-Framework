@@ -226,6 +226,8 @@ namespace Scene
 
 		virtual void OnActorHit(RE::Actor*, const RE::TESHitEvent&) {}
 
+		virtual std::vector<std::string> QCachedHKXStrings() { return {}; }
+
 		virtual bool Init(std::shared_ptr<const Data::Position>)
 		{
 			uid = Data::Uid::Get();
