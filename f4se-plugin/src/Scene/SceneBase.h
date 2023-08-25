@@ -51,12 +51,16 @@ namespace Scene
 		SceneManager::VisitScene(sceneId, [](IScene* scn) {
 			auto player = RE::PlayerCharacter::GetSingleton();
 
-			scn->ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
-				if (auto npc = currentActor->GetNPC(); currentActor != player && npc != nullptr) {
-					float targetScale = player->GetScale() / npc->GetHeight(currentActor, currentActor->race);
-					currentActor->SetScale(targetScale * 0.999f);
-					currentActor->SetScale(targetScale);
+			scn->ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
+				float targetScale = 1.0f;
+				if (auto customScale = GetProperty<float>(props, kScale); customScale.has_value()) {
+					targetScale = customScale.value();
+				} else if (auto npc = currentActor->GetNPC(); currentActor != player && npc != nullptr) {
+					targetScale = player->GetScale() / npc->GetHeight(currentActor, currentActor->race);
 				}
+
+				currentActor->SetScale(targetScale * 0.999f);
+				currentActor->SetScale(targetScale);
 			});
 		});
 	}

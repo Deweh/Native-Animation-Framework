@@ -59,6 +59,7 @@ namespace Data
 			integrated_optional<std::string> stopEquipSet;
 			integrated_optional<ActionSet> actions;
 			integrated_optional<std::pair<RE::NiPoint3, float>> offset;
+			integrated_optional<float> customScale;
 
 			static Slot FromActorAndHKX(RE::Actor* a, const std::string& hkxPath) {
 				Slot result;
@@ -106,6 +107,7 @@ namespace Data
 				OptionalSet(m, Scene::kStopEquipSet, stopEquipSet);
 				OptionalSet(m, Scene::kAction, actions);
 				OptionalSet(m, Scene::kOffset, offset);
+				OptionalSet(m, Scene::kScale, customScale);
 			}
 
 			RE::TESIdleForm* GetIdle() const {
@@ -261,6 +263,7 @@ namespace Data
 				m(&s.loopFaceAnim, false, true, false, "", "loopFaceAnim");
 				s.startEquipSet.set_has_value(m(&s.startEquipSet.value(), ""s, true, false, "", "startEquipmentSet"));
 				s.stopEquipSet.set_has_value(m(&s.stopEquipSet.value(), ""s, true, false, "", "stopEquipmentSet"));
+				s.customScale.set_has_value(m(&s.customScale.value(), 1.0f, true, false, "", "scale"));
 				
 				s.actions.set_has_value(s.actions.value().Parse(m));
 

@@ -299,6 +299,42 @@ namespace Papyrus::NAF
 	}
 
 	/*
+	|----------------|
+	| Data Functions |
+	|----------------|
+	*/
+
+	//Not yet implemented in PSC
+	bool PositionExists(std::monostate, std::string a_pos) {
+		return (Data::GetPosition(a_pos) != nullptr);
+	}
+
+	//Not yet implemented in PSC
+	int32_t GetPositionType(std::monostate, std::string a_pos) {
+		int32_t result = 0;
+		if (auto pos = Data::GetPosition(a_pos); pos != nullptr) {
+			result = pos->posType;
+		}
+		return result;
+	}
+
+	//Not yet implemented in PSC
+	std::string GetPositionBaseAnimation(std::monostate, std::string a_pos) {
+		std::string result = "";
+		if (auto pos = Data::GetPosition(a_pos); pos != nullptr) {
+			if (auto anim = pos->GetBaseAnimation(); anim != nullptr) {
+				result = anim->id;
+			}
+		}
+		return result;
+	}
+
+	//Not yet implemented in PSC
+	bool AnimationExists(std::monostate, std::string a_anim) {
+		return (Data::GetAnimation(a_anim) != nullptr);
+	}
+
+	/*
 	|--------------------------|
 	| Face Animation Functions |
 	|--------------------------|

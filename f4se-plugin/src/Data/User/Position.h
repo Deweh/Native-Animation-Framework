@@ -9,9 +9,9 @@ namespace Data
 	public:
 		enum Type : uint8_t
 		{
-			kAnimation,
-			kAnimationGroup,
-			kPositionTree,
+			kAnimation = 0,
+			kAnimationGroup = 1,
+			kPositionTree = 2,
 		};
 
 		struct ControlSystemInfo
