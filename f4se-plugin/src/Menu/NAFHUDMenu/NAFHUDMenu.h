@@ -14,7 +14,8 @@ namespace Menu
 			menuFlags.set(
 				RE::UI_MENU_FLAGS::kAllowSaving,
 				RE::UI_MENU_FLAGS::kRequiresUpdate,
-				RE::UI_MENU_FLAGS::kDontHideCursorWhenTopmost
+				RE::UI_MENU_FLAGS::kDontHideCursorWhenTopmost,
+				RE::UI_MENU_FLAGS::kCompanionAppAllowed
 			);
 
 			depthPriority.set(RE::UI_DEPTH_PRIORITY::kBook);
