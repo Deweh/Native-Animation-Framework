@@ -12,7 +12,8 @@ namespace Menu
 		kManageScenes,
 		kCreator,
 		kFaceAnimCreator,
-		kSettings
+		kSettings,
+		kInventories
 	};
 
 	class MenuItemData
