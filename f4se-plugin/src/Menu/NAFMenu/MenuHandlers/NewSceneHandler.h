@@ -79,6 +79,14 @@ namespace Menu::NAF
 						}
 					}
 
+					// NIS: add player to location selection, even if player is not in scene
+					if (auto player = RE::PlayerCharacter::GetSingleton()) {
+						if (std::find(actors.begin(), actors.end(), player) == actors.end())
+						{
+							actors.push_back(player);
+						}						
+					}
+
 					auto distMap = GameUtil::GenerateRefDistMap<RE::TESObjectREFR>([&](RE::TESObjectREFR* r) {
 						if (GameUtil::RefIsDisabled(r))
 							return false;
