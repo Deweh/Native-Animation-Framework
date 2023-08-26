@@ -30,10 +30,10 @@ EndStruct
 Function ToggleMenu() Native Global
 
 ; Get bRescalerDisable setting
-Function GetRescalerDisabled() Native Global
+Bool Function GetDisableRescaler() Native Global
 
 ; Set bRescalerDisable setting
-Function SetRescalerDisabled() Native Global
+Function SetDisableRescaler() Native Global
 
 ;Returns false if the actor has either the NAF_InScene keyword or NAF_DoNotUse keyword, otherwise true
 Bool Function IsActorUsable(Actor akActor) Native Global

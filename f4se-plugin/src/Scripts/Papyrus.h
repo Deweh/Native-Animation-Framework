@@ -11,8 +11,8 @@ namespace Papyrus
 	bool RegisterFunctions(RE::BSScript::IVirtualMachine* a_VM)
 	{
 		PAPYRUS_BIND(ToggleMenu);
-		PAPYRUS_BIND(SetRescalerDisabled);
-		PAPYRUS_BIND(GetRescalerDisabled);		
+		PAPYRUS_BIND(SetDisableRescaler);
+		PAPYRUS_BIND(GetDisableRescaler);		
 		PAPYRUS_BIND(IsActorUsable);
 		PAPYRUS_BIND(SetActorUsable);
 		PAPYRUS_BIND(SetPackageOverride);

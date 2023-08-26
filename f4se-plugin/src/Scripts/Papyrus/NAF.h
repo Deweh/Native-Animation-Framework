@@ -136,12 +136,12 @@ namespace Papyrus::NAF
 		}
 	}
 
-	bool GetRescalerDisabled(std::monostate)
+	bool GetDisableRescaler(std::monostate)
 	{
 		return Data::Settings::Values.bDisableRescaler;
 	}
 
-	void SetRescalerDisabled(std::monostate, bool bSetting)
+	void SetDisableRescaler(std::monostate, bool bSetting)
 	{
 		Data::Settings::Values.bDisableRescaler = bSetting;
 	}
