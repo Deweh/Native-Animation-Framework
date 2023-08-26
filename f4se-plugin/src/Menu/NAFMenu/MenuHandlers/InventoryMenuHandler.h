@@ -13,16 +13,22 @@ namespace Menu::NAF
 
 		virtual ~InventoryMenuHandler() {}
 
+
+		//virtual void InitSubmenu() override
+		//{
+		//	manager->SetMenuTitle("Inventories");
+		//	BindableMenu::InitSubmenu();
+		//	ConfigurePanel(GetBindings());			
+		//}
+
 		std::function<void(int)> BindGoto(SUB_MENU_TYPE ty)
 		{
 			return Bind(&InventoryMenuHandler::Goto, ty);
 		}
 
 		virtual BindingsVector GetBindings() override
-		{
-			manager->SetMenuTitle("Inventories");
+		{			
 			BindingsVector result;
-
 			SceneManager::VisitScene(sceneId, [&](IScene* scn) {
 				scn->ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
 					  result.push_back({ GameUtil::GetActorName(currentActor),					  
@@ -42,7 +48,7 @@ namespace Menu::NAF
 			}
 
 			RE::ContainerMenuNAF::OpenContainerMenu(a, 3, false)
-
+				
 			If(!hadSWIKeyword)
 			{
 				a->RemoveKeyword(Data::Forms::ShowWornItemsKW)
