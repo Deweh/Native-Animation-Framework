@@ -48,7 +48,7 @@ namespace Menu::NAF
 					manager->SetMenuTitle("New Scene: Select Actors");
 
 					auto distMap = GameUtil::GenerateRefDistMap<RE::Actor>([](RE::Actor* a) {
-						return (GameUtil::ActorIsEnabled(a) && GameUtil::ActorIsAlive(a) && a->race != nullptr && a->race->formEditorID != "HumanChildRace");
+						return (GameUtil::ActorIsAlive(a) && !a->HasKeyword(Data::Forms::ActorTypeChildKW));
 					});
 
 					cachedActors.clear();

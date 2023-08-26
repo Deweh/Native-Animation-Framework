@@ -28,6 +28,7 @@ namespace Data
 		RE::TESIdleForm* NAFDynIdle = nullptr;
 		RE::BGSKeyword* TeammateReadyWeaponKW = nullptr;
 		RE::BGSKeyword* BlockActivationKW = nullptr;
+		RE::BGSKeyword* ActorTypeChildKW = nullptr;
 
 		void GetFormPointers() {
 			if (!RE::TESDataHandler::GetSingleton()->LookupLoadedModByName(NAF_ESP_NAME)) {
@@ -46,6 +47,7 @@ namespace Data
 			NAFDynIdle = GET_FORM_EID(RE::TESIdleForm, "NAF_DynamicIdle");
 			TeammateReadyWeaponKW = GET_FORM_EID(RE::BGSKeyword, "TeammateReadyWeapon_DO");
 			BlockActivationKW = GET_FORM_EID(RE::BGSKeyword, "BlockPlayerActivation");
+			ActorTypeChildKW = GET_FORM_EID(RE::BGSKeyword, "ActorTypeChild");
 		}
 	}
 }
