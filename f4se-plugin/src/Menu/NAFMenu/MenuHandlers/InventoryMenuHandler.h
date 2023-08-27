@@ -1,8 +1,8 @@
 #pragma once
-#include "InventoryMenuHandler.h"
 #include "Menu/BindableMenu.h"
 #include "Misc/MathUtil.h"
 #include "Scene/SceneBase.h"
+#include "Scene/SceneManager.h"
 
 namespace Menu::NAF
 {
@@ -11,47 +11,48 @@ namespace Menu::NAF
 	public:
 		using BindableMenu::BindableMenu;
 
+		uint64_t curSceneId = 0;
+
 		virtual ~InventoryMenuHandler() {}
 
-
-		//virtual void InitSubmenu() override
-		//{
-		//	manager->SetMenuTitle("Inventories");
-		//	BindableMenu::InitSubmenu();
-		//	ConfigurePanel(GetBindings());			
-		//}
-
-		std::function<void(int)> BindGoto(SUB_MENU_TYPE ty)
+		virtual void InitSubmenu() override
 		{
-			return Bind(&InventoryMenuHandler::Goto, ty);
+			BindableMenu::InitSubmenu();
+			auto sceneData = PersistentMenuState::SceneData::GetSingleton();
+			curSceneId = sceneData->pendingSceneId;
+			sceneData->pendingSceneId = 0;
 		}
 
 		virtual BindingsVector GetBindings() override
 		{			
 			BindingsVector result;
-			SceneManager::VisitScene(sceneId, [&](IScene* scn) {
-				scn->ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
-					  result.push_back({ GameUtil::GetActorName(currentActor),					  
+			Scene::SceneManager::VisitScene(curSceneId, [&](Scene::IScene* scn) {
+				scn->ForEachActor([&](RE::Actor* currentActor, Scene::ActorPropertyMap&) {
+					result.push_back({ GameUtil::GetActorName(currentActor),
 						Bind(&InventoryMenuHandler::ShowActorInventory, currentActor->GetActorHandle()) });
 				});
-			}
+			});
 
 			return result;
 		}
 
-		void ShowActorInventory(RE::ActorHandle a)
+		void ShowActorInventory(RE::ActorHandle h, int)
 		{
-			bool hadSWIKeyword = a->HasKeyword(Data::Forms::ShowWornItemsKW);
-			If(!hadSWIKeyword)
+			RE::Actor* a = h.get().get();
+			if (a)
 			{
-				a->AddKeyword(Data::Forms::ShowWornItemsKW)
-			}
+				bool hadSWIKeyword = a->HasKeyword(Data::Forms::ShowWornItemsKW);
+				if (!hadSWIKeyword)
+				{
+					a->ModifyKeyword(Data::Forms::ShowWornItemsKW, true);
+				}
 
-			RE::ContainerMenuNAF::OpenContainerMenu(a, 3, false)
-				
-			If(!hadSWIKeyword)
-			{
-				a->RemoveKeyword(Data::Forms::ShowWornItemsKW)
+				RE::ContainerMenuNAF::OpenContainerMenu(a, 3, false);
+
+				if (!hadSWIKeyword)
+				{
+					a->ModifyKeyword(Data::Forms::ShowWornItemsKW, false);
+				}
 			}
 		}
 

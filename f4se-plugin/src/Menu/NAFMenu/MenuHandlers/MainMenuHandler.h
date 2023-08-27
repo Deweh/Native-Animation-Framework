@@ -22,8 +22,7 @@ namespace Menu::NAF
 				{ "New Scene", BindGoto(kNewScene) },
 				{ "Active Scenes", BindGoto(kManageScenes) },
 				{ "Creator", BindGoto(kCreator) },
-				{ "Settings", BindGoto(kSettings) },
-				{ "Inventories", BindGoto(kInventories) },
+				{ "Settings", BindGoto(kSettings) },				
 				//{ "Test", Bind(&MainMenuHandler::Test) },
 				//{ "File Browser", Bind(&MainMenuHandler::DoFileBrowserWidget) }
 			};

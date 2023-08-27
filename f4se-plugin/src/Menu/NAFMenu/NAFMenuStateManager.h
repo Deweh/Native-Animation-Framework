@@ -4,6 +4,7 @@
 #include "MenuHandlers/CreatorMenuHandler.h"
 #include "MenuHandlers/FaceAnimCreatorHandler.h"
 #include "MenuHandlers/SettingsMenuHandler.h"
+#include "MenuHandlers/InventoryMenuHandler.h"
 #pragma once
 
 namespace Menu
