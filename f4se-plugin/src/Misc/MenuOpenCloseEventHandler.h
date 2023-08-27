@@ -24,6 +24,18 @@ public:
 		{		
 			if (auto sceneData = Menu::PersistentMenuState::SceneData::GetSingleton(); sceneData->restoreSubmenu != Menu::SUB_MENU_TYPE::kNone)
 			{
+				// keyword needs removal?
+				if (sceneData->removeShowWornItemsKWActorHandle.has_value())
+				{
+					auto actorPointer = sceneData->removeShowWornItemsKWActorHandle.value().get().get();
+					if (actorPointer) {
+						// yes, remove
+						actorPointer->ModifyKeyword(Data::Forms::ShowWornItemsKW, false);
+						sceneData->removeShowWornItemsKWActorHandle = std::nullopt;
+					}
+				}
+
+				// re-open NAF menu
 				F4SE::GetTaskInterface()->AddTask([]() {
 					RE::UIMessageQueue::GetSingleton()->AddMessage("NAFMenu", RE::UI_MESSAGE_TYPE::kShow);
 				});

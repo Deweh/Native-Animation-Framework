@@ -12,12 +12,14 @@ namespace Menu::NAF
 	public:
 		using BindableMenu::BindableMenu;
 
+		// current scene ID
 		uint64_t curSceneId = 0;
 
 		virtual ~InventoryMenuHandler() {}
 
 		virtual void InitSubmenu() override
 		{
+			// setup this submenu
 			BindableMenu::InitSubmenu();
 			auto sceneData = PersistentMenuState::SceneData::GetSingleton();
 			curSceneId = sceneData->pendingSceneId;
@@ -25,8 +27,11 @@ namespace Menu::NAF
 		}
 
 		virtual BindingsVector GetBindings() override
-		{			
+		{
+			// menu title
 			manager->SetMenuTitle("Actor Inventories");
+			
+			// populate menu with actors list and showactorinventory actions
 			BindingsVector result;
 			Scene::SceneManager::VisitScene(curSceneId, [&](Scene::IScene* scn) {
 				scn->ForEachActor([&](RE::Actor* currentActor, Scene::ActorPropertyMap&) {
@@ -43,20 +48,30 @@ namespace Menu::NAF
 			RE::Actor* a = h.get().get();
 			if (a)
 			{
+				// preserve keyword state and add keyword
 				bool hadSWIKeyword = a->HasKeyword(Data::Forms::ShowWornItemsKW);
 				if (!hadSWIKeyword)
 				{
 					a->ModifyKeyword(Data::Forms::ShowWornItemsKW, true);
 				}
 
+				// persistent state
 				auto sceneData = PersistentMenuState::SceneData::GetSingleton();
 				sceneData->pendingSceneId = curSceneId;
-				sceneData->restoreSubmenu = kInventories;			
-
+				sceneData->restoreSubmenu = kInventories;							
+				if (!hadSWIKeyword)
+				{
+					sceneData->removeShowWornItemsKWActorHandle = h;
+				}
+				else
+				{
+					sceneData->removeShowWornItemsKWActorHandle = std::nullopt;
+				}
+				
+				// close NAF menu
 				Menu::IStateManager::activeInstance->CloseMenu();
-				//Sleep(100);
 
-
+				// open actor container menu
 				RE::ContainerMenuNAF::OpenContainerMenu(a, 3, false);
 
 			}
@@ -64,11 +79,13 @@ namespace Menu::NAF
 
 		void Goto(SUB_MENU_TYPE menuType, int)
 		{
+			// navigate to specified menu
 			manager->GotoMenu(menuType, true);
 		}
 
 		virtual void BackImpl() override
 		{
+			// navigate back to scenes menu
 			manager->GotoMenu(kManageScenes, false, false);
 		}
 	};

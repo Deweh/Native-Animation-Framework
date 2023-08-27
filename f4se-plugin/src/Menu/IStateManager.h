@@ -173,6 +173,8 @@ namespace Menu
 			bool isWalkInstance = true;
 			// open directly in submenu when set to !kNone
 			SUB_MENU_TYPE restoreSubmenu = kNone;
+			// actor to remove ShowWornItemsKW from on closing ContainerMenu
+			std::optional<RE::ActorHandle> removeShowWornItemsKWActorHandle = std::nullopt;
 		};
 	};
 
