@@ -47,12 +47,10 @@ namespace Menu::NAF
 					a->ModifyKeyword(Data::Forms::ShowWornItemsKW, true);
 				}
 
-				RE::ContainerMenuNAF::OpenContainerMenu(a, 3, false);
+				Menu::IStateManager::activeInstance->CloseMenu();
+				Sleep(100);
 
-				if (!hadSWIKeyword)
-				{
-					a->ModifyKeyword(Data::Forms::ShowWornItemsKW, false);
-				}
+				RE::ContainerMenuNAF::OpenContainerMenu(a, 3, false);
 			}
 		}
 
