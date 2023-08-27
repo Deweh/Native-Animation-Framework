@@ -21,6 +21,8 @@ public:
 		{
 			// opening menu
 			logger::trace("ContainerMenu opened");
+			auto ui = RE::UI::GetSingleton();
+			ui->UpdateMenuMode("ContainerMenu", false);
 		}
 		else if(event.menuName == "ContainerMenu" && !event.opening)
 		{
