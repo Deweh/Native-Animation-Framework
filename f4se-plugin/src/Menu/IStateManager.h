@@ -13,7 +13,8 @@ namespace Menu
 		kCreator,
 		kFaceAnimCreator,
 		kSettings,
-		kInventories
+		kInventories,
+		kNone
 	};
 
 	class MenuItemData
@@ -170,6 +171,8 @@ namespace Menu
 		{
 			uint64_t pendingSceneId = 0;
 			bool isWalkInstance = true;
+			// open directly in submenu when set to !kNone
+			SUB_MENU_TYPE restoreSubmenu = kNone;
 		};
 	};
 

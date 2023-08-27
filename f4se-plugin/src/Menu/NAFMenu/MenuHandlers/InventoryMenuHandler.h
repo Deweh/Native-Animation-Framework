@@ -3,6 +3,7 @@
 #include "Misc/MathUtil.h"
 #include "Scene/SceneBase.h"
 #include "Scene/SceneManager.h"
+#include "Misc/MenuOpenCloseEventHandler.h"
 
 namespace Menu::NAF
 {
@@ -25,6 +26,7 @@ namespace Menu::NAF
 
 		virtual BindingsVector GetBindings() override
 		{			
+			manager->SetMenuTitle("Actor Inventories");
 			BindingsVector result;
 			Scene::SceneManager::VisitScene(curSceneId, [&](Scene::IScene* scn) {
 				scn->ForEachActor([&](RE::Actor* currentActor, Scene::ActorPropertyMap&) {
@@ -47,10 +49,16 @@ namespace Menu::NAF
 					a->ModifyKeyword(Data::Forms::ShowWornItemsKW, true);
 				}
 
+				auto sceneData = PersistentMenuState::SceneData::GetSingleton();
+				sceneData->pendingSceneId = curSceneId;
+				sceneData->restoreSubmenu = kInventories;			
+
 				Menu::IStateManager::activeInstance->CloseMenu();
 				Sleep(100);
 
+
 				RE::ContainerMenuNAF::OpenContainerMenu(a, 3, false);
+
 			}
 		}
 
@@ -59,14 +67,9 @@ namespace Menu::NAF
 			manager->GotoMenu(menuType, true);
 		}
 
-		void StowPlayerWeapon(int)
-		{
-			RE::PlayerCharacter::GetSingleton()->DrawWeaponMagicHands(false);
-		}
-
 		virtual void BackImpl() override
 		{
-			manager->CloseMenu();
+			manager->GotoMenu(kManageScenes, false, false);
 		}
 	};
 }
