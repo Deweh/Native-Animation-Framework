@@ -54,7 +54,7 @@ namespace Menu::NAF
 				sceneData->restoreSubmenu = kInventories;			
 
 				Menu::IStateManager::activeInstance->CloseMenu();
-				Sleep(100);
+				//Sleep(100);
 
 
 				RE::ContainerMenuNAF::OpenContainerMenu(a, 3, false);
