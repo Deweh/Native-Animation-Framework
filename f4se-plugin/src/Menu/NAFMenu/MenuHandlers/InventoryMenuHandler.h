@@ -21,6 +21,8 @@ namespace Menu::NAF
 		{
 			// setup this submenu
 			BindableMenu::InitSubmenu();
+
+			// read from persistent state
 			auto sceneData = PersistentMenuState::SceneData::GetSingleton();
 			curSceneId = sceneData->pendingSceneId;
 			sceneData->pendingSceneId = 0;
