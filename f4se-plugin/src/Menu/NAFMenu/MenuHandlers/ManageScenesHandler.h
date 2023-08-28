@@ -33,6 +33,14 @@ namespace Menu::NAF
 
 		using Events = Data::Events;
 
+		// NIS: store selected sceneID and navigate to inventorymenu
+		void GotoInventoriesMenu(uint64_t sceneId, int)
+		{
+			auto sceneData = PersistentMenuState::SceneData::GetSingleton();
+			sceneData->pendingSceneId = sceneId;
+			manager->GotoMenu(kInventories, true);
+		}
+
 		virtual void InitSubmenu() override
 		{
 			BindableMenu::InitSubmenu();
@@ -171,8 +179,9 @@ namespace Menu::NAF
 						{ std::format("Sync Status: {}", GetSyncStateString()), std::nullopt },
 						{ "Speed (%): ", MENU_BINDING(ManageScenesHandler::AdjustSceneSpeed), true, 1, 500, static_cast<int>(cachedSpeed) },
 						{ std::format("Current Animation: {}", cachedAnimId), std::nullopt },
-						{ "Change Position", MENU_BINDING(ManageScenesHandler::ChangePosition) },
-						{ "Stop Scene", MENU_BINDING(ManageScenesHandler::StopScene) }
+						{ "Change Position...", MENU_BINDING(ManageScenesHandler::ChangePosition) },
+						{ "Actor Inventories...", MENU_BINDING_WARG(ManageScenesHandler::GotoInventoriesMenu, selectionId) },
+						{ "Stop Scene", MENU_BINDING(ManageScenesHandler::StopScene) }						
 					};
 				}
 				case kManageWalkInstance:

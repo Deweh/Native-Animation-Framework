@@ -12,7 +12,9 @@ namespace Menu
 		kManageScenes,
 		kCreator,
 		kFaceAnimCreator,
-		kSettings
+		kSettings,
+		kInventories,
+		kNone
 	};
 
 	class MenuItemData
@@ -169,6 +171,10 @@ namespace Menu
 		{
 			uint64_t pendingSceneId = 0;
 			bool isWalkInstance = true;
+			// open directly in submenu when set to !kNone
+			SUB_MENU_TYPE restoreSubmenu = kNone;
+			// actor to remove ShowWornItemsKW from on closing ContainerMenu
+			std::optional<RE::ActorHandle> removeShowWornItemsKWActorHandle = std::nullopt;
 		};
 	};
 

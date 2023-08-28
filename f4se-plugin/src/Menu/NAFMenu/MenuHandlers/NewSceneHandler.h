@@ -48,7 +48,7 @@ namespace Menu::NAF
 					manager->SetMenuTitle("New Scene: Select Actors");
 
 					auto distMap = GameUtil::GenerateRefDistMap<RE::Actor>([](RE::Actor* a) {
-						return (GameUtil::ActorIsEnabled(a) && GameUtil::ActorIsAlive(a) && a->race != nullptr && a->race->formEditorID != "HumanChildRace");
+						return (GameUtil::ActorIsAlive(a) && !a->HasKeyword(Data::Forms::ActorTypeChildKW));
 					});
 
 					cachedActors.clear();
@@ -77,6 +77,14 @@ namespace Menu::NAF
 						if (a != nullptr) {
 							actors.push_back(a);
 						}
+					}
+
+					// NIS: make sure player is in location selection, even if not part of the scene
+					if (auto player = RE::PlayerCharacter::GetSingleton()) {
+						if (std::find(actors.begin(), actors.end(), player) == actors.end())
+						{
+							actors.push_back(player);
+						}				
 					}
 
 					auto distMap = GameUtil::GenerateRefDistMap<RE::TESObjectREFR>([&](RE::TESObjectREFR* r) {

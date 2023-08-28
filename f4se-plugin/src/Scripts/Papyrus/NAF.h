@@ -136,6 +136,16 @@ namespace Papyrus::NAF
 		}
 	}
 
+	bool GetDisableRescaler(std::monostate)
+	{
+		return Data::Settings::Values.bDisableRescaler;
+	}
+
+	void SetDisableRescaler(std::monostate, bool bSetting)
+	{
+		Data::Settings::Values.bDisableRescaler = bSetting;
+	}
+
 	bool IsActorUsable(std::monostate, RE::Actor* a_actor)
 	{
 		if (!a_actor) {
