@@ -10,6 +10,7 @@ bool g_gameDataReady = false;
 #include "LooksMenu/LooksMenu.h"
 #include "FaceAnimation/AnimationData.h"
 #include "Data/Global.h"
+#include "Data/CommandEngine.h"
 #include "CamHook/CamHook.h"
 #include "Misc/GameUtil.h"
 #include "Menu/Menu.h"

@@ -2,52 +2,54 @@
 
 namespace RE
 {
-	class hkbContext;
+	class AnimVariableCacheInfo;
+	class BSAnimationGraphChannel;
+	class BShkbAnimationGraph;
+	class hkbVariableValue;
+	struct hkbGeneratorSyncInfo;
 
-	enum hkbNodeType : uint8_t
-	{
-		kClipGenerator = 4
-	};
-
-	class hkbSyncInfo
-	{
-	public:
-		uint8_t unk00[128];
-		float f3;
-		float f1;
-		uint8_t unk01[28];
-		float f2;
-	};
-
-	class hkbNode
+	struct BSAnimationGraphVariableCache
 	{
 	public:
-		uint8_t unk00[15];
-		hkbSyncInfo* syncInfo;
+		// members
+		BSTArray<AnimVariableCacheInfo> variableCache;         // 00
+		BSTArray<hkbVariableValue*> variableQuickLookup;       // 18
+		BSSpinLock* lock;                                      // 30
+		BSTSmartPointer<BShkbAnimationGraph> graphToCacheFor;  // 38
 	};
+	static_assert(sizeof(BSAnimationGraphVariableCache) == 0x40);
+
+	class BSAnimationGraphManager :
+		public BSTEventSink<BSAnimationGraphEvent>,  //00
+		public BSIntrusiveRefCounted                 //08
+	{
+	public:
+		struct DependentManagerSmartPtr
+		{
+		public:
+			// members
+			std::uint64_t ptrAndFlagsStorage;  // 00
+		};
+		static_assert(sizeof(DependentManagerSmartPtr) == 0x08);
+
+		// members
+		BSTArray<BSTSmartPointer<BSAnimationGraphChannel>> boundChannel;   // 10
+		BSTArray<BSTSmartPointer<BSAnimationGraphChannel>> bumpedChannel;  // 28
+		BSTSmallArray<BSTSmartPointer<BShkbAnimationGraph>, 1> graph;      // 40
+		BSTArray<DependentManagerSmartPtr> subManagers;                    // 58
+		BSTArray<BSTTuple<BSFixedString, BSFixedString>> eventQueuea;      // 70
+		BSAnimationGraphVariableCache variableCache;                       // 88
+		BSSpinLock updateLock;                                             // C8
+		BSSpinLock dependentManagerLock;                                   // D0
+		std::uint32_t activeGraph;                                         // D8
+		std::uint32_t generateDepth;                                       // DC
+	};
+	static_assert(sizeof(BSAnimationGraphManager) == 0xE0);
 
 	enum BSVisitControl : uint32_t
 	{
 		kContinue = 0,
 		kStop = 1
-	};
-
-	class hkbClipGenerator : public hkbNode
-	{
-	public:
-		void setLocalTime(const hkbContext* a_context, float a_time)
-		{
-			using func_t = decltype(&hkbClipGenerator::setLocalTime);
-			REL::Relocation<func_t> func{ REL::ID(1447515) };
-			return func(this, a_context, a_time);
-		}
-
-		float getLocalLocalTime()
-		{
-			using func_t = decltype(&hkbClipGenerator::getLocalLocalTime);
-			REL::Relocation<func_t> func{ REL::ID(564058) };
-			return func(this);
-		}
 	};
 
 	namespace BShkbUtils
@@ -97,15 +99,8 @@ namespace RE
 	}
 
 	class BShkbAnimationGraph;
-	
-	class hkbCharacter
-	{
-	public:
-		std::byte unk01[128];
-		BShkbAnimationGraph* graph;
-	};
 
-	class __declspec(novtable) BShkbVisitor
+	class BShkbVisitor
 	{
 	public:
 		static constexpr auto VTABLE{ VTABLE::BSAnimGraphVisit__BShkbVisitor };
@@ -118,15 +113,25 @@ namespace RE
 			unk02 = 0;
 		}
 
-		virtual BSVisitControl TraverseAnimationGraphNodes(hkbNode*) {}
+		virtual BSVisitControl TraverseAnimationGraphNodes(hkbNode* a_node) {
+			using func_t = decltype(&BShkbVisitor::TraverseAnimationGraphNodes);
+			REL::Relocation<func_t> func{ REL::ID(1065709) };
+			return func(this, a_node);
+		}
 		virtual BSVisitControl Visit(hkbNode*) = 0;
+		virtual BSVisitControl InitVisit() { return RE::BSVisitControl::kContinue; }
 
 		hkbCharacter* character;
 		int32_t unk01;
 		BSFixedString unk02;
 	};
 
-	class hkbContext
+	struct hkbGraphInformation : public BShkbVisitor
+	{
+		virtual BSVisitControl Visit(hkbNode*) override { return RE::BSVisitControl::kStop; }
+	};
+
+	struct hkbContext
 	{
 	public:
 
@@ -158,9 +163,7 @@ namespace RE
 	class BShkbAnimationGraph
 	{
 	public:
-		uint8_t unk01[192];
-		hkbNode* targetNode;
-		uint8_t unk00[256];
+		uint8_t pad00[0x1C8];
 		hkbCharacter* character;
 
 		void VisitGraph(BShkbVisitor& a_visitor)
@@ -174,12 +177,6 @@ namespace RE
 			using func_t = decltype(&BShkbAnimationGraph::getNodeClone);
 			REL::Relocation<func_t> func{ REL::ID(326555) };
 			return func(this, a_node);
-		}
-
-		void setActiveGeneratorLocalTime(const hkbContext* a_context, hkbClipGenerator* a_gen, float a_time) {
-			using func_t = decltype(&BShkbAnimationGraph::setActiveGeneratorLocalTime);
-			REL::Relocation<func_t> func{ REL::ID(992878) };
-			return func(this, a_context, a_gen, a_time);
 		}
 	};
 
@@ -200,17 +197,5 @@ namespace RE
 		hkbAnimationBindingWithTriggers* binding;
 		hkbClipGenerator* clipGenerator;
 		BShkbAnimationGraph* animationGraph;
-	};
-
-	struct BSAnimationGraphVariableCache
-	{
-		uint64_t unk1;
-		uint64_t unk2;
-		uint64_t unk3;
-		uint64_t unk4;
-		uint64_t unk5;
-		uint64_t unk6;
-		uint64_t unk7;
-		BShkbAnimationGraph* animGraph;
 	};
 }

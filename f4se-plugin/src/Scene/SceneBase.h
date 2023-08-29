@@ -573,6 +573,48 @@ namespace Scene
 			}
 		}
 
+		void PerformSync() {
+			auto player = RE::PlayerCharacter::GetSingleton();
+			bool noActorsReady = true;
+			bool allActorsReady = true;
+			float minTime = 0.0f;
+			size_t i = 0;
+			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
+				cachedSyncInfo.otherSyncInfo.clear();
+				if (RE::BGSAnimationSystemUtils::GetActiveSyncInfo(currentActor, cachedSyncInfo) &&
+					cachedSyncInfo.currentAnimTime >= 0.0f) {
+
+					if (currentActor == player && cachedSyncInfo.currentAnimTime <= playerSyncOffset) {
+						allActorsReady = false;
+					}
+
+					auto& ele = syncInfoVec[i];
+					ele.actor.reset(currentActor);
+					ele.currentAnimTime = cachedSyncInfo.currentAnimTime + ((currentActor == player) * playerSyncOffset);
+					ele.totalAnimTime = cachedSyncInfo.totalAnimTime;
+
+					//If this is the first actor, set minTime to its anim time to kick off the process.
+					//Use arithmetic here instead of a conditional to avoid an unneccesary branch.
+					minTime += ele.currentAnimTime * noActorsReady;
+					noActorsReady = false;
+					minTime = min(minTime, ele.currentAnimTime);
+					i++;
+				} else {
+					allActorsReady = false;
+				}
+			});
+
+			if (minTime > 0 && allActorsReady) {
+				for (auto& info : syncInfoVec) {
+					if (minTime < info.totalAnimTime) {
+						GameUtil::SetAnimationGraphTime(info.actor.get(), minTime - ((info.actor.get() == player) * playerSyncOffset));
+					}
+				}
+
+				SetSyncState(Synced);
+			}
+		}
+
 		void UpdateSmoothSync() {
 			auto player = RE::PlayerCharacter::GetSingleton();
 			bool allActorsReady = true;
@@ -704,7 +746,7 @@ namespace Scene
 				}
 			case SyncingTimes:
 				{
-					UpdateSmoothSync();
+					PerformSync();
 					break;
 				}
 			}

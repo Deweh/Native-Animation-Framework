@@ -1,4 +1,5 @@
 #pragma once
+#include "hk.h"
 #include "TESActionData.h"
 #include "BGSAnimationSystemUtils.h"
 #include "BSInputEnableManager.h"

@@ -14,6 +14,68 @@ public:
 		return sqrt(pow(pt2.x - pt1.x, 2) + pow(pt2.y - pt1.y, 2) + pow(pt2.z - pt1.z, 2) * 1.0);
 	}
 
+	struct GraphTime
+	{
+		float current = 0.0f;
+		float total = 0.0f;
+	};
+
+	static bool SetAnimationGraphTime(RE::IAnimationGraphManagerHolder* graphHolder, float time) {
+		if (graphHolder == nullptr)
+			return false;
+
+		RE::BSTSmartPointer<RE::BSAnimationGraphManager> manager;
+		if (!graphHolder->GetAnimationGraphManagerImpl(manager) || manager == nullptr)
+			return false;
+
+		RE::BSAutoLock l{ manager->updateLock };
+		if (manager->graph.size() < 1 || manager->graph.size() <= manager->activeGraph)
+			return false;
+
+		RE::hkbGraphInformation graphInfo;
+		manager->graph[manager->activeGraph]->VisitGraph(graphInfo);
+		auto graph = graphInfo.character->behaviorGraph._ptr;
+
+		if (graph == nullptr)
+			return false;
+
+		auto rootGen = graph->rootGenerator._ptr;
+		if (rootGen == nullptr)
+			return false;
+
+		RE::hkbContext context(graphInfo.character);
+		graph->setActiveGeneratorLocalTime(&context, rootGen, time);
+		return true;
+	}
+
+	static bool GetAnimationGraphTime(RE::IAnimationGraphManagerHolder* graphHolder, GraphTime& timeOut) {
+		if (graphHolder == nullptr)
+			return false;
+
+		RE::BSTSmartPointer<RE::BSAnimationGraphManager> manager;
+		if (!graphHolder->GetAnimationGraphManagerImpl(manager) || manager == nullptr)
+			return false;
+
+		RE::BSAutoLock l{ manager->updateLock };
+		if (manager->graph.size() < 1 || manager->graph.size() <= manager->activeGraph)
+			return false;
+
+		RE::hkbGraphInformation graphInfo;
+		manager->graph[manager->activeGraph]->VisitGraph(graphInfo);
+		auto graph = graphInfo.character->behaviorGraph._ptr;
+
+		if (graph == nullptr)
+			return false;
+
+		auto rootGen = reinterpret_cast<RE::hkbGenerator*>(graph->getNodeClone(graph->rootGenerator._ptr));
+		if (rootGen == nullptr)
+			return false;
+
+		timeOut.current = rootGen->syncInfo->localTime;
+		timeOut.total = rootGen->syncInfo->duration;
+		return true;
+	}
+
 	// Gets the full name of the corresponding actor.
 	// Returns an empty string if unable to get the full name.
 	static std::string GetActorName(RE::Actor* targetActor) {
