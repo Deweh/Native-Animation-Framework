@@ -33,7 +33,7 @@ Function ToggleMenu() Native Global
 Bool Function GetDisableRescaler() Native Global
 
 ; Set bDisableRescaler setting (will not persist unless saved in NAF)
-Function SetDisableRescaler() Native Global
+Function SetDisableRescaler(Bool bDisable) Native Global
 
 ;Returns false if the actor has either the NAF_InScene keyword or NAF_DoNotUse keyword, otherwise true
 Bool Function IsActorUsable(Actor akActor) Native Global
