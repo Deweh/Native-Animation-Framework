@@ -48,6 +48,12 @@ namespace Menu
 
 	struct PersistentMenuState
 	{
+		inline static PersistentMenuState* GetSingleton()
+		{
+			static PersistentMenuState instance;
+			return &instance;
+		}
+
 		struct CreatorData
 		{
 			inline static CreatorData* GetSingleton() {
@@ -171,11 +177,12 @@ namespace Menu
 		{
 			uint64_t pendingSceneId = 0;
 			bool isWalkInstance = true;
-			// open directly in submenu when set to !kNone
-			SUB_MENU_TYPE restoreSubmenu = kNone;
-			// actor to remove ShowWornItemsKW from on closing ContainerMenu
-			std::optional<RE::ActorHandle> removeShowWornItemsKWActorHandle = std::nullopt;
+			std::optional<RE::ActorHandle> pendingActor = std::nullopt;
 		};
+
+		SUB_MENU_TYPE restoreSubmenu = kNone;
+		CreatorData* creatorData = CreatorData::GetSingleton();
+		SceneData* sceneData = SceneData::GetSingleton();
 	};
 
 	class IStateManager

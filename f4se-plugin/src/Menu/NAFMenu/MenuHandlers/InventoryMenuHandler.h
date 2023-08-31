@@ -3,13 +3,63 @@
 #include "Misc/MathUtil.h"
 #include "Scene/SceneBase.h"
 #include "Scene/SceneManager.h"
-#include "Misc/MenuOpenCloseEventHandler.h"
 
 namespace Menu::NAF
 {
 	class InventoryMenuHandler : public BindableMenu<InventoryMenuHandler, SUB_MENU_TYPE::kInventories>
 	{
 	public:
+		class MenuOpenCloseEventHandler :
+			public RE::BSTEventSink<RE::MenuOpenCloseEvent>,
+			public Singleton<MenuOpenCloseEventHandler>,
+			public Data::EventListener<MenuOpenCloseEventHandler>
+		{
+		public:
+
+			RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent& event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)
+			{
+				if (event.menuName != "ContainerMenu")
+					return;
+
+				auto state = Menu::PersistentMenuState::GetSingleton();
+				if (state->restoreSubmenu == Menu::SUB_MENU_TYPE::kNone)
+					return;
+
+				if (event.opening) {
+					RE::UI::GetSingleton()->UpdateMenuMode("ContainerMenu", false);
+				} else {
+					auto state = Menu::PersistentMenuState::GetSingleton();
+					if ( state->restoreSubmenu != Menu::SUB_MENU_TYPE::kNone) {
+						if (auto& a = state->sceneData->pendingActor; a.has_value()) {
+							auto targetActor = a.value().get().get();
+							if (targetActor) {
+								targetActor->ModifyKeyword(Data::Forms::ShowWornItemsKW, false);
+								a = std::nullopt;
+							}
+						}
+
+						F4SE::GetTaskInterface()->AddTask([]() {
+							RE::UIMessageQueue::GetSingleton()->AddMessage("NAFMenu", RE::UI_MESSAGE_TYPE::kShow);
+						});
+					}
+				}
+
+				return RE::BSEventNotifyControl::kContinue;
+			}
+
+			void OnGameDataReady(Data::Events::event_type, Data::Events::EventData&)
+			{
+				RE::UI::GetSingleton()->RegisterSink(this);
+			}
+
+		protected:
+			friend class Singleton;
+			MenuOpenCloseEventHandler()
+			{
+				RegisterListener(Data::Events::GAME_DATA_READY, &MenuOpenCloseEventHandler::OnGameDataReady);
+			}
+		};
+
 		using BindableMenu::BindableMenu;
 
 		// current scene ID
@@ -69,25 +119,15 @@ namespace Menu::NAF
 				{
 					sceneData->removeShowWornItemsKWActorHandle = std::nullopt;
 				}
-				
-				// close NAF menu
-				Menu::IStateManager::activeInstance->CloseMenu();
 
-				// open actor container menu
-				RE::ContainerMenuNAF::OpenContainerMenu(a, 3, false);
+				manager->CloseMenu();
+				RE::OpenContainerMenu(a, 3, false);
 
 			}
 		}
 
-		void Goto(SUB_MENU_TYPE menuType, int)
-		{
-			// navigate to specified menu
-			manager->GotoMenu(menuType, true);
-		}
-
 		virtual void BackImpl() override
 		{
-			// navigate back to scenes menu
 			manager->GotoMenu(kManageScenes, false, false);
 		}
 	};

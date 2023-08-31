@@ -8,4 +8,4 @@
 #include "TESObjectREFR_Events.h"
 #include "TESEffectShader.h"
 #include "BSAnimationGraphManager.h"
-#include "ContainerMenuNAF.h"
+#include "ContainerMenu.h"
