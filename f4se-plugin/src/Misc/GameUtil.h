@@ -20,60 +20,98 @@ public:
 		float total = 0.0f;
 	};
 
-	static bool SetAnimationGraphTime(RE::IAnimationGraphManagerHolder* graphHolder, float time) {
+	struct GraphLock
+	{
+		GraphLock(GraphLock&) = delete;
+
+		GraphLock(RE::BSSpinLock& lock) {
+			_lock = std::addressof(lock);
+			_lock->lock();
+		}
+
+		GraphLock(GraphLock&& other) {
+			_lock = other._lock;
+			other._lock = nullptr;
+			character = other.character;
+			graph = other.graph;
+			rootGen = other.rootGen;
+		}
+
+		GraphLock(std::nullptr_t) {}
+
+		~GraphLock() {
+			if (_lock != nullptr)
+				_lock->unlock();
+		}
+
+		operator bool() {
+			return _lock != nullptr;
+		}
+
+		RE::hkbCharacter* character = nullptr;
+		RE::hkbBehaviorGraph* graph = nullptr;
+		RE::hkbGenerator* rootGen = nullptr;
+
+	protected:
+		RE::BSSpinLock* _lock = nullptr;
+	};
+
+	static GraphLock AcquireGraphLock(RE::IAnimationGraphManagerHolder* graphHolder) {
 		if (graphHolder == nullptr)
-			return false;
+			return nullptr;
 
 		RE::BSTSmartPointer<RE::BSAnimationGraphManager> manager;
 		if (!graphHolder->GetAnimationGraphManagerImpl(manager) || manager == nullptr)
-			return false;
+			return nullptr;
 
-		RE::BSAutoLock l{ manager->updateLock };
+		GraphLock result(manager->updateLock);
 		if (manager->graph.size() < 1 || manager->graph.size() <= manager->activeGraph)
-			return false;
+			return nullptr;
 
-		RE::hkbGraphInformation graphInfo;
-		manager->graph[manager->activeGraph]->VisitGraph(graphInfo);
-		auto graph = graphInfo.character->behaviorGraph._ptr;
+		auto& character = manager->graph[manager->activeGraph]->character;
+		result.character = &character;
+		result.graph = character.behaviorGraph.get();
 
-		if (graph == nullptr)
-			return false;
+		if (result.graph == nullptr)
+			return nullptr;
 
-		auto rootGen = graph->rootGenerator._ptr;
-		if (rootGen == nullptr)
-			return false;
+		result.rootGen = result.graph->rootGenerator.get();
+		if (result.rootGen == nullptr)
+			return nullptr;
 
-		RE::hkbContext context(graphInfo.character);
-		graph->setActiveGeneratorLocalTime(&context, rootGen, time);
-		return true;
+		return result;
 	}
 
-	static bool GetAnimationGraphTime(RE::IAnimationGraphManagerHolder* graphHolder, GraphTime& timeOut) {
-		if (graphHolder == nullptr)
-			return false;
+	static void SetAnimationGraphTime(GraphLock& gl, float time) {
+		RE::hkbContext context(gl.character);
+		gl.graph->setActiveGeneratorLocalTime(&context, gl.rootGen, time);
+	}
 
-		RE::BSTSmartPointer<RE::BSAnimationGraphManager> manager;
-		if (!graphHolder->GetAnimationGraphManagerImpl(manager) || manager == nullptr)
-			return false;
-
-		RE::BSAutoLock l{ manager->updateLock };
-		if (manager->graph.size() < 1 || manager->graph.size() <= manager->activeGraph)
-			return false;
-
-		RE::hkbGraphInformation graphInfo;
-		manager->graph[manager->activeGraph]->VisitGraph(graphInfo);
-		auto graph = graphInfo.character->behaviorGraph._ptr;
-
-		if (graph == nullptr)
-			return false;
-
-		auto rootGen = reinterpret_cast<RE::hkbGenerator*>(graph->getNodeClone(graph->rootGenerator._ptr));
-		if (rootGen == nullptr)
+	static bool GetAnimationGraphTime(GraphLock& gl, GraphTime& timeOut) {
+		auto rootGen = reinterpret_cast<RE::hkbGenerator*>(gl.graph->getNodeClone(gl.rootGen));
+		if (rootGen == nullptr || rootGen->syncInfo->duration == 0.0f)
 			return false;
 
 		timeOut.current = rootGen->syncInfo->localTime;
 		timeOut.total = rootGen->syncInfo->duration;
 		return true;
+	}
+
+	static bool SetAnimationGraphTime(RE::IAnimationGraphManagerHolder* graphHolder, float time) {
+		if (auto gl = AcquireGraphLock(graphHolder); gl) {
+			SetAnimationGraphTime(gl, time);
+			return true;
+		}
+
+		return false;
+	}
+
+	static bool GetAnimationGraphTime(RE::IAnimationGraphManagerHolder* graphHolder, GraphTime& timeOut) {
+		if (auto gl = AcquireGraphLock(graphHolder); gl) {
+			return GetAnimationGraphTime(gl, timeOut);
+		}
+
+		return false;
 	}
 
 	// Gets the full name of the corresponding actor.

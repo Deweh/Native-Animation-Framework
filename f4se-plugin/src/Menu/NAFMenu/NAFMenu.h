@@ -180,6 +180,7 @@ namespace Menu
 
 					case RE::BS_BUTTON_CODE::kUp:
 					case RE::BS_BUTTON_CODE::kW:
+					case RE::BS_BUTTON_CODE::kDPAD_Up:
 						if (a_event->QJustPressed()) {
 							RE::Scaleform::GFx::Value args[1];
 							args[0] = "Up";
@@ -189,6 +190,7 @@ namespace Menu
 
 					case RE::BS_BUTTON_CODE::kDown:
 					case RE::BS_BUTTON_CODE::kS:
+					case RE::BS_BUTTON_CODE::kDPAD_Down:
 						if (a_event->QJustPressed()) {
 							RE::Scaleform::GFx::Value args[1];
 							args[0] = "Down";
@@ -198,6 +200,7 @@ namespace Menu
 
 					case RE::BS_BUTTON_CODE::kLeft:
 					case RE::BS_BUTTON_CODE::kA:
+					case RE::BS_BUTTON_CODE::kDPAD_Left:
 						if (a_event->QJustPressed()) {
 							RE::Scaleform::GFx::Value args[1];
 							args[0] = "Left";
@@ -207,6 +210,7 @@ namespace Menu
 
 					case RE::BS_BUTTON_CODE::kRight:
 					case RE::BS_BUTTON_CODE::kD:
+					case RE::BS_BUTTON_CODE::kDPAD_Right:
 						if (a_event->QJustPressed()) {
 							RE::Scaleform::GFx::Value args[1];
 							args[0] = "Right";
@@ -215,6 +219,7 @@ namespace Menu
 						break;
 
 					case RE::BS_BUTTON_CODE::kDelete:
+					case RE::BS_BUTTON_CODE::kXButton:
 						if (a_event->QJustPressed()) {
 							RE::Scaleform::GFx::Value args[1];
 							args[0] = "Delete";

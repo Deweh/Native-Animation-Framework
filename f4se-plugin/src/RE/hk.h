@@ -319,9 +319,11 @@ namespace RE
 		float userControlledTimeFraction;
 	};
 
-	struct hkbCharacter : public hkReferencedObject
+	struct __declspec(novtable) hkbCharacter : public hkReferencedObject
 	{
-		void* vtable_placeholder;
+		virtual void getNearbyCharacters(float, hkArray<hkbCharacter*, hkContainerHeapAllocator>*) {}
+
+		void* unk10;
 		hkArray<hkbCharacter*, hkContainerHeapAllocator> nearbyCharacters;
 		uint32_t userData;
 		int16_t currentLod;

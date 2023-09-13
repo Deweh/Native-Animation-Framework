@@ -22,7 +22,7 @@ namespace FaceAnimation
 			std::string animationId = "";
 			std::optional<EyeVector> eyeOverride = std::nullopt;
 			std::optional<AnimInfo> animBackup = std::nullopt;
-			RE::BGSAnimationSystemUtils::ActiveSyncInfo syncInfoCache;
+			GameUtil::GraphTime syncInfoCache;
 
 			template <class Archive>
 			void save(Archive& ar, const uint32_t) const
@@ -160,10 +160,9 @@ namespace FaceAnimation
 					} else {
 						const auto actor = h.get().get();
 						auto& syncInfo = a->second.syncInfoCache;
-						syncInfo.otherSyncInfo.clear();
 						std::scoped_lock al{ a->second.anim->lock };
-						if (!a->second.anim->paused && !RE::BGSAnimationSystemUtils::IsActiveGraphInTransition(actor) && RE::BGSAnimationSystemUtils::GetActiveSyncInfo(actor, syncInfo)) {
-							a->second.anim->timeElapsed = a->second.anim->loop ? std::fmod(syncInfo.currentAnimTime, a->second.anim->data.duration) : syncInfo.currentAnimTime;
+						if (!a->second.anim->paused && GameUtil::GetAnimationGraphTime(actor, syncInfo) && syncInfo.current > 0.0f) {
+							a->second.anim->timeElapsed = a->second.anim->loop ? std::fmod(syncInfo.current, a->second.anim->data.duration) : syncInfo.current;
 						}
 						a->second.anim->UpdateNoDelta(data, eyeGeo);
 					}

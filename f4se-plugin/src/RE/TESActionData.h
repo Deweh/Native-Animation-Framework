@@ -34,5 +34,6 @@ namespace RE
 		int64_t unk03 = 0;
 		int32_t unk04 = 0;
 		int32_t unk05 = 0;
+		uint8_t padding[32];
 	};
 }

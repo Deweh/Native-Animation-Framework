@@ -175,7 +175,7 @@ namespace Scene
 		using IScene::IScene;
 
 		std::vector<LocalSyncInfo> syncInfoVec;
-		RE::BGSAnimationSystemUtils::ActiveSyncInfo cachedSyncInfo;
+		GameUtil::GraphTime cachedSyncInfo;
 		float diffLimit = 100.0f * 0.05f;
 		float basicallyFullSpeed = 100.0f * 0.9999f;
 		RE::NiPoint3 baseLocation;
@@ -580,18 +580,17 @@ namespace Scene
 			float minTime = 0.0f;
 			size_t i = 0;
 			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
-				cachedSyncInfo.otherSyncInfo.clear();
-				if (RE::BGSAnimationSystemUtils::GetActiveSyncInfo(currentActor, cachedSyncInfo) &&
-					cachedSyncInfo.currentAnimTime >= 0.0f) {
+				if (GameUtil::GetAnimationGraphTime(currentActor, cachedSyncInfo) &&
+					cachedSyncInfo.current >= 0.0f) {
 
-					if (currentActor == player && cachedSyncInfo.currentAnimTime <= playerSyncOffset) {
+					if (currentActor == player && cachedSyncInfo.current <= playerSyncOffset) {
 						allActorsReady = false;
 					}
 
 					auto& ele = syncInfoVec[i];
 					ele.actor.reset(currentActor);
-					ele.currentAnimTime = cachedSyncInfo.currentAnimTime + ((currentActor == player) * playerSyncOffset);
-					ele.totalAnimTime = cachedSyncInfo.totalAnimTime;
+					ele.currentAnimTime = cachedSyncInfo.current + ((currentActor == player) * playerSyncOffset);
+					ele.totalAnimTime = cachedSyncInfo.total;
 
 					//If this is the first actor, set minTime to its anim time to kick off the process.
 					//Use arithmetic here instead of a conditional to avoid an unneccesary branch.
@@ -612,74 +611,7 @@ namespace Scene
 				}
 
 				SetSyncState(Synced);
-			}
-		}
-
-		void UpdateSmoothSync() {
-			auto player = RE::PlayerCharacter::GetSingleton();
-			bool allActorsReady = true;
-			bool noActorsReady = true;
-			int i = 0;
-
-			//Keep track of the earliest anim time amongst all actors to know if any actors are behind.
-			float minTime = 0.0f;
-			//Keep track of the first total time to see if any are different.
-			float baseTotalTime = 0.0f;
-
-			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
-				cachedSyncInfo.otherSyncInfo.clear();
-				//We don't want to make any changes until all actors are finished transitioning
-				//to the animation and have their active sync info available.
-				if (RE::BGSAnimationSystemUtils::GetActiveSyncInfo(currentActor, cachedSyncInfo) &&
-					cachedSyncInfo.currentAnimTime >= 0.0f) {
-					auto& ele = syncInfoVec[i];
-					ele.actor.reset(currentActor);
-					ele.currentAnimTime = std::clamp(cachedSyncInfo.currentAnimTime + (playerSyncOffset * (currentActor == player)), 0.0f, cachedSyncInfo.totalAnimTime);
-					ele.totalAnimTime = cachedSyncInfo.totalAnimTime;
-
-					//If this is the first actor, set minTime to its anim time to kick off the process.
-					//Use arithmetic here instead of a conditional to avoid an unneccesary branch.
-					minTime += ele.currentAnimTime * noActorsReady;
-					baseTotalTime += ele.totalAnimTime * noActorsReady;
-					noActorsReady = false;
-					minTime = min(minTime, ele.currentAnimTime);
-					i++;
-				} else {
-					allActorsReady = false;
-				}
-			});
-
-			if (minTime > 0 && allActorsReady) {
-				bool allFullSpeed = true;
-				for (auto& info : syncInfoVec) {
-					//Avoid synchronizing animations that have different total times.
-					if (info.totalAnimTime != baseTotalTime) {
-						allFullSpeed = true;
-						break;
-					}
-
-					float oldMult = GameUtil::GetAnimMult(info.actor.get());
-					//Adjust each actor's animation speed to nudge their current time towards the minTime.
-					//Over time this results in an ease-out function, where anim speed is changed by a large amount
-					//at first then gradually tapers off until all current times align with the min time.
-					//To keep the function from suddenly going out of sync when one actor's current time loops
-					//back to 0 before others, the anim speed change is clamped to +/- 5% of the scene's base anim speed.
-					float mult = std::clamp(animMult * (minTime / info.currentAnimTime), oldMult - diffLimit, oldMult + diffLimit);
-					GameUtil::SetAnimMult(info.actor.get(), mult);
-
-					//basicallyFullSpeed = scene's base anim speed * 0.9999
-					if (mult < basicallyFullSpeed) {
-						allFullSpeed = false;
-					}
-				}
-
-				//Once all anim speeds are within floating point error of the scene's base anim speed,
-				//the anim times are as synchronized as they're going to get and smooth sync updates can
-				//be stopped for this scene.
-				if (allFullSpeed) {
-					SetAnimMult(animMult);
-					SetSyncState(Synced);
-				}
+				SetTrackAnimTime(true);
 			}
 		}
 
@@ -740,7 +672,6 @@ namespace Scene
 						syncInfoVec.clear();
 						syncInfoVec.resize(actors.size());
 						SetSyncState(SyncingTimes);
-						SetTrackAnimTime(true);
 					}
 					break;
 				}
@@ -752,12 +683,11 @@ namespace Scene
 			}
 
 			if (trackAnimTime) {
-				cachedSyncInfo.otherSyncInfo.clear();
 				auto trackingActor = actors.begin()->first.get();
 				if (trackingActor != nullptr &&
-					RE::BGSAnimationSystemUtils::GetActiveSyncInfo(trackingActor.get(), cachedSyncInfo) &&
-					cachedSyncInfo.currentAnimTime >= 0.0f) {
-					animTime = cachedSyncInfo.currentAnimTime;
+					GameUtil::GetAnimationGraphTime(trackingActor.get(), cachedSyncInfo) &&
+					cachedSyncInfo.current >= 0.0f) {
+					animTime = cachedSyncInfo.current;
 					if (animTime < lastAnimTime) {
 						controlSystem->OnAnimationLoop(this);
 						Data::Events::Send(Data::Events::SCENE_ANIM_LOOP, uid);

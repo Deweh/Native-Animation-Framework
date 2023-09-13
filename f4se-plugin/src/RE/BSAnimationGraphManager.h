@@ -164,7 +164,7 @@ namespace RE
 	{
 	public:
 		uint8_t pad00[0x1C8];
-		hkbCharacter* character;
+		hkbCharacter character;
 
 		void VisitGraph(BShkbVisitor& a_visitor)
 		{
@@ -179,6 +179,7 @@ namespace RE
 			return func(this, a_node);
 		}
 	};
+	static_assert(offsetof(BShkbAnimationGraph, BShkbAnimationGraph::character) == 0x1C8);
 
 	struct hkbAnimationBindingWithTriggers
 	{
