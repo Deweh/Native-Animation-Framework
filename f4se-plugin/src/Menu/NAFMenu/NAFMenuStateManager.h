@@ -20,19 +20,11 @@ namespace Menu
 		void InitMenu()
 		{
 			menuItems.clear();
-			// NIS: restore submenu
-			if (auto sceneData = PersistentMenuState::SceneData::GetSingleton(); sceneData->restoreSubmenu != kNone)
-			{
-				// store navigation target
-				SUB_MENU_TYPE navTarget = sceneData->restoreSubmenu;
-				// clear scenedata
-				sceneData->restoreSubmenu = kNone;
-				// navigate to stored menu
-				GotoMenu(navTarget, true);				
-			}
-			else
-			{
-				// navigate to main menu
+			if (auto state = PersistentMenuState::GetSingleton(); state->restoreSubmenu != kNone) {
+				SUB_MENU_TYPE navTarget = state->restoreSubmenu;
+				state->restoreSubmenu = kNone;
+				GotoMenu(navTarget, true);
+			} else {
 				GotoMenu(SUB_MENU_TYPE::kMain, true);
 			}			
 			activeInstance = this;

@@ -15,33 +15,29 @@ namespace Menu::NAF
 			public Data::EventListener<MenuOpenCloseEventHandler>
 		{
 		public:
-
 			RE::BSEventNotifyControl ProcessEvent(const RE::MenuOpenCloseEvent& event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)
 			{
 				if (event.menuName != "ContainerMenu")
-					return;
+					return RE::BSEventNotifyControl::kContinue;
 
 				auto state = Menu::PersistentMenuState::GetSingleton();
-				if (state->restoreSubmenu == Menu::SUB_MENU_TYPE::kNone)
-					return;
+				if (state->restoreSubmenu != Menu::SUB_MENU_TYPE::kInventories)
+					return RE::BSEventNotifyControl::kContinue;
 
 				if (event.opening) {
 					RE::UI::GetSingleton()->UpdateMenuMode("ContainerMenu", false);
 				} else {
-					auto state = Menu::PersistentMenuState::GetSingleton();
-					if ( state->restoreSubmenu != Menu::SUB_MENU_TYPE::kNone) {
-						if (auto& a = state->sceneData->pendingActor; a.has_value()) {
-							auto targetActor = a.value().get().get();
-							if (targetActor) {
-								targetActor->ModifyKeyword(Data::Forms::ShowWornItemsKW, false);
-								a = std::nullopt;
-							}
+					if (auto& a = state->sceneData->pendingActor; a.has_value()) {
+						auto targetActor = a.value().get().get();
+						if (targetActor) {
+							targetActor->ModifyKeyword(Data::Forms::ShowWornItemsKW, false);
+							a = std::nullopt;
 						}
-
-						F4SE::GetTaskInterface()->AddTask([]() {
-							RE::UIMessageQueue::GetSingleton()->AddMessage("NAFMenu", RE::UI_MESSAGE_TYPE::kShow);
-						});
 					}
+
+					F4SE::GetTaskInterface()->AddTask([]() {
+						RE::UIMessageQueue::GetSingleton()->AddMessage("NAFMenu", RE::UI_MESSAGE_TYPE::kShow);
+					});
 				}
 
 				return RE::BSEventNotifyControl::kContinue;
@@ -61,18 +57,14 @@ namespace Menu::NAF
 		};
 
 		using BindableMenu::BindableMenu;
-
-		// current scene ID
-		uint64_t curSceneId = 0;
-
 		virtual ~InventoryMenuHandler() {}
+
+		uint64_t curSceneId = 0;
 
 		virtual void InitSubmenu() override
 		{
-			// setup this submenu
 			BindableMenu::InitSubmenu();
 
-			// read from persistent state
 			auto sceneData = PersistentMenuState::SceneData::GetSingleton();
 			curSceneId = sceneData->pendingSceneId;
 			sceneData->pendingSceneId = 0;
@@ -80,10 +72,8 @@ namespace Menu::NAF
 
 		virtual BindingsVector GetBindings() override
 		{
-			// menu title
 			manager->SetMenuTitle("Actor Inventories");
-			
-			// populate menu with actors list and showactorinventory actions
+
 			BindingsVector result;
 			Scene::SceneManager::VisitScene(curSceneId, [&](Scene::IScene* scn) {
 				scn->ForEachActor([&](RE::Actor* currentActor, Scene::ActorPropertyMap&) {
@@ -100,35 +90,29 @@ namespace Menu::NAF
 			RE::Actor* a = h.get().get();
 			if (a)
 			{
-				// preserve keyword state and add keyword
 				bool hadSWIKeyword = a->HasKeyword(Data::Forms::ShowWornItemsKW);
 				if (!hadSWIKeyword)
 				{
 					a->ModifyKeyword(Data::Forms::ShowWornItemsKW, true);
 				}
 
-				// persistent state
-				auto sceneData = PersistentMenuState::SceneData::GetSingleton();
-				sceneData->pendingSceneId = curSceneId;
-				sceneData->restoreSubmenu = kInventories;							
-				if (!hadSWIKeyword)
-				{
-					sceneData->removeShowWornItemsKWActorHandle = h;
-				}
-				else
-				{
-					sceneData->removeShowWornItemsKWActorHandle = std::nullopt;
+				auto state = PersistentMenuState::GetSingleton();
+				state->sceneData->pendingSceneId = curSceneId;
+				state->restoreSubmenu = kInventories;							
+				if (!hadSWIKeyword) {
+					state->sceneData->pendingActor = h;
+				} else {
+					state->sceneData->pendingActor = std::nullopt;
 				}
 
 				manager->CloseMenu();
 				RE::OpenContainerMenu(a, 3, false);
-
 			}
 		}
 
 		virtual void BackImpl() override
 		{
-			manager->GotoMenu(kManageScenes, false, false);
+			manager->GotoMenu(kManageScenes, true);
 		}
 	};
 }

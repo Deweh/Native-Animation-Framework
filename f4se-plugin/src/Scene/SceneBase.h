@@ -48,7 +48,6 @@ namespace Scene
 
 	void ProcessScaleFunctor(uint64_t sceneId)
 	{
-		// NIS: Disable rescaler setting
 		if (!Data::Settings::Values.bDisableRescaler) {
 			SceneManager::VisitScene(sceneId, [](IScene* scn) {
 				auto player = RE::PlayerCharacter::GetSingleton();

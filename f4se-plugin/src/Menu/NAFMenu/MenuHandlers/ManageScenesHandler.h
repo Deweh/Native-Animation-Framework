@@ -33,14 +33,6 @@ namespace Menu::NAF
 
 		using Events = Data::Events;
 
-		// NIS: store selected sceneID and navigate to inventorymenu
-		void GotoInventoriesMenu(uint64_t sceneId, int)
-		{
-			auto sceneData = PersistentMenuState::SceneData::GetSingleton();
-			sceneData->pendingSceneId = sceneId;
-			manager->GotoMenu(kInventories, true);
-		}
-
 		virtual void InitSubmenu() override
 		{
 			BindableMenu::InitSubmenu();
@@ -213,6 +205,12 @@ namespace Menu::NAF
 					};
 				}
 			}
+		}
+
+		void GotoInventoriesMenu(uint64_t sceneId, int) {
+			auto sceneData = PersistentMenuState::SceneData::GetSingleton();
+			sceneData->pendingSceneId = sceneId;
+			manager->GotoMenu(kInventories, true);
 		}
 
 		void ChangePosition(int) {

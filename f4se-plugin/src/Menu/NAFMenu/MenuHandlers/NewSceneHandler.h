@@ -79,7 +79,6 @@ namespace Menu::NAF
 						}
 					}
 
-					// NIS: make sure player is in location selection, even if not part of the scene
 					if (auto player = RE::PlayerCharacter::GetSingleton()) {
 						if (std::find(actors.begin(), actors.end(), player) == actors.end())
 						{

@@ -44,6 +44,7 @@ namespace Data
 			std::atomic<bool> bHeadPartMorphPatch = false;
 			ThreadSafeString sHeadPartPatchType = "";
 			ThreadSafeString sHeadPartPatchTriPath = "";
+
 			std::atomic<bool> bDisableRescaler = false;
 		};
 
@@ -51,7 +52,9 @@ namespace Data
 		{
 			bool bUseLookAtCam;
 			std::string sLookAtCamTarget;
+
 			uint32_t iDefaultSceneDuration;
+
 			bool bDisableRescaler;
 
 			UnsafeSettingValues() {}
