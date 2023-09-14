@@ -32,7 +32,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>DLL" CA
 
 project(
 	NAF
-	VERSION 0.5.6
+	VERSION 0.6.7
 	LANGUAGES CXX
 )
 
