@@ -92,6 +92,11 @@ Actor[] Function GetSceneActors(SceneId akScene) Native Global
 ;Paths are returned as all-lowercase for easy comparison.
 String[] Function GetSceneHKXs(SceneId akScene) Native Global
 
+;Returns the tags on the position that the provided scene is currently playing.
+;For position trees, this will return the tags on the current node, not the tree itself.
+;Tags are returned as all-lowercase.
+String[] Function GetSceneTags(SceneId akScene) Native Global
+
 ;Sets the speed multipler for akScene. 100.0 is normal speed.
 ;The speed multiplier only affects animation speed, it does not affect the scene duration.
 ;If the provided SceneId does not point to any currently running scene, nothing will happen.

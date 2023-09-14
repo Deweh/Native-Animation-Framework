@@ -253,6 +253,21 @@ namespace Papyrus::NAF
 		return result;
 	}
 
+	std::vector<std::string> GetSceneTags(std::monostate, SceneId a_id) {
+		std::string id = "";
+		Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
+			id = scn->controlSystem->QSystemID();
+		});
+		std::shared_ptr<const Data::Position> pos = Data::GetPosition(id);
+		std::vector<std::string> result;
+		if (pos != nullptr) {
+			for (const auto& t : pos->tags) {
+				result.emplace_back(t);
+			}
+		}
+		return result;
+	}
+
 	void SetSceneSpeed(std::monostate, SceneId a_id, float a_speed) {
 		auto sceneId = UnpackSceneId(a_id);
 		Scene::SceneManager::VisitScene(sceneId, [&](Scene::IScene* scn) {

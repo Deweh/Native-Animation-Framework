@@ -353,6 +353,13 @@ namespace Scene
 			return "";
 		}
 
+		virtual std::string QSystemID() override
+		{
+			if (subSystem)
+				return subSystem->QSystemID();
+			return "";
+		}
+
 		virtual void OnTimer(uint16_t id) override
 		{
 			if (id == 100) {
