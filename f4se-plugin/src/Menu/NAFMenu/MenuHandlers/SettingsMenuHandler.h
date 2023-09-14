@@ -59,7 +59,8 @@ namespace Menu::NAF
 			return {
 				BIND_SETTING_BOOL("Use LookAt Cam", tempValues.bUseLookAtCam),
 				BIND_SETTING_STRING("LookAt Cam Target", tempValues.sLookAtCamTarget, "HEAD", "Chest", "COM"),
-				BIND_SETTING_UINT("Default Scene Duration", tempValues.iDefaultSceneDuration, 1, 9999999)
+				BIND_SETTING_UINT("Default Scene Duration", tempValues.iDefaultSceneDuration, 1, 9999999),
+				BIND_SETTING_BOOL("Disable Actor Rescaling", tempValues.bDisableRescaler)
 			};
 		}
 

@@ -44,13 +44,18 @@ namespace Data
 			std::atomic<bool> bHeadPartMorphPatch = false;
 			ThreadSafeString sHeadPartPatchType = "";
 			ThreadSafeString sHeadPartPatchTriPath = "";
+
+			std::atomic<bool> bDisableRescaler = false;
 		};
 
 		struct UnsafeSettingValues
 		{
 			bool bUseLookAtCam;
 			std::string sLookAtCamTarget;
+
 			uint32_t iDefaultSceneDuration;
+
+			bool bDisableRescaler;
 
 			UnsafeSettingValues() {}
 
@@ -63,6 +68,7 @@ namespace Data
 				bUseLookAtCam = other.bUseLookAtCam;
 				sLookAtCamTarget = other.sLookAtCamTarget.get();
 				iDefaultSceneDuration = other.iDefaultSceneDuration;
+				bDisableRescaler = other.bDisableRescaler;
 			}
 		};
 
@@ -73,6 +79,7 @@ namespace Data
 			Values.bUseLookAtCam = a_values.bUseLookAtCam;
 			Values.sLookAtCamTarget = a_values.sLookAtCamTarget;
 			Values.iDefaultSceneDuration = a_values.iDefaultSceneDuration;
+			Values.bDisableRescaler = a_values.bDisableRescaler;
 
 			Data::Events::Send(Data::Events::SETTINGS_CHANGED);
 		}
@@ -105,6 +112,7 @@ namespace Data
 				{ VAR_NAME(Values.sHeadPartPatchType), Values.sHeadPartPatchType.get() },
 				{ VAR_NAME(Values.sHeadPartPatchTriPath), Values.sHeadPartPatchTriPath.get() },
 				{ VAR_NAME(Values.iDefaultSceneDuration), std::format("{}", Values.iDefaultSceneDuration.load()) },
+				{ VAR_NAME(Values.bDisableRescaler), Values.bDisableRescaler ? "true" : "false" },
 			};
 
 			WriteINI(file, SaveMap);
@@ -140,6 +148,7 @@ namespace Data
 			{ VAR_NAME(Values.sHeadPartPatchType), [](auto& s) { Values.sHeadPartPatchType = s; } },
 			{ VAR_NAME(Values.sHeadPartPatchTriPath), [](auto& s) { Values.sHeadPartPatchTriPath = s; } },
 			{ VAR_NAME(Values.iDefaultSceneDuration), [](auto& s) { Values.iDefaultSceneDuration = ParseU32(s, 30); } },
+			{ VAR_NAME(Values.bDisableRescaler), [](auto& s) { Values.bDisableRescaler = ParseBool(s); } },
 		};
 
 		static std::unordered_map<std::string, std::string> ParseINI(std::istream& a_stream) {

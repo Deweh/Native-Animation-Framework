@@ -9,3 +9,4 @@
 #include "TESObjectREFR_Events.h"
 #include "TESEffectShader.h"
 #include "BSAnimationGraphManager.h"
+#include "ContainerMenu.h"

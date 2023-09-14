@@ -4,6 +4,7 @@
 #include "MenuHandlers/CreatorMenuHandler.h"
 #include "MenuHandlers/FaceAnimCreatorHandler.h"
 #include "MenuHandlers/SettingsMenuHandler.h"
+#include "MenuHandlers/InventoryMenuHandler.h"
 #pragma once
 
 namespace Menu
@@ -19,7 +20,13 @@ namespace Menu
 		void InitMenu()
 		{
 			menuItems.clear();
-			GotoMenu(SUB_MENU_TYPE::kMain, true);
+			if (auto state = PersistentMenuState::GetSingleton(); state->restoreSubmenu != kNone) {
+				SUB_MENU_TYPE navTarget = state->restoreSubmenu;
+				state->restoreSubmenu = kNone;
+				GotoMenu(navTarget, true);
+			} else {
+				GotoMenu(SUB_MENU_TYPE::kMain, true);
+			}			
 			activeInstance = this;
 		}
 
