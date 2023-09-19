@@ -84,7 +84,7 @@ namespace Papyrus::NAF
 			resultData.result = { Scene::kInvalidActor };
 			return resultData;
 		}
-		auto positions = Data::Global::GetFilteredPositions(filter, false, false, posRefr, false, tFilter);
+		auto positions = Data::Global::GetFilteredPositions(filter, a_position.size() < 1, false, posRefr, false, tFilter);
 
 		if (a_position.size() < 1) {
 			if (positions.size() > 0) {
