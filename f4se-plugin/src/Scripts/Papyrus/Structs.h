@@ -50,7 +50,7 @@ namespace Papyrus::NAF
 	uint64_t UnpackSceneId(SceneId in)
 	{
 		auto id1 = in.find<int32_t>("id1", true);
-		auto id2 = in.find<int32_t>("id1", true);
+		auto id2 = in.find<int32_t>("id2", true);
 
 		if (!id1.has_value() || !id2.has_value()) {
 			return 0;
