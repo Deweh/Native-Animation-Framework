@@ -168,6 +168,7 @@ namespace Scene
 			TimerCompleted = 1u << 1
 		};
 
+		std::string id = "";
 		IControllable* parent = nullptr;
 		uint64_t parentId = 0;
 		std::unique_ptr<IControlSystem> subSystem;
@@ -297,6 +298,7 @@ namespace Scene
 		virtual void SetInfo(Data::Position::ControlSystemInfo* info) override
 		{
 			if (info->type == Data::kPositionTreeSystem) {
+				id = info->id;
 				auto treeInfo = static_cast<Data::Position::PositionTreeInfo*>(info);
 				tree = treeInfo->tree;
 				currentNode = tree->tree;
@@ -315,8 +317,9 @@ namespace Scene
 				autoAdvance = true;
 			}
 
-			subSystem = GetControlSystem(Data::GetPosition(currentNode->position));
-			subSystem->OnBegin(this, lastId);
+			subSystem = GetControlSystem(Data::GetPosition(currentNode->position), true);
+			if (subSystem != nullptr)
+				subSystem->OnBegin(this, lastId);
 
 			if (autoAdvance) {
 				Advance(true);
@@ -331,7 +334,8 @@ namespace Scene
 
 		virtual void OnAnimationLoop(IControllable*) override
 		{
-			subSystem->OnAnimationLoop(this);
+			if (subSystem != nullptr)
+				subSystem->OnAnimationLoop(this);
 		}
 
 		virtual void OnEnd(IControllable* scn, std::string_view nextId) override
@@ -343,7 +347,11 @@ namespace Scene
 				UnregisterListener(Data::Events::HUD_RIGHT_KEY_DOWN);
 				Menu::SceneHUD::Clear();
 			}
-			subSystem->OnEnd(scn, nextId);
+			if (subSystem != nullptr) {
+				subSystem->OnEnd(scn, nextId);
+			} else {
+				scn->PushQueuedControlSystem();
+			}
 		}
 
 		virtual std::string QAnimationID() override
@@ -355,9 +363,11 @@ namespace Scene
 
 		virtual std::string QSystemID() override
 		{
-			if (subSystem)
+			if (subSystem) {
 				return subSystem->QSystemID();
-			return "";
+			} else {
+				return id;
+			}
 		}
 
 		virtual void OnTimer(uint16_t id) override
@@ -512,10 +522,14 @@ namespace Scene
 		}
 
 		template <class Archive>
-		void serialize(Archive& ar, const uint32_t)
+		void serialize(Archive& ar, const uint32_t ver)
 		{
 			ar(cereal::base_class<IControlSystem>(this), parentId, subSystem, queuedSubSystem, tree, currentNode,
 				hudActive, autoAdvance, nextIndex, nodeState._impl);
+
+			if (ver >= 1) {
+				ar(id);
+			}
 		}
 	};
 }
@@ -524,3 +538,5 @@ CEREAL_REGISTER_TYPE(Scene::BaseControlSystem);
 CEREAL_REGISTER_TYPE(Scene::AnimationGroupControlSystem);
 CEREAL_REGISTER_TYPE(Scene::EndingControlSystem);
 CEREAL_REGISTER_TYPE(Scene::PositionTreeControlSystem);
+
+CEREAL_CLASS_VERSION(Scene::PositionTreeControlSystem, 1);
