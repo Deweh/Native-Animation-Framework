@@ -13,6 +13,7 @@ namespace Data
 			SCENE_START,
 			SCENE_END,
 			SCENE_POS_CHANGE,
+			TREE_POS_CHANGE,
 			HUD_INIT,
 			HUD_UP_KEY_DOWN,
 			HUD_DOWN_KEY_DOWN,
@@ -35,6 +36,12 @@ namespace Data
 			SETTINGS_CHANGED
 		};
 
+		struct SceneData
+		{
+			uint64_t id;
+			std::vector<RE::NiPointer<RE::Actor>> actors;
+		};
+
 		struct ScenePositionData
 		{
 			uint64_t id;
@@ -42,11 +49,9 @@ namespace Data
 			bool successful;
 		};
 
-		struct SceneTreeItemData
+		struct TreePositionData : public ScenePositionData
 		{
-			std::string_view prevItm;
-			std::string_view nextItm;
-			bool cancel = false;
+			std::string treeId;
 		};
 
 		typedef std::any EventData;

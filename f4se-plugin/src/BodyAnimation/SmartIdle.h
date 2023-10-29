@@ -62,7 +62,7 @@ namespace BodyAnimation
 				Scene::DynamicIdle::Play(targetActor, _data, animEvent, graph);
 				return true;
 			case kNAF:
-				return BodyAnimation::GraphHook::LoadAndPlayAnimation(targetActor, _data, 1.0f, _id);
+				return BodyAnimation::GraphHook::LoadAndPlayAnimation(targetActor, USERDATA_DIR + _data, 1.0f, _id);
 			default:
 				return false;
 			}

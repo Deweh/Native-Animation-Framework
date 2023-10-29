@@ -355,7 +355,7 @@ namespace Scene
 			}, false);
 
 			status = SceneState::PendingDeletion;
-			Data::Events::Send(Data::Events::SCENE_END, uid);
+			Data::Events::Send(Data::Events::SCENE_END, Data::Events::SceneData{ uid, GetActorsInOrder(actors) });
 			tasks.Start<DelegateFunctor<PostStopDelegate>>(50, uid);
 			return true;
 		}

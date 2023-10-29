@@ -5,6 +5,10 @@ Struct SceneId
     Int id2 = 0
 EndStruct
 
+Struct SceneData
+    Actor[] actors
+EndStruct
+
 Struct StartSceneResult
     Bool successful = False
     Int id1 = 0
@@ -152,9 +156,10 @@ Bool Function PlayNANIM(Actor akActor, String sFilePath, String sAnimID = "defau
 ;Stops any .nanim animation currently playing on an actor.
 ;akActor - The actor to stop any animations on.
 ;fTransitionTime - The duration of the transition between the current animation and the new animation, in seconds.
+;Returns false if there is no animation currently playing on the actor, otherwise true.
 Bool Function StopNANIM(Actor akActor, Float fTransitionTime = 1.0) Native Global
 
-;Enables an IK chain on an actor and makes the effector follow the position and rotation of akTarget.
+;Enables an IK chain on an actor and sets the effector to the current position and rotation of akTarget.
 ;akActor - The actor to enable the chain on.
 ;sChainName - The ID of the IK chain, as configured in a GraphInfo XML. i.e., "RArm" for right arm on humans.
 ;akTarget - The object reference to use as the target.
@@ -277,9 +282,23 @@ String Function SceneEndEvent() Global
     Return "NAF::SceneEnded"
 EndFunction
 
+;Same as SceneEndEvent, but passes data about the ended scene as an extra parameter.
+;Parameters: (NAF:SceneId akScene, NAF:SceneData akData)
+;Register for this event using RegisterForExternalEvent(NAF.SceneEndDataEvent(), YourFunctionName)
+String Function SceneEndDataEvent() Global
+    Return "NAF::SceneEndedData"
+EndFunction
+
 ;Event for when a scene's position is changed.
 ;Parameters: (NAF:SceneId akScene, String akNewPosition)
 ;Register for this event using RegisterForExternalEvent(NAF.ScenePositionChangeEvent(), YourFunctionName)
 String Function ScenePositionChangeEvent() Global
     Return "NAF::ScenePositionChanged"
+EndFunction
+
+;Event for when a position tree's sub-position is changed.
+;Parameters: (NAF:SceneId akScene, String akNewPosition, String akTreePosition)
+;Register for this event using RegisterForExternalEvent(NAF.TreePositionChangeEvent(), YourFunctionName)
+String Function TreePositionChangeEvent() Global
+    Return "NAF::TreePositionChanged"
 EndFunction

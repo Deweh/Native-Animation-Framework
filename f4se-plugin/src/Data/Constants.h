@@ -5,7 +5,9 @@
 
 #define PEVENT_SCENE_START "NAF::SceneStarted"
 #define PEVENT_SCENE_END "NAF::SceneEnded"
+#define PEVENT_SCENE_END_DATA "NAF::SceneEndedData"
 #define PEVENT_SCENE_POS_CHANGE "NAF::ScenePositionChanged"
+#define PEVENT_TREE_POS_CHANGE "NAF::TreePositionChanged"
 
 #define LOOKSMENU_1_6_18_CHECKSUM 0x57B3298
 #define LOOKSMENU_1_6_20_CHECKSUM 0x59F7081

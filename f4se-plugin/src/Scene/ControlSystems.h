@@ -291,6 +291,13 @@ namespace Scene
 			nextIndex = 0;
 			currentNode = n;
 
+			Data::Events::TreePositionData evntData;
+			evntData.id = parentId;
+			evntData.newPosition = sys->QSystemID();
+			evntData.successful = true;
+			evntData.treeId = id;
+			Data::Events::Send(Data::Events::TREE_POS_CHANGE, evntData);
+
 			QueueSubSystem(std::move(sys));
 			return true;
 		}

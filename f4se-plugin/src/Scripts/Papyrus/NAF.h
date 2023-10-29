@@ -373,8 +373,18 @@ namespace Papyrus::NAF
 		return BodyAnimation::GraphHook::StopAnimation(a_actor, a_transitionTime);
 	}
 
-	void SetIKChainTarget(std::monostate, RE::Actor*, std::string, RE::TESObjectREFR*) {
+	void SetIKChainTarget(std::monostate, RE::Actor* a_actor, std::string a_chainName, RE::TESObjectREFR* a_target) {
+		if (!a_actor || !a_target)
+			return;
 
+		auto _3d = a_target->Get3D();
+		if (!_3d)
+			return;
+
+		BodyAnimation::GraphHook::VisitGraph(a_actor, [&](BodyAnimation::NodeAnimationGraph* g) {
+			g->ikManager.SetChainEnabled(a_chainName, true);
+			g->ikManager.SetChainTarget(a_chainName, _3d->world);
+		});
 	}
 
 	void SetIKChainEnabled(std::monostate, RE::Actor* a_actor, std::string a_chainName, bool a_enabled) {

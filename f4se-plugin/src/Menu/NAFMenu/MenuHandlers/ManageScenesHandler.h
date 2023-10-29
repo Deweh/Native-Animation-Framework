@@ -87,7 +87,7 @@ namespace Menu::NAF
 
 		void OnSceneEnd(const Events::EventData& data)
 		{
-			if (auto uid = std::any_cast<uint64_t>(&data); currentStage != Stage::kSelectScene && uid && (*uid) == selectionId) {
+			if (auto d = std::any_cast<Events::SceneData>(&data); currentStage != Stage::kSelectScene && d && d->id == selectionId) {
 				currentStage = Stage::kSelectScene;
 				manager->RefreshList(true);
 				manager->ShowNotification("Scene ended.");

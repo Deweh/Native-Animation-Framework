@@ -21,9 +21,9 @@ namespace BodyAnimation
 	//   Shoulder->Elbow->TwistBone1->TwistBone2->Hand. However, we can just have a chain target the
 	//   Shoulder, Elbow & Hand and it will solve properly.
 
-	inline static void OnIKMessage(const char* msg)
+	inline static void OnIKMessage(const char*)
 	{
-		OutputDebugStringA(std::format("{}\n", msg).c_str());
+		//OutputDebugStringA(std::format("{}\n", msg).c_str());
 	}
 
 	inline static bool IK_LIB_INITIALIZED = ([]() {
@@ -372,6 +372,15 @@ namespace BodyAnimation
 					targetNodes[i] = nodes[iter->second];
 				}
 			}
+
+			if (auto curTarget = GetTarget();
+				curTarget.translate.x == 0.0f &&
+				curTarget.translate.y == 0.0f &&
+				curTarget.translate.z == 0.0f &&
+				targetNodes[2] != nullptr)
+			{
+				SetTarget(targetNodes[2]->world);
+			}
 		}
 
 		void DebugLogMidTransform()
@@ -470,6 +479,15 @@ namespace BodyAnimation
 				oneEnabled = oneEnabled || h->holderEnabled;
 			}
 			chainActiveCallback(oneEnabled);
+		}
+
+		void SetChainTarget(const std::string& id, const NodeTransform& a_target) {
+			for (auto& h : holders) {
+				if (h->holderId == id) {
+					h->SetTarget(a_target);
+					break;
+				}
+			}
 		}
 
 		bool GetChainEnabled(const std::string& id) {

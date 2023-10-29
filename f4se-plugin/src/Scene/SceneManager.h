@@ -247,7 +247,7 @@ namespace Scene
 						StopWalkPackage(info.first);
 					}
 					state->actorsWalkingToScene.erase(iter);
-					Data::Events::Send(Data::Events::SCENE_END, sceneId);
+					Data::Events::Send(Data::Events::SCENE_END, Data::Events::SceneData{ sceneId });
 					return true;
 				} else {
 					return false;

@@ -18,8 +18,18 @@ namespace Papyrus
 
 		void OnSceneEnd(Events::event_type, Events::EventData& data)
 		{
-			if (auto u64 = std::any_cast<uint64_t>(&data); u64) {
-				GameUtil::SendPapyrusEvent(PEVENT_SCENE_END, PackSceneId(*u64));
+			if (auto d = std::any_cast<Events::SceneData>(&data); d) {
+				GameUtil::SendPapyrusEvent(PEVENT_SCENE_END, PackSceneId(d->id));
+
+				std::vector<RE::Actor*> actors;
+				actors.reserve(d->actors.size());
+				for (const auto& a : d->actors) {
+					actors.push_back(a.get());
+				}
+
+				RE::BSScript::structure_wrapper<"NAF", "SceneData"> sceneData;
+				sceneData.insert("actors", actors);
+				GameUtil::SendPapyrusEvent(PEVENT_SCENE_END_DATA, PackSceneId(d->id), sceneData);
 			}
 		}
 
@@ -30,12 +40,19 @@ namespace Papyrus
 			}
 		}
 
+		void OnTreePosChange(Events::event_type, Events::EventData& data) {
+			if (auto sData = std::any_cast<Events::TreePositionData>(&data); sData && sData->successful) {
+				GameUtil::SendPapyrusEvent(PEVENT_TREE_POS_CHANGE, PackSceneId(sData->id), sData->newPosition, sData->treeId);
+			}
+		}
+
 	protected:
 		friend class Singleton;
 		EventProxy() {
 			RegisterListener(Events::SCENE_START, &EventProxy::OnSceneStart);
 			RegisterListener(Events::SCENE_END, &EventProxy::OnSceneEnd);
 			RegisterListener(Events::SCENE_POS_CHANGE, &EventProxy::OnScenePosChange);
+			RegisterListener(Events::TREE_POS_CHANGE, &EventProxy::OnTreePosChange);
 		}
 	};
 }
