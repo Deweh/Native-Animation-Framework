@@ -726,12 +726,12 @@ namespace Scene
 			newScene->actors.insert({ actors[i]->GetActorHandle(), { { kOrder, ActorProperty{ i } } } });
 		}
 
-		newScene->Init(position);
 		if (overrideId) {
 			newScene->uid = sceneIdInOut;
 		} else {
 			sceneIdInOut = newScene->uid;
 		}
+		newScene->Init(position);
 
 		for (auto& a : actors) {
 			if (a->parentCell != locationRef->parentCell)
