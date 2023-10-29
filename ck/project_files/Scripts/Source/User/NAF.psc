@@ -136,6 +136,37 @@ EndFunction
 Bool Function IsSceneRunning(SceneId akScene) Native Global
 
 ;|--------------------------|
+;| Body Animation Functions |
+;|--------------------------|
+
+;Plays a .nanim animation on an actor. Any animation created with the NAF Animation Studio is a .nanim animation.
+;akActor - The actor to play the animation on.
+;sFilePath - The file path of the .nanim file, starting from the Data/NAF folder. If an animation is at Data/NAF/myAnim.nanim,
+;you would just put myAnim.nanim
+;sAnimID - The animation ID to play from the .nanim file. For animations baked from the NAF Animation Studio, this will always
+;be "default".
+;fTransitionTime - The duration of the transition between the current animation and the new animation, in seconds.
+;Returns false if the actor is invalid or their race has no configured GraphInfo, otherwise true.
+Bool Function PlayNANIM(Actor akActor, String sFilePath, String sAnimID = "default", Float fTransitionTime = 1.0) Native Global
+
+;Stops any .nanim animation currently playing on an actor.
+;akActor - The actor to stop any animations on.
+;fTransitionTime - The duration of the transition between the current animation and the new animation, in seconds.
+Bool Function StopNANIM(Actor akActor, Float fTransitionTime = 1.0) Native Global
+
+;Enables an IK chain on an actor and makes the effector follow the position and rotation of akTarget.
+;akActor - The actor to enable the chain on.
+;sChainName - The ID of the IK chain, as configured in a GraphInfo XML. i.e., "RArm" for right arm on humans.
+;akTarget - The object reference to use as the target.
+Function SetIKChainTarget(Actor akActor, String sChainName, ObjectReference akTarget) Native Global
+
+;Enables or disables an IK chain on an actor. Disabling will clear any target set on the chain.
+;akActor - The actor to enable/disable the chain on.
+;sChainName - The ID of the IK chain to enable/disable, as configured in a GraphInfo XML. i.e., "RArm" for right arm on humans.
+;bEnabled - Whether to enable or disable the chain.
+Function SetIKChainEnabled(Actor akActor, String sChainName, Bool bEnabled) Native Global
+
+;|--------------------------|
 ;| Face Animation Functions |
 ;|--------------------------|
 

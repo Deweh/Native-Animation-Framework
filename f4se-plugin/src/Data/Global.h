@@ -14,6 +14,7 @@ namespace Data
 	class AnimationGroup;
 	class PositionTree;
 	class Race;
+	class GraphInfo;
 
 	std::shared_ptr<const Animation> GetAnimation(const std::string&);
 	std::shared_ptr<const Position> GetPosition(const std::string&);
@@ -26,6 +27,7 @@ namespace Data
 	std::shared_ptr<const Race> GetRace(const std::string&);
 	std::shared_ptr<const Race> GetRaceFromGraph(const std::string&);
 	std::shared_ptr<const Race> GetRace(RE::Actor*);
+	std::shared_ptr<const GraphInfo> GetGraphInfo(const std::string&);
 }
 
 #include <Windows.h>
@@ -39,6 +41,7 @@ namespace Data
 #include "Cache/AnimCache.h"
 #include "Data/Forms.h"
 #include "Data/User/IdentifiableObject.h"
+#include "Data/User/GraphInfo.h"
 #include "Data/User/Tag.h"
 #include "Data/User/Condition.h"
 #include "Data/User/Action.h"
@@ -98,6 +101,7 @@ namespace Data
 		inline static IDMap<AnimationGroup> AnimationGroups;
 		inline static IDMap<Furniture> Furnitures;
 		inline static IDMap<PositionTree> PositionTrees;
+		inline static IDMap<GraphInfo> GraphInfos;
 
 		struct ApplicableFurniture
 		{
@@ -348,6 +352,7 @@ namespace Data
 			AnimationGroups.clear();
 			Furnitures.clear();
 			PositionTrees.clear();
+			GraphInfos.clear();
 			FaceAnim::nextFileId = 0;
 			Init(false);
 			LinkDataReferences(false);
@@ -393,7 +398,8 @@ namespace Data
 			{ "animationGroup", [](auto& m) { ParseXMLType<AnimationGroup>(AnimationGroups, m); } },
 			{ "group", [](auto& m) { ParseXMLType<Furniture>(Furnitures, m); } },
 			{ "tree", [](auto& m) { ParseXMLType<PositionTree>(PositionTrees, m); } },
-			{ "tag", [](auto& m) { TagData::Parse(m); } }
+			{ "tag", [](auto& m) { TagData::Parse(m); } },
+			{ "graph", [](auto& m) { ParseXMLType<GraphInfo>(GraphInfos, m); } }
 		};
 
 		static bool ParseXML(const std::string& f, std::string_view fName, bool verbose = true)
@@ -601,6 +607,7 @@ namespace Data
 	std::shared_ptr<const AnimationGroup> GetAnimationGroup(const std::string& id) { return GetObjectFromIDMap(Global::AnimationGroups, id); }
 	std::shared_ptr<const PositionTree> GetPositionTree(const std::string& id) { return GetObjectFromIDMap(Global::PositionTrees, id); }
 	std::shared_ptr<const Race> GetRace(const std::string& id) { return GetObjectFromIDMap(Global::Races, id); }
+	std::shared_ptr<const GraphInfo> GetGraphInfo(const std::string& id) { return GetObjectFromIDMap(Global::GraphInfos, id); }
 
 	std::shared_ptr<const Race> GetRaceFromGraph(const std::string& s) {
 		std::string skeleton = "";

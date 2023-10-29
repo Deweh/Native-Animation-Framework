@@ -63,6 +63,8 @@ namespace Serialization
 				tThread->timerLock,
 				FaceAnimation::FaceUpdateHook::loadingAnimsLock,
 				FaceAnimation::FaceUpdateHook::stateLock,
+				BodyAnimation::GraphHook::loadingAnimsLock,
+				BodyAnimation::GraphHook::graphsLock,
 				Data::Uid::lock,
 				PackageOverride::lock,
 				Menu::HUDManager::elementsLock,
@@ -81,6 +83,7 @@ namespace Serialization
 			SAVE_PERSISTENT_STATE('HUD', 5, "HUD", Menu::HUDManager::state);
 			SAVE_PERSISTENT_STATE('PACK', 5, "package override", PackageOverride::state);
 			SAVE_PERSISTENT_STATE('SHUD', 5, "scene HUD", Menu::SceneHUD::state);
+			SAVE_PERSISTENT_STATE('BODY', 5, "body animation", BodyAnimation::GraphHook::state);
 
 			Serialization::General::s_intfc = nullptr;
 		}
@@ -108,6 +111,8 @@ namespace Serialization
 				tThread->timerLock,
 				FaceAnimation::FaceUpdateHook::loadingAnimsLock,
 				FaceAnimation::FaceUpdateHook::stateLock,
+				BodyAnimation::GraphHook::loadingAnimsLock,
+				BodyAnimation::GraphHook::graphsLock,
 				Data::Uid::lock,
 				PackageOverride::lock,
 				Menu::HUDManager::elementsLock,
@@ -133,6 +138,7 @@ namespace Serialization
 						LOAD_PERSISTENT_STATE('HUD', "HUD", Menu::HUDManager);
 						LOAD_PERSISTENT_STATE('PACK', "package override", PackageOverride);
 						LOAD_PERSISTENT_STATE('SHUD', "scene HUD", Menu::SceneHUD);
+						LOAD_PERSISTENT_STATE('BODY', "body animation", BodyAnimation::GraphHook);
 					}
 				}
 			}
@@ -150,6 +156,7 @@ namespace Serialization
 		Tasks::TimerThread::GetSingleton()->Reset();
 		PackageOverride::Reset();
 		FaceAnimation::FaceUpdateHook::Reset();
+		BodyAnimation::GraphHook::Reset();
 		Scene::SceneManager::Reset();
 		Scene::OrderedActionQueue::Reset();
 		Data::Uid::Reset();

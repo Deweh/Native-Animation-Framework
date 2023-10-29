@@ -18,6 +18,7 @@ namespace Data
 {
 	namespace Forms
 	{
+		RE::PlayerCharacter* Player = nullptr;
 		RE::TESPackage* NAFWalkPackage = nullptr;
 		RE::TESPackage* NAFLockPackage = nullptr;
 		RE::BGSKeyword* NAFInSceneKW = nullptr;
@@ -38,6 +39,7 @@ namespace Data
 				std::abort();
 			}
 
+			Player = RE::PlayerCharacter::GetSingleton();
 			AnimMultAV = GET_FORM(RE::ActorValueInfo, 0x2D2);
 			NAFInSceneKW = GET_MOD_FORM(RE::BGSKeyword, NAF_IN_SCENE_KEYWORD, NAF_ESP_NAME);
 			NAFDoNotUseKW = GET_MOD_FORM(RE::BGSKeyword, NAF_DO_NOT_USE_KEYWORD, NAF_ESP_NAME);
@@ -53,3 +55,5 @@ namespace Data
 		}
 	}
 }
+
+#define player Data::Forms::Player

@@ -1,0 +1,124 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="NodeMarker" itemID="65075f5d-00000127" linkageExportForAS="true" linkageClassName="NodeMarker" lastModified="1697910625">
+  <timeline>
+    <DOMTimeline name="NodeMarker" layerDepthEnabled="true">
+      <layers>
+        <DOMLayer name="Layer_11" color="#FF800A" current="true" isSelected="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="MoveIcon" name="MoveIco_mc">
+                  <matrix>
+                    <Matrix tx="-47.25" ty="395.35"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="62.9" y="63.6"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Layer_10" color="#9933CC" locked="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="RotateIcon" name="RotateIco_mc" selected="true">
+                  <matrix>
+                    <Matrix tx="-47.25" ty="408.05"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="55.3" y="50.9"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Layer_5" color="#009999" locked="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="EffectorIcon" name="EffectorIco_mc">
+                  <matrix>
+                    <Matrix tx="-34.4" ty="-35"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="59.3" y="59"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Layer_4" color="#FF4FFF" locked="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="PoleIcon" name="PoleIco_mc">
+                  <matrix>
+                    <Matrix ty="-45.95"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="25" y="70.95"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Layer_3" color="#FF800A" locked="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="GizmoTriangle" name="Tri1_mc">
+                  <matrix>
+                    <Matrix tx="-125.2" ty="-497.35"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="149.4" y="127.35"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+                <DOMSymbolInstance libraryItemName="GizmoTriangle" name="Tri2_mc">
+                  <matrix>
+                    <Matrix a="-0.605438232421875" b="0.795867919921875" c="-0.795867919921875" d="-0.605438232421875" tx="547.85" ty="238"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="149.5" y="127.3"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+                <DOMSymbolInstance libraryItemName="GizmoTriangle" name="Tri3_mc">
+                  <matrix>
+                    <Matrix a="-0.612045288085938" b="-0.790771484375" c="0.790771484375" d="-0.612045288085938" tx="-342" ty="487.15"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="149.5" y="127.3"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Layer_2" color="#9933CC" locked="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements/>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Layer_1" color="#00FFFF" locked="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="NodeIcon" name="NodeIco_mc">
+                  <transformationPoint>
+                    <Point x="25" y="25"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

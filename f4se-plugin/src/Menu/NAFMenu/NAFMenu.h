@@ -259,8 +259,12 @@ namespace Menu
 					ControlMap->PopInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kBasicMenuNav);
 					ControlMap->PopInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kThumbNav);
 					ControlMap->PopInputContext(RE::UserEvents::INPUT_CONTEXT_ID::kVirtualController);
-					RE::SendHUDMessage::PopHUDMode("SpecialMode");
-					RE::PlayerControls::GetSingleton()->blockPlayerInput = false;
+					
+					if (!RE::UI::GetSingleton()->GetMenuOpen("NAFStudioMenu")) {
+						RE::SendHUDMessage::PopHUDMode("SpecialMode");
+						RE::PlayerControls::GetSingleton()->blockPlayerInput = false;
+					}
+						
 
 					return RE::UI_MESSAGE_RESULTS::kPassOn;
 				}

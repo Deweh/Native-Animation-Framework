@@ -32,7 +32,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>DLL" CA
 
 project(
 	NAF
-	VERSION 0.6.8
+	VERSION 0.7.9
 	LANGUAGES CXX
 )
 
@@ -79,6 +79,8 @@ if (NOT TARGET CommonLibF4)
 endif ()
 
 find_package(spdlog REQUIRED CONFIG)
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/ik")
 
 # ---- Add source files ----
 
@@ -128,6 +130,7 @@ target_link_libraries(
 	PRIVATE
 		CommonLibF4::CommonLibF4
 		spdlog::spdlog
+		ik
 )
 
 target_precompile_headers(

@@ -1,0 +1,42 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="Keyframe" itemID="65106487-0000012c" linkageExportForAS="true" linkageClassName="Keyframe" lastModified="1697592614">
+  <timeline>
+    <DOMTimeline name="Keyframe" layerDepthEnabled="true">
+      <layers>
+        <DOMLayer name="Layer_2" color="#9933CC" current="true" isSelected="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="KeyframeSelection" name="Glow_mc">
+                  <matrix>
+                    <Matrix tx="4.25" ty="2.75"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="22.6" y="23.5"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Layer_1" color="#00FFFF" locked="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMShape>
+                  <fills>
+                    <FillStyle index="1">
+                      <SolidColor color="#FFFFFF"/>
+                    </FillStyle>
+                  </fills>
+                  <edges>
+                    <Edge fillStyle1="1" edges="!200 0|880 0!880 0[1080 0 1080 200!1080 200|1080 880!1080 880[1080 1080 880 1080!880 1080|200 1080!200 1080[0 1080 0 880!0 880|0 200!0 200[0 0 200 0"/>
+                  </edges>
+                </DOMShape>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

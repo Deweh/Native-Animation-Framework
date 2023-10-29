@@ -161,7 +161,7 @@ namespace FaceAnimation
 						const auto actor = h.get().get();
 						auto& syncInfo = a->second.syncInfoCache;
 						std::scoped_lock al{ a->second.anim->lock };
-						if (!a->second.anim->paused && GameUtil::GetAnimationGraphTime(actor, syncInfo) && syncInfo.current > 0.0f) {
+						if (!a->second.anim->paused && BodyAnimation::SmartIdle::GetGraphTime(actor, syncInfo) && syncInfo.current > 0.0f) {
 							a->second.anim->timeElapsed = a->second.anim->loop ? std::fmod(syncInfo.current, a->second.anim->data.duration) : syncInfo.current;
 						}
 						a->second.anim->UpdateNoDelta(data, eyeGeo);

@@ -5,6 +5,7 @@
 #include "MenuHandlers/FaceAnimCreatorHandler.h"
 #include "MenuHandlers/SettingsMenuHandler.h"
 #include "MenuHandlers/InventoryMenuHandler.h"
+#include "MenuHandlers/BodyCreatorHandler.h"
 #pragma once
 
 namespace Menu
@@ -20,13 +21,16 @@ namespace Menu
 		void InitMenu()
 		{
 			menuItems.clear();
-			if (auto state = PersistentMenuState::GetSingleton(); state->restoreSubmenu != kNone) {
+			auto state = PersistentMenuState::GetSingleton(); 
+			if (NAFStudioMenu::IsActive()) {
+				GotoMenu(SUB_MENU_TYPE::kBodyAnimCreator, true);
+			} else if (state->restoreSubmenu != kNone) {
 				SUB_MENU_TYPE navTarget = state->restoreSubmenu;
-				state->restoreSubmenu = kNone;
 				GotoMenu(navTarget, true);
 			} else {
 				GotoMenu(SUB_MENU_TYPE::kMain, true);
-			}			
+			}
+			state->restoreSubmenu = kNone;
 			activeInstance = this;
 		}
 

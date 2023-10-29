@@ -14,6 +14,7 @@ namespace Menu
 		kFaceAnimCreator,
 		kSettings,
 		kInventories,
+		kBodyAnimCreator,
 		kNone
 	};
 
@@ -67,63 +68,17 @@ namespace Menu
 				FaceAnimation::FrameBasedAnimData animData;
 			};
 
-			struct ProjectPosition
+			struct ProjectBodyAnim
 			{
-				std::unique_ptr<Data::Position> positionImpl = nullptr;
-				std::unique_ptr<Data::Animation> animationImpl = nullptr;
-
-				void CreateData() {
-					positionImpl = std::make_unique<Data::Position>();
-					animationImpl = std::make_unique<Data::Animation>();
-				}
-
-				bool SetID(const std::string_view& id) {
-					if (!positionImpl || !animationImpl)
-						return false;
-
-					positionImpl->id = id;
-					positionImpl->idForType = id;
-					positionImpl->posType = Data::Position::kAnimation;
-					animationImpl->id = id;
-					return true;
-				}
-
-				std::string GetID() {
-					if (!positionImpl)
-						return "";
-
-					return positionImpl->id;
-				}
-
-				bool AddActorAndHKX(RE::Actor* a, std::string hkxPath) {
-					if (!a || !positionImpl || !animationImpl)
-						return false;
-
-					animationImpl->slots.push_back(Data::Animation::Slot::FromActorAndHKX(a, hkxPath));
-					return true;
-				}
-
-				size_t size() {
-					if (!animationImpl || !positionImpl)
-						return 0;
-
-					return animationImpl->slots.size();
-				}
-
-				void remove(size_t index) {
-					animationImpl->slots.erase(std::next(animationImpl->slots.begin(), index));
-				}
-
-				Data::Animation::Slot& operator[](size_t index) {
-					return animationImpl->slots.at(index);
-				}
+				std::string id;
+				size_t duration;
 			};
 
 			std::string projectName = "";
 			std::vector<ProjectFaceAnim> faceAnims;
-			std::vector<ProjectPosition> positions;
+			BodyAnimation::NANIM bodyAnims;
 			std::optional<size_t> activeFaceAnim = std::nullopt;
-			std::optional<size_t> activePosition = std::nullopt;
+			std::optional<std::string> activeBodyAnim = std::nullopt;
 			std::optional<RE::ActorHandle> faceAnimTarget = std::nullopt;
 
 			ProjectFaceAnim* QActiveFaceAnimProject() {
@@ -134,20 +89,20 @@ namespace Menu
 				return &faceAnims[activeFaceAnim.value()];
 			}
 
-			ProjectPosition* QActivePositionProject() {
-				if (!activePosition.has_value() || activePosition.value() >= positions.size()) {
+			BodyAnimation::NANIM::AnimationData* QActiveBodyAnimProject() {
+				if (!activeBodyAnim.has_value() || !Utility::VectorContains(bodyAnims.GetAnimationList(), activeBodyAnim.value())) {
 					return nullptr;
 				}
 
-				return &positions[activePosition.value()];
+				return &bodyAnims.animations.value[activeBodyAnim.value()];
 			}
 
 			void ClearActiveFaceAnimProject() {
 				activeFaceAnim = std::nullopt;
 			}
 
-			void ClearActivePositionProject() {
-				activePosition = std::nullopt;
+			void ClearActiveBodyAnimProject() {
+				activeBodyAnim = std::nullopt;
 			}
 
 			bool SetActiveFaceAnimProject(const std::string& id) {
@@ -161,15 +116,57 @@ namespace Menu
 				return false;
 			}
 
-			bool SetActivePositionProject(const std::string& id) {
-				for (size_t i = 0; i < positions.size(); i++) {
-					if (positions[i].GetID() == id) {
-						activePosition = i;
-						return true;
-					}
+			bool SetActiveBodyAnimProject(const std::string& id) {
+				if (Utility::VectorContains(bodyAnims.GetAnimationList(), id)) {
+					activeBodyAnim = id;
+					return true;
 				}
 
 				return false;
+			}
+
+			std::string GetSavePath() {
+				return std::format("Data\\NAF\\{}_project", projectName);
+			}
+
+			std::optional<std::string> GetCannotBeSaved() {
+				if (projectName.size() < 1) {
+					return "A project name must be set before saving.";
+				}
+
+				bool hasBodyAnims = !bodyAnims.GetAnimationList().empty();
+				if (faceAnims.size() < 1 && !hasBodyAnims) {
+					return "No project data to save. Try creating a new animation first.";
+				}
+
+				return std::nullopt;
+			}
+
+			bool Save() {
+				bool hasBodyAnims = !bodyAnims.GetAnimationList().empty();
+				std::string basePath = GetSavePath();
+				std::string xmlPath = std::format("{}.xml", basePath);
+				std::string nanimPath = std::format("{}.nanim", basePath);
+
+				pugi::xml_document outDoc;
+				for (auto& p : faceAnims) {
+					p.animData.ToXML(p.id, outDoc);
+				}
+
+				if (hasBodyAnims) {
+					if (!bodyAnims.SaveToFile(nanimPath)) {
+						return false;
+					}
+					outDoc.append_child("bodyAnimFile").append_attribute("path").set_value(nanimPath.c_str());
+				}
+
+				try {
+					outDoc.save_file(xmlPath.c_str());
+				} catch (std::exception ex) {
+					return false;
+				}
+
+				return true;
 			}
 		};
 

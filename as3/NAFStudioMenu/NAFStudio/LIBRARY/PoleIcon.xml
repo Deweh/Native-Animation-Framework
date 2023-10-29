@@ -1,0 +1,37 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="PoleIcon" itemID="652c6385-00000141" lastModified="1697407877">
+  <timeline>
+    <DOMTimeline name="PoleIcon" layerDepthEnabled="true">
+      <layers>
+        <DOMLayer name="Layer_1" color="#00FFFF" current="true" isSelected="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMShape>
+                  <fills>
+                    <FillStyle index="1">
+                      <SolidColor color="#FFFFFF"/>
+                    </FillStyle>
+                  </fills>
+                  <strokes>
+                    <StrokeStyle index="1">
+                      <SolidStroke scaleMode="normal" weight="10">
+                        <fill>
+                          <SolidColor color="#FFFFFF"/>
+                        </fill>
+                      </SolidStroke>
+                    </StrokeStyle>
+                  </strokes>
+                  <edges>
+                    <Edge strokeStyle="1" edges="!500 0S4|500 919"/>
+                    <Edge fillStyle1="1" edges="!1000 1419S2[1000 1626 853 1772!853 1772[707 1919 500 1919!500 1919[293 1919 147 1772!147 1772[0 1626 0 1419!0 1419[0 1212 147 1066!147 1066[293 919 500 919!500 919[707 919 853 1066!853 1066[1000 1212 1000 1419"/>
+                    <Edge strokeStyle="1" edges="!500 1919S4|500 2839"/>
+                  </edges>
+                </DOMShape>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

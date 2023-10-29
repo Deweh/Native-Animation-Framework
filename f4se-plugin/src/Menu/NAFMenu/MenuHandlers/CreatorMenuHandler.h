@@ -1,8 +1,6 @@
 #pragma once
 #include "Menu/BindableMenu.h"
 
-#define ALPHANUMERIC_UNDERSCORE_HYPHEN "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
-
 namespace Menu::NAF
 {
 	class CreatorMenuHandler : public BindableMenu<CreatorMenuHandler, SUB_MENU_TYPE::kCreator>
@@ -15,10 +13,15 @@ namespace Menu::NAF
 		enum Stage
 		{
 			kMain,
+			kLoadProject,
+
 			kNewFaceAnim,
 			kFaceAnimMain,
 			kChangeFaceAnimDur,
-			kLoadProject
+			
+			kNewBodyAnim,
+			kBodyAnimMain,
+			kChangeBodyAnimDur
 		};
 
 		enum RetimeMode
@@ -27,16 +30,27 @@ namespace Menu::NAF
 			RescaleAnim
 		};
 
+		const float defaultSampleRate = 0.0333333f;
 		Stage currentStage = kMain;
-		RetimeMode timingMode;
+		RetimeMode timingMode = RetimeMode::ChangeEndpoint;
+		std::string newActorBehGraph = "";
+		std::string newID = "";
 		int32_t newDur = 0;
 		PersistentMenuState::CreatorData::ProjectFaceAnim newFaceAnim;
 		PersistentMenuState::CreatorData* data = PersistentMenuState::CreatorData::GetSingleton();
+
+		bool doActorSelection = false;
+		std::function<void(bool, RE::Actor*)> actorSelectionCallback = nullptr;
 
 		virtual void InitSubmenu() override {
 			BindableMenu::InitSubmenu();
 			if (data->QActiveFaceAnimProject() != nullptr) {
 				currentStage = kFaceAnimMain;
+				return;
+			}
+			if (data->QActiveBodyAnimProject() != nullptr) {
+				currentStage = kBodyAnimMain;
+				return;
 			}
 		}
 
@@ -45,13 +59,25 @@ namespace Menu::NAF
 			BindingsVector result;
 			manager->SetPanelShown(false);
 
+			if (doActorSelection) {
+				auto distMap = GameUtil::GenerateRefDistMap<RE::Actor>([](RE::Actor* a) {
+					return GameUtil::ActorIsAlive(a) && !a->HasKeyword(Data::Forms::ActorTypeChildKW);
+				});
+
+				for (auto& info : distMap) {
+					result.push_back({ std::format("[{:.2f}] {}", info.distance, info.name), Bind(&CreatorMenuHandler::OnActorSelection, info.ref) });
+				}
+				return result;
+			}
+
 			switch (currentStage) {
 				case kMain:
 				{
 					ConfigurePanel({
 						{ "New Project", Button,  MENU_BINDING_WARG(CreatorMenuHandler::NewProject, false) },
 						{ "Load Project", Button, MENU_BINDING_WARG(CreatorMenuHandler::LoadProject, false) },
-						{ "Save Project", Button, MENU_BINDING_WARG(CreatorMenuHandler::SaveProject, false) }
+						{ "Save Project", Button, MENU_BINDING_WARG(CreatorMenuHandler::SaveProject, false) },
+						{ "Save Pose Snapshot", Button, MENU_BINDING(CreatorMenuHandler::SavePoseSnapshot) }
 					});
 
 					manager->SetMenuTitle("Creator");
@@ -62,9 +88,51 @@ namespace Menu::NAF
 						result.push_back({ std::format("[->] Face Anim '{}'", f.id), MENU_BINDING_WARG(CreatorMenuHandler::EditFaceAnim, f.id) });
 					}
 
+					for (auto& b : data->bodyAnims.GetAnimationList()) {
+						result.push_back({ std::format("[->] Body Anim '{}'", b), MENU_BINDING_WARG(CreatorMenuHandler::EditBodyAnim, b) });
+					}
+
 					result.push_back({ "[+] New Face Animation", MENU_BINDING(CreatorMenuHandler::NewFaceAnim) });
+					result.push_back({ "[+] New Body Animation", MENU_BINDING(CreatorMenuHandler::NewBodyAnim) });
 
 					return result;
+				}
+				case kLoadProject:
+				{
+					manager->SetMenuTitle("Load Project");
+					return GetLoadableProjects();
+				}
+				case kBodyAnimMain:
+				{
+					manager->SetMenuTitle(data->activeBodyAnim.value());
+					result.push_back({ "[->] Open in Animation Studio", MENU_BINDING(CreatorMenuHandler::GotoBodyAnim) });
+					result.push_back({ "[Animation ID]: " + data->activeBodyAnim.value(), MENU_BINDING(CreatorMenuHandler::SetBodyAnimID) });
+					result.push_back({ "[Animation Duration]: " + std::to_string(QBodyAnimFrameDuration()) + " frames @30FPS", MENU_BINDING(CreatorMenuHandler::GotoBodyAnimDur) });
+					result.push_back({ "[X] Delete", MENU_BINDING_WARG(CreatorMenuHandler::DeleteBodyAnim, false) });
+					return result;
+				}
+				case kChangeBodyAnimDur:
+				{
+					manager->SetMenuTitle("Set Anim Duration");
+					if (data->activeBodyAnim.has_value()) {
+						newDur = static_cast<int32_t>(QBodyAnimFrameDuration());
+						return {
+							{ "Animation Frames (30FPS):", MENU_BIND_TICKER(&newDur), true, 3, 120, newDur },
+							{ std::format("[Retime Mode]: {}", GetTimeRescaleString()), MENU_BINDING(CreatorMenuHandler::SwitchTimeRescale) },
+							{ "Confirm", MENU_BINDING(CreatorMenuHandler::ChangeBodyAnimDur) },
+						};
+					} else {
+						result.push_back({ "<Error>" });
+					}
+				}
+				case kNewBodyAnim:
+				{
+					manager->SetMenuTitle("New Body Animation");
+					return {
+						{ "Animation Frames (30FPS):", MENU_BIND_TICKER(&newDur), true, 3, 120, newDur },
+						{ std::format("[Animation ID]: {}", newID.size() > 0 ? newID : "[None]"), MENU_BINDING(CreatorMenuHandler::SetNewBodyAnimID) },
+						{ "[+] Create", MENU_BINDING(CreatorMenuHandler::CreateBodyAnim) }
+					};
 				}
 				case kFaceAnimMain:
 				{
@@ -90,7 +158,7 @@ namespace Menu::NAF
 						return {
 							{ "Animation Frames (30FPS):", MENU_BIND_TICKER(&newDur), true, 3, 120000, newDur },
 							{ std::format("[Retime Mode]: {}", GetTimeRescaleString()), MENU_BINDING(CreatorMenuHandler::SwitchTimeRescale) },
-							{ "Confirm", MENU_BINDING(CreatorMenuHandler::ChangeAnimDur) },
+							{ "Confirm", MENU_BINDING(CreatorMenuHandler::ChangeFaceAnimDur) },
 						};
 					} else {
 						result.push_back({ "<Error>" });
@@ -106,11 +174,6 @@ namespace Menu::NAF
 						{ "[+] Create", MENU_BINDING(CreatorMenuHandler::CreateFaceAnim) }
 					};
 				}
-				case kLoadProject:
-				{
-					manager->SetMenuTitle("Load Project");
-					return GetLoadableProjects();
-				}
 				default:
 				{
 					return {
@@ -120,32 +183,42 @@ namespace Menu::NAF
 			}
 		}
 
-		void DeleteFaceAnim(bool confirmed, int) {
-			if (!confirmed) {
-				ConfigurePanel({
-					{ "Are you sure you wish to delete this face anim?", Info },
-					{ "Confirm", Button, MENU_BINDING_WARG(CreatorMenuHandler::DeleteFaceAnim, true) },
-					{ "Cancel", Button, [&](int) { manager->RefreshList(false); } }
-				});
-				return;
-			}
-
-			auto proj = data->QActiveFaceAnimProject();
-			if (proj == nullptr) {
-				manager->ShowNotification("An error occured while trying to query the project data.");
-				return;
-			}
-
-			auto id = proj->id;
-			data->ClearActiveFaceAnimProject();
-			for (auto iter = data->faceAnims.begin(); iter != data->faceAnims.end(); iter++) {
-				if (iter->id == id) {
-					data->faceAnims.erase(iter);
-					break;
+		void SavePoseSnapshot(int) {
+			manager->SetMenuTitle("Select Actor");
+			GetActorInput([&](bool ok, RE::Actor* a) {
+				if (ok) {
+					BodyAnimation::GraphHook::VisitGraph(a, [&](BodyAnimation::NodeAnimationGraph* g) {
+						std::vector<BodyAnimation::NodeTransform> result;
+						for (auto& n : g->nodes) {
+							if (n != nullptr) {
+								result.push_back(n->local);
+							} else {
+								result.push_back(BodyAnimation::NodeTransform::Identity());
+							}
+						}
+						BodyAnimation::NANIM poseContainer;
+						poseContainer.SetAnimationFromPose("pose", 0.1f, g->nodeMap, result);
+						if (!poseContainer.SaveToFile("Data\\NAF\\pose_snapshot.nanim")) {
+							manager->ShowNotification("Failed to save pose to file.");
+						} else {
+							manager->ShowNotification(std::format("Saved pose to {}", "Data\\NAF\\pose_snapshot.nanim"));
+						}
+					});
 				}
-			}
+			});
+		}
 
-			currentStage = kMain;
+		void OnActorSelection(RE::Actor* a, int) {
+			if (actorSelectionCallback != nullptr) {
+				doActorSelection = false;
+				manager->RefreshList(true);
+				actorSelectionCallback(true, a);
+			}
+		}
+
+		void GetActorInput(const std::function<void(bool, RE::Actor*)>& callback) {
+			actorSelectionCallback = callback;
+			doActorSelection = true;
 			manager->RefreshList(true);
 		}
 
@@ -181,9 +254,11 @@ namespace Menu::NAF
 				return;
 			}
 
-			auto anims = doc.children("faceAnim");
-			if (anims.empty()) {
-				manager->ShowNotification("Failed to load project. No face animations found.");
+			auto faceAnims = doc.children("faceAnim");
+			auto bodyAnimFile = doc.child("bodyAnimFile");
+
+			if (faceAnims.empty() && bodyAnimFile.empty()) {
+				manager->ShowNotification("Failed to load project. No body or face animations found.");
 				currentStage = kMain;
 				manager->RefreshList(true);
 				return;
@@ -193,19 +268,31 @@ namespace Menu::NAF
 			loadingProject.projectName = projName;
 			auto m = Data::XMLUtil::Mapper({}, {}, path);
 
-			for (auto& anim : anims) {
-				m.SetCurrentNode(&anim);
-				Data::FaceAnim animInfo;
-				FaceAnimation::FrameBasedAnimData animData;
-				
-				if (!Data::FaceAnim::Parse(m, animInfo, false, nullptr, &animData)) {
-					manager->ShowNotification("Failed to parse face animation. Check log for full message.");
+			if (!faceAnims.empty()) {
+				for (auto& anim : faceAnims) {
+					m.SetCurrentNode(&anim);
+					Data::FaceAnim animInfo;
+					FaceAnimation::FrameBasedAnimData animData;
+
+					if (!Data::FaceAnim::Parse(m, animInfo, false, nullptr, &animData)) {
+						manager->ShowNotification("Failed to parse face animation. Check log for full message.");
+						currentStage = kMain;
+						manager->RefreshList(true);
+						return;
+					}
+
+					loadingProject.faceAnims.push_back({ animInfo.id, std::move(animData) });
+				}
+			}
+
+			if (!bodyAnimFile.empty()) {
+				std::string baPath = bodyAnimFile.attribute("path").as_string();
+				if (baPath.empty() || !loadingProject.bodyAnims.LoadFromFile(baPath)) {
+					manager->ShowNotification("Failed to parse body animation.");
 					currentStage = kMain;
 					manager->RefreshList(true);
 					return;
 				}
-
-				loadingProject.faceAnims.push_back({ animInfo.id, std::move(animData) });
 			}
 			
 			(*data) = std::move(loadingProject);
@@ -219,6 +306,88 @@ namespace Menu::NAF
 			manager->RefreshList(true);
 		}
 
+		void NewProject(bool confirmed, int)
+		{
+			if (!confirmed) {
+				ConfigurePanel({ { "Are you sure you wish to make a new project?", Info },
+					{ "All unsaved project data will be lost.", Info },
+					{ "Confirm", Button, MENU_BINDING_WARG(CreatorMenuHandler::NewProject, true) },
+					{ "Cancel", Button, [&](int) { manager->RefreshList(false); } } });
+			} else {
+				(*data) = PersistentMenuState::CreatorData();
+				manager->RefreshList(false);
+			}
+		}
+
+		void SaveProject(bool confirmed, int)
+		{
+			if (auto msg = data->GetCannotBeSaved(); msg.has_value()) {
+				manager->ShowNotification(msg.value());
+				return;
+			}
+
+			std::string xmlPath = std::format("{}.xml", data->GetSavePath());
+
+			if (!confirmed && std::filesystem::exists(xmlPath)) {
+				ConfigurePanel({ { "Overwrite " + xmlPath + "?", Info },
+					{ "Confirm", Button, MENU_BINDING_WARG(CreatorMenuHandler::SaveProject, true) },
+					{ "Cancel", Button, [&](int) { manager->RefreshList(false); } } });
+				return;
+			} else {
+				manager->RefreshList(false);
+			}
+
+			if (!data->Save()) {
+				manager->ShowNotification(std::format("Failed to save {}", xmlPath));
+				return;
+			}
+
+			QueueHotReload("Saving...", std::format("Project saved to {}", xmlPath));
+		}
+
+		void ChangeProjectName(int)
+		{
+			GetTextInput([&](bool ok, const std::string& text) {
+				if (ok) {
+					if (text.find_first_not_of(ALPHANUMERIC_UNDERSCORE_HYPHEN) == std::string::npos) {
+						data->projectName = text;
+						manager->RefreshList(false);
+					} else {
+						manager->ShowNotification("Project names can only contain a-z, A-Z, 0-9, underscores and hyphens");
+					}
+				}
+			});
+		}
+
+		//Face Anims
+
+		void DeleteFaceAnim(bool confirmed, int) {
+			if (!confirmed) {
+				ConfigurePanel({ { "Are you sure you wish to delete this face anim?", Info },
+					{ "Confirm", Button, MENU_BINDING_WARG(CreatorMenuHandler::DeleteFaceAnim, true) },
+					{ "Cancel", Button, [&](int) { manager->RefreshList(false); } } });
+				return;
+			}
+
+			auto proj = data->QActiveFaceAnimProject();
+			if (proj == nullptr) {
+				manager->ShowNotification("An error occured while trying to query the project data.");
+				return;
+			}
+
+			auto id = proj->id;
+			data->ClearActiveFaceAnimProject();
+			for (auto iter = data->faceAnims.begin(); iter != data->faceAnims.end(); iter++) {
+				if (iter->id == id) {
+					data->faceAnims.erase(iter);
+					break;
+				}
+			}
+
+			currentStage = kMain;
+			manager->RefreshList(true);
+		}
+
 		void EditFaceAnim(const std::string& id, int) {
 			if (data->SetActiveFaceAnimProject(id)) {
 				currentStage = kFaceAnimMain;
@@ -228,7 +397,7 @@ namespace Menu::NAF
 			}
 		}
 
-		void ChangeAnimDur(int) {
+		void ChangeFaceAnimDur(int) {
 			auto proj = data->QActiveFaceAnimProject();
 			if (proj == nullptr) {
 				manager->ShowNotification("An error occured while trying to query the project data.");
@@ -341,75 +510,199 @@ namespace Menu::NAF
 			manager->RefreshList(true);
 		}
 
-		void NewProject(bool confirmed, int) {
+		//Body Anims
+
+		float QBodyAnimSampleRate() {
+			return defaultSampleRate;
+		}
+
+		size_t QBodyAnimFrameDuration() {
+			auto proj = data->QActiveBodyAnimProject();
+			if (!proj)
+				return 0;
+
+			return static_cast<size_t>(std::round(proj->duration / QBodyAnimSampleRate()));
+		}
+
+		void DeleteBodyAnim(bool confirmed, int)
+		{
 			if (!confirmed) {
-				ConfigurePanel({ 
-					{ "Are you sure you wish to make a new project?", Info },
-					{ "All unsaved project data will be lost.", Info },
-					{ "Confirm", Button, MENU_BINDING_WARG(CreatorMenuHandler::NewProject, true) },
-					{ "Cancel", Button, [&](int) { manager->RefreshList(false); } }
-				});
+				ConfigurePanel({ { "Are you sure you wish to delete this body anim?", Info },
+					{ "Confirm", Button, MENU_BINDING_WARG(CreatorMenuHandler::DeleteBodyAnim, true) },
+					{ "Cancel", Button, [&](int) { manager->RefreshList(false); } } });
+				return;
+			}
+
+			if (!data->activeBodyAnim.has_value()) {
+				manager->ShowNotification("An error occured while trying to query the project data.");
+				return;
+			}
+
+			auto id = data->activeBodyAnim.value();
+			data->ClearActiveBodyAnimProject();
+			data->bodyAnims.RemoveAnimation(id);
+
+			currentStage = kMain;
+			manager->RefreshList(true);
+		}
+
+		void EditBodyAnim(const std::string& id, int)
+		{
+			if (data->SetActiveBodyAnimProject(id)) {
+				currentStage = kBodyAnimMain;
+				manager->RefreshList(true);
 			} else {
-				(*data) = PersistentMenuState::CreatorData();
-				manager->RefreshList(false);
+				manager->ShowNotification("An error occured while trying to query the project data.");
 			}
 		}
 
-		void SaveProject(bool confirmed, int) {
-			if (data->projectName.size() < 1) {
-				manager->ShowNotification("A project name must be set before saving.");
-				return;
-			}
-			if (data->faceAnims.size() < 1) {
-				manager->ShowNotification("No project data to save. Try creating a new animation first.");
-				return;
-			}
-
-			std::string path = std::format("Data\\NAF\\{}_project.xml", data->projectName);
-
-			if (!confirmed && std::filesystem::exists(path)) {
-				ConfigurePanel({ 
-					{ "Overwrite " + path + "?", Info },
-					{ "Confirm", Button, MENU_BINDING_WARG(CreatorMenuHandler::SaveProject, true) },
-					{ "Cancel", Button, [&](int) { manager->RefreshList(false); } }
-				});
-				return;
-			} else {
-				manager->RefreshList(false);
-			}
-
-			pugi::xml_document outDoc;
-			for (auto& p : data->faceAnims) {
-				p.animData.ToXML(p.id, outDoc);
-			}
-			
-			try {
-				outDoc.save_file(path.c_str());
-			} catch (std::exception ex) {
-				manager->ShowNotification(std::format("Failed to save project. Full message: {}", ex.what()));
+		void ChangeBodyAnimDur(int)
+		{
+			auto proj = data->QActiveBodyAnimProject();
+			if (proj == nullptr) {
+				manager->ShowNotification("An error occured while trying to query the project data.");
 				return;
 			}
 
-			QueueHotReload("Saving...", std::format("Project saved to {}", path));
+			auto frameRateDur = QBodyAnimFrameDuration();
+
+			if (newDur == frameRateDur) {
+				return;
+			}
+
+			if (timingMode == RescaleAnim) {
+				float scale = static_cast<float>(newDur) / static_cast<float>(frameRateDur);
+
+				for (auto& tl : proj->timelines) {
+					for (auto& k : tl.second) {
+						k.time *= scale;
+					}
+				}
+			}
+
+			proj->duration = static_cast<float>(newDur) * QBodyAnimSampleRate();
+			currentStage = kBodyAnimMain;
+			manager->RefreshList(true);
 		}
 
-		void ChangeProjectName(int) {
+		void SetBodyAnimID(int)
+		{
 			GetTextInput([&](bool ok, const std::string& text) {
 				if (ok) {
-					//Remove new lines.
-					auto txtFixed = text;
-					txtFixed.erase(std::remove(txtFixed.begin(), txtFixed.end(), '\r'), txtFixed.end());
-					txtFixed.erase(std::remove(txtFixed.begin(), txtFixed.end(), '\n'), txtFixed.end());
-
-					if (txtFixed.find_first_not_of(ALPHANUMERIC_UNDERSCORE_HYPHEN) == std::string::npos) {
-						data->projectName = txtFixed;
-						manager->RefreshList(false);
-					} else {
-						manager->ShowNotification("Project names can only contain a-z, A-Z, 0-9, underscores and hyphens");
+					if (!data->activeBodyAnim.has_value()) {
+						manager->ShowNotification("An error occured while trying to query the project data.");
+						return;
 					}
+
+					if (!data->bodyAnims.ChangeAnimationName(data->activeBodyAnim.value(), text)) {
+						manager->ShowNotification("A body anim with that ID already exists.");
+						return;
+					}
+
+					data->activeBodyAnim = text;
+					manager->RefreshList(false);
 				}
 			});
 		}
+
+		void SetNewBodyAnimID(int)
+		{
+			GetTextInput([&](bool ok, const std::string& text) {
+				if (ok) {
+					newID = text;
+					manager->RefreshList(false);
+				}
+			});
+		}
+
+		static std::pair<std::vector<BodyAnimation::NodeTransform>, std::vector<std::string>> GetBasePose(RE::TESObjectREFR* a_target)
+		{
+			std::pair<std::vector<BodyAnimation::NodeTransform>, std::vector<std::string>> result;
+
+			if (!a_target)
+				return result;
+
+			RE::BSFixedString behGraphName;
+			a_target->GetAnimationGraphProjectName(behGraphName);
+			if (auto info = Data::GetGraphInfo(behGraphName.c_str()); info != nullptr) {
+				result.second = info->nodeList;
+				if (info->basePoseFile.has_value()) {
+					BodyAnimation::NANIM poseContainer;
+					if (poseContainer.LoadFromFile(std::format("Data\\NAF\\{}", info->basePoseFile.value()))) {
+						poseContainer.GetAnimationAsPose("pose", info->nodeList, result.first);
+					}
+				}
+			}
+
+			return result;
+		}
+
+		void CreateBodyAnim(int)
+		{
+			if (newID.size() < 1) {
+				manager->ShowNotification("An animation ID must be set before creation.");
+				return;
+			}
+
+			if (Utility::VectorContains(data->bodyAnims.GetAnimationList(), newID)) {
+				manager->ShowNotification("A body animation with that ID already exists.");
+				return;
+			}
+
+			manager->SetMenuTitle("Select Actor Type");
+			GetActorInput([&](bool ok, RE::Actor* a) {
+				if (ok) {
+					auto basePose = GetBasePose(a);
+					if (basePose.first.size() > 0) {
+						data->bodyAnims.SetAnimationFromPose(newID, static_cast<float>(newDur) * QBodyAnimSampleRate(), basePose.second, basePose.first);
+					} else {
+						data->bodyAnims.SetEmptyAnimation(newID, static_cast<float>(newDur) * QBodyAnimSampleRate());
+					}
+					currentStage = kMain;
+					manager->RefreshList(true);
+				}
+			});
+		}
+
+		void NewBodyAnim(int)
+		{
+			newID = "";
+			newDur = 60;
+			currentStage = kNewBodyAnim;
+			manager->RefreshList(true);
+		}
+
+		void GotoBodyAnim(int)
+		{
+			manager->SetMenuTitle("Select Target Actor");
+			GetActorInput([&](bool ok, RE::Actor* a) {
+				if (ok) {
+					auto UI = RE::UI::GetSingleton();
+					auto UIMessageQueue = RE::UIMessageQueue::GetSingleton();
+					if (UI->GetMenuOpen("NAFStudioMenu")) {
+						UIMessageQueue->AddMessage("NAFStudioMenu", RE::UI_MESSAGE_TYPE::kHide);
+					}
+					UIMessageQueue->AddMessage("NAFStudioMenu", RE::UI_MESSAGE_TYPE::kShow);
+
+					F4SE::GetTaskInterface()->AddUITask([sampleRate = QBodyAnimSampleRate(), a = a] {
+						auto data = PersistentMenuState::CreatorData::GetSingleton();
+						if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
+							inst->SetTarget(a, data->bodyAnims, data->activeBodyAnim.value(), sampleRate);
+						}
+					});
+
+					manager->CloseMenu();
+				}
+			});
+		}
+
+		void GotoBodyAnimDur(int)
+		{
+			currentStage = kChangeBodyAnimDur;
+			manager->RefreshList(true);
+		}
+
+		//Misc
 
 		void Goto(SUB_MENU_TYPE menuType, int)
 		{
@@ -418,8 +711,19 @@ namespace Menu::NAF
 
 		virtual void Back() override
 		{
+			if (doActorSelection) {
+				doActorSelection = false;
+				manager->RefreshList(true);
+				if (actorSelectionCallback != nullptr) {
+					actorSelectionCallback(false, nullptr);
+				}
+				return;
+			}
+
 			if (currentStage == kFaceAnimMain) {
 				data->ClearActiveFaceAnimProject();
+			} else if (currentStage == kBodyAnimMain) {
+				data->ClearActiveBodyAnimProject();
 			}
 
 			if (currentStage == kMain) {

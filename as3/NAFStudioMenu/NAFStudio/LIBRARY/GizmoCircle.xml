@@ -1,0 +1,30 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="GizmoCircle" itemID="6509c352-00000125" linkageExportForAS="true" linkageClassName="GizmoCircle" lastModified="1695667754">
+  <timeline>
+    <DOMTimeline name="GizmoCircle" layerDepthEnabled="true">
+      <layers>
+        <DOMLayer name="Layer_1" color="#00FFFF" current="true" isSelected="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMShape>
+                  <strokes>
+                    <StrokeStyle index="1">
+                      <SolidStroke scaleMode="normal" weight="15">
+                        <fill>
+                          <SolidColor color="#FFFFFF"/>
+                        </fill>
+                      </SolidStroke>
+                    </StrokeStyle>
+                  </strokes>
+                  <edges>
+                    <Edge strokeStyle="1" edges="!3062 1531S4[3062 2165 2613 2613!2613 2613[2165 3062 1531 3062!1531 3062[897 3062 448 2613!448 2613[0 2165 0 1531!0 1531[0 897 448 448!448 448[897 0 1531 0!1531 0[2165 0 2613 448!2613 448[3062 897 3062 1531"/>
+                  </edges>
+                </DOMShape>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

@@ -1,0 +1,115 @@
+
+<graph id="RaiderProject" basePoseFile="Animations/Human/BasePose.nanim">
+	<!-- 
+		These are all the nodes in the skeleton that
+		NAF should create animation timelines for.
+	-->
+	<node id="COM"/>
+	<node id="Pelvis"/>
+	<node id="LLeg_Thigh"/>
+	<node id="LLeg_Calf"/>
+	<node id="LLeg_Foot"/>
+	<node id="RLeg_Thigh"/>
+	<node id="RLeg_Calf"/>
+	<node id="RLeg_Foot"/>
+	<node id="SPINE1"/>
+	<node id="SPINE2"/>
+	<node id="Chest"/>
+	<node id="Neck"/>
+	<node id="HEAD"/>
+	<node id="LArm_Collarbone"/>
+	<node id="LArm_UpperArm"/>
+	<node id="LArm_ForeArm1"/>
+	<node id="LArm_ForeArm2"/>
+	<node id="LArm_ForeArm3"/>
+	<node id="LArm_Hand"/>
+	<node id="RArm_Collarbone"/>
+	<node id="RArm_UpperArm"/>
+	<node id="RArm_ForeArm1"/>
+	<node id="RArm_ForeArm2"/>
+	<node id="RArm_ForeArm3"/>
+	<node id="PipboyBone"/>
+	<node id="RArm_Hand"/>
+	<node id="WeaponLeft"/>
+	<node id="Weapon"/>
+	<node id="LArm_UpperTwist1"/>
+	<node id="LArm_UpperTwist2"/>
+	<node id="RArm_UpperTwist1"/>
+	<node id="RArm_UpperTwist2"/>
+	<node id="LLeg_Toe1"/>
+	<node id="RLeg_Toe1"/>
+	<node id="LArm_Finger11"/>
+	<node id="LArm_Finger12"/>
+	<node id="LArm_Finger13"/>
+	<node id="LArm_Finger21"/>
+	<node id="LArm_Finger22"/>
+	<node id="LArm_Finger23"/>
+	<node id="LArm_Finger31"/>
+	<node id="LArm_Finger32"/>
+	<node id="LArm_Finger33"/>
+	<node id="LArm_Finger41"/>
+	<node id="LArm_Finger42"/>
+	<node id="LArm_Finger43"/>
+	<node id="LArm_Finger51"/>
+	<node id="LArm_Finger52"/>
+	<node id="LArm_Finger53"/>
+	<node id="RArm_Finger11"/>
+	<node id="RArm_Finger12"/>
+	<node id="RArm_Finger13"/>
+	<node id="RArm_Finger21"/>
+	<node id="RArm_Finger22"/>
+	<node id="RArm_Finger23"/>
+	<node id="RArm_Finger31"/>
+	<node id="RArm_Finger32"/>
+	<node id="RArm_Finger33"/>
+	<node id="RArm_Finger41"/>
+	<node id="RArm_Finger42"/>
+	<node id="RArm_Finger43"/>
+	<node id="RArm_Finger51"/>
+	<node id="RArm_Finger52"/>
+	<node id="RArm_Finger53"/>
+	<node id="Camera"/>
+	<node id="Camera Control"/>
+
+	<!-- 
+		These are IK dummy nodes. They aren't part of the skeleton,
+		and are simply listed here to let NAF's animation system know
+		that it should create animation timelines for them.
+	-->
+	<node id="IK-LLeg_Target"/>
+	<node id="IK-LLeg_Pole"/>
+	<node id="IK-RLeg_Target"/>
+	<node id="IK-RLeg_Pole"/>
+	<node id="IK-LArm_Target"/>
+	<node id="IK-LArm_Pole"/>
+	<node id="IK-RArm_Target"/>
+	<node id="IK-RArm_Pole"/>
+
+	<chain id="LLeg" effectorNode="IK-LLeg_Target" poleNode="IK-LLeg_Pole"
+		poleParent="LLeg_Foot" poleStartX="50.5" poleStartY="81.5" poleStartZ="-20">
+		<node id="LLeg_Thigh"/>
+		<node id="LLeg_Calf"/>
+		<node id="LLeg_Foot"/>
+	</chain>
+
+	<chain id="RLeg" effectorNode="IK-RLeg_Target" poleNode="IK-RLeg_Pole"
+		poleParent="RLeg_Foot" poleStartX="50.5" poleStartY="81.5" poleStartZ="20">
+		<node id="RLeg_Thigh"/>
+		<node id="RLeg_Calf"/>
+		<node id="RLeg_Foot"/>
+	</chain>
+
+	<chain id="LArm" effectorNode="IK-LArm_Target" poleNode="IK-LArm_Pole"
+		poleParent="COM" poleStartX="27.5" poleStartY="-62.5" poleStartZ="32.5">
+		<node id="LArm_UpperArm"/>
+		<node id="LArm_ForeArm1"/>
+		<node id="LArm_Hand"/>
+	</chain>
+
+	<chain id="RArm" effectorNode="IK-RArm_Target" poleNode="IK-RArm_Pole"
+		poleParent="COM" poleStartX="27.5" poleStartY="-62.5" poleStartZ="-32.5">
+		<node id="RArm_UpperArm"/>
+		<node id="RArm_ForeArm1"/>
+		<node id="RArm_Hand"/>
+	</chain>
+</graph>

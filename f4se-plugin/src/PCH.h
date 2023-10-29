@@ -13,6 +13,8 @@ namespace logger = F4SE::log;
 
 using namespace std::literals;
 
+#define M_PI 3.1415926535897
+
 #include "Version.h"
 #include "cereal/archives/binary.hpp"
 #include "cereal/types/polymorphic.hpp"
@@ -28,4 +30,9 @@ using namespace std::literals;
 #include "cereal/types/optional.hpp"
 #include "cereal/types/atomic.hpp"
 #include "cereal/types/utility.hpp"
-#include "pugixml/pugixml.hpp"
+#define PUGIXML_HEADER_ONLY
+#include "../extern/pugixml/src/pugixml.hpp"
+#include "zstr.hpp"
+#include "nlohmann/json.hpp"
+#include "ik/ik.h"
+#include "BodyAnimation/Spline.h"

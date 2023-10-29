@@ -8,6 +8,9 @@
     "boost-stl-interfaces",
     "fmt",
     "mmio",
-    "spdlog"
+    "spdlog",
+    "zstr",
+    "nlohmann-json",
+    "cereal"
   ]
 }

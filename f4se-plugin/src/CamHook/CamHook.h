@@ -4,6 +4,52 @@
 
 namespace CamHook
 {
+	struct AtomicPoint3
+	{
+		std::atomic<float> x = 0.0f;
+		std::atomic<float> y = 0.0f;
+		std::atomic<float> z = 0.0f;
+
+		RE::NiPoint3 get() {
+			return { x, y, z };
+		}
+
+		void operator=(const RE::NiPoint3& rhs) {
+			x = rhs.x;
+			y = rhs.y;
+			z = rhs.z;
+		}
+
+		bool IsIdentity() {
+			return x == 0.0f && y == 0.0f && z == 0.0f;
+		}
+
+		void MakeIdentity() {
+			x = 0.0f;
+			y = 0.0f;
+			z = 0.0f;
+		}
+	};
+
+	inline static std::atomic<bool> useExternalInput = false;
+	inline static std::atomic<bool> useExternalOrbit = false;
+	inline static std::atomic<float> leftRightInput = 0.0f;
+	inline static std::atomic<float> forwardBackInput = 0.0f;
+	inline static std::atomic<float> upDownInput = 0.0f;
+	inline static std::atomic<float> turnRightLeftInput = 0.0f;
+	inline static std::atomic<float> turnUpDownInput = 0.0f;
+	inline static AtomicPoint3 orbitTarget;
+
+	void SetUseExternalInput(bool use)
+	{
+		useExternalInput = use;
+		leftRightInput = 0.0f;
+		forwardBackInput = 0.0f;
+		upDownInput = 0.0f;
+		turnRightLeftInput = 0.0f;
+		turnUpDownInput = 0.0f;
+	}
+
 	namespace detail
 	{
 		typedef void(UpdateSig)(RE::FreeCameraState*);
@@ -72,50 +118,94 @@ namespace CamHook
 		void HookedUpdate(RE::FreeCameraState* s)
 		{
 			OriginalUpdate(s);
+			bool doUpdate = false;
 
 			std::unique_lock l{ lock };
-			if (active && Data::Settings::Values.bUseLookAtCam && s->camera && s->camera->cameraRoot) {
+			if (s->camera && s->camera->cameraRoot) {
 				auto camNode = s->camera->cameraRoot;
 
-				//We have to update both the free camera's numbers and the cam node's numbers to avoid input lag.
-				switch (pendingInput) {
-				case 1:
-					s->z += 1.0f;
-					camNode->local.translate.z += 1.0f;
-					break;
-				case 2:
-					s->z -= 1.0f;
-					camNode->local.translate.z -= 1.0f;
-					break;
+				if (useExternalInput) {
+					if (leftRightInput != 0.0f || forwardBackInput != 0.0f || upDownInput != 0.0f) {
+						doUpdate = true;
+						RE::NiQuaternion cameraRot;
+						cameraRot.FromRotation(camNode->local.rotate);
+						cameraRot = MathUtil::NormalizeQuat(cameraRot);
+
+						ik_quat_t rot = ik.quat.quat(cameraRot.x, cameraRot.y, cameraRot.z, cameraRot.w);
+						ik_vec3_t pos = ik.vec3.vec3(camNode->local.translate.x, camNode->local.translate.y, camNode->local.translate.z);
+						ik_vec3_t up = ik.vec3.vec3(0, 0, 1);
+						ik_vec3_t forward = ik.vec3.vec3(0, 1, 0);
+						ik_vec3_t left = ik.vec3.vec3(1, 0, 0);
+
+						ik.vec3.rotate(up.f, rot.f);
+						ik.vec3.rotate(forward.f, rot.f);
+						ik.vec3.rotate(left.f, rot.f);
+
+						ik.vec3.normalize(up.f);
+						ik.vec3.normalize(forward.f);
+						ik.vec3.normalize(left.f);
+						
+						ik.vec3.mul_scalar(up.f, upDownInput);
+						ik.vec3.mul_scalar(forward.f, forwardBackInput);
+						ik.vec3.mul_scalar(left.f, leftRightInput);
+
+						ik.vec3.add_vec3(pos.f, up.f);
+						ik.vec3.add_vec3(pos.f, forward.f);
+						ik.vec3.add_vec3(pos.f, left.f);
+
+						camNode->local.translate = {
+							static_cast<float>(pos.x),
+							static_cast<float>(pos.y),
+							static_cast<float>(pos.z)
+						};
+
+						s->x = camNode->local.translate.x;
+						s->y = camNode->local.translate.y;
+						s->z = camNode->local.translate.z;
+						
+						if (useExternalOrbit.load() == true && !orbitTarget.IsIdentity()) {
+							auto r = MathUtil::GetLookAtRotation(camNode->local.translate, orbitTarget.get());
+							s->yaw = r.x;
+							camNode->local.rotate.FromEulerAnglesZXY(s->yaw, s->pitch, 0.0f);
+						}
+						
+					}
+
+					if (turnRightLeftInput != 0.0f || turnUpDownInput != 0.0f) {
+						doUpdate = true;
+						s->pitch += MathUtil::DegreeToRadian(turnUpDownInput * 0.5f);
+						s->yaw += MathUtil::DegreeToRadian(turnRightLeftInput * 0.5f);
+						camNode->local.rotate.FromEulerAnglesZXY(s->yaw, s->pitch, 0.0f);
+					}
 				}
 
-				auto r = MathUtil::GetLookAtRotation(camNode->local.translate, lookAtNode->world.translate);
-				s->pitch = r.y;
-				s->yaw = r.x;
-				
-				camNode->local.rotate.FromEulerAnglesZXY(r.z, r.x, r.y);
-				RE::NiUpdateData d;
-				camNode->Update(d);
+				if (active && Data::Settings::Values.bUseLookAtCam) {
+					doUpdate = true;
+
+					//We have to update both the free camera's numbers and the cam node's numbers to avoid input lag.
+					switch (pendingInput) {
+					case 1:
+						s->z += 1.0f;
+						camNode->local.translate.z += 1.0f;
+						break;
+					case 2:
+						s->z -= 1.0f;
+						camNode->local.translate.z -= 1.0f;
+						break;
+					}
+
+					auto r = MathUtil::GetLookAtRotation(camNode->local.translate, lookAtNode->world.translate);
+					s->pitch = r.y;
+					s->yaw = r.x;
+
+					camNode->local.rotate.FromEulerAnglesZXY(r.x, r.y, 0.0f);
+				}
+
+				if (doUpdate) {
+					RE::NiUpdateData d;
+					camNode->Update(d);
+				}
 			}
-
-			/*
-			if (!active) {
-				OriginalUpdate(s);
-				return;
-			}
-
-			auto cam = s->camera;
-			if (!cam)
-				return;
-
-			std::unique_lock l{ lock };
-
-			cam->cameraRoot->local.translate = location;
-			cam->cameraRoot->local.rotate = rotation;
-
-			RE::NiUpdateData d;
-			cam->cameraRoot->Update(d);
-			*/
 		}
 
 		void RegisterHook()
@@ -174,7 +264,7 @@ namespace CamHook
 		return true;
 	})();
 
-	void Register() {
+	void RegisterHook() {
 		detail::RegisterHook();
 	}
 

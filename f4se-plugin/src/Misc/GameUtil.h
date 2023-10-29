@@ -231,8 +231,6 @@ public:
 	template <typename T>
 	static std::vector<RefDistInfo<T>> GenerateRefDistMap(std::function<bool(T*)> filter, const std::vector<T*> addToResultList = {})
 	{
-		auto player = RE::PlayerCharacter::GetSingleton();
-
 		std::vector<RefDistInfo<T>> result;
 		auto resultList = GameUtil::GetRefsInLoadedArea<T>(filter);
 		for (auto& e : addToResultList) {

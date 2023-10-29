@@ -30,6 +30,12 @@ namespace Papyrus
 		PAPYRUS_BIND(GetSceneSpeed);
 		PAPYRUS_BIND(GetSceneFromActor);
 		PAPYRUS_BIND(IsSceneRunning);
+
+		PAPYRUS_BIND(PlayNANIM);
+		PAPYRUS_BIND(StopNANIM);
+		PAPYRUS_BIND(SetIKChainTarget);
+		PAPYRUS_BIND(SetIKChainEnabled);
+
 		PAPYRUS_BIND(SetEyeCoordOverride);
 		PAPYRUS_BIND(ClearEyeCoordOverride);
 		PAPYRUS_BIND(PlayFaceAnimation);

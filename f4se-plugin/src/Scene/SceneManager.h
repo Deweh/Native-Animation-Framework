@@ -350,7 +350,7 @@ namespace Scene
 				return false;
 			}
 
-			if (auto player = RE::PlayerCharacter::GetSingleton(); a == player) {
+			if (a == player) {
 				player->DisableInputForPlayer("NAF_Scene", GetInputsToDisableForScene());
 				player->SetAIControlled(true);
 				state->playerWalkInstance = uid;
@@ -392,7 +392,7 @@ namespace Scene
 				ref->SetLinkedRef(nullptr, Data::Forms::NAFWalkToKW);
 			}
 
-			if (auto player = RE::PlayerCharacter::GetSingleton(); ref == player) {
+			if (ref == player) {
 				player->ReenableInputForPlayer();
 				player->SetAIControlled(false);
 				state->playerWalkInstance = 0;
@@ -425,8 +425,6 @@ namespace Scene
 			if (actors.size() < 1) {
 				return { kNoActors };
 			}
-
-			auto player = RE::PlayerCharacter::GetSingleton();
 
 			for (auto& aNi : actors) {
 				auto a = aNi.get();

@@ -240,25 +240,25 @@ namespace Scene
 				parent->SoftEnd();
 		}
 
-		virtual void ApplyMorphSet(const std::string& id) override
+		virtual void ApplyMorphSet(const std::string& a_id) override
 		{
 			CheckParentPointer();
 			if (parent != nullptr)
-				parent->ApplyMorphSet(id);
+				parent->ApplyMorphSet(a_id);
 		}
 
-		virtual void StartTimer(uint16_t id, double durationMs) override
+		virtual void StartTimer(uint16_t a_id, double durationMs) override
 		{
 			CheckParentPointer();
 			if (parent != nullptr)
-				parent->StartTimer(id, durationMs);
+				parent->StartTimer(a_id, durationMs);
 		}
 
-		virtual void StopTimer(uint16_t id) override
+		virtual void StopTimer(uint16_t a_id) override
 		{
 			CheckParentPointer();
 			if (parent != nullptr)
-				parent->StopTimer(id);
+				parent->StopTimer(a_id);
 		}
 
 		virtual void ReportSystemCompletion() override {
@@ -370,13 +370,13 @@ namespace Scene
 			}
 		}
 
-		virtual void OnTimer(uint16_t id) override
+		virtual void OnTimer(uint16_t a_id) override
 		{
-			if (id == 100) {
+			if (a_id == 100) {
 				nodeState.set(TreeNodeState::TimerCompleted);
 				Advance(false, true);
 			} else if (subSystem != nullptr) {
-				subSystem->OnTimer(id);
+				subSystem->OnTimer(a_id);
 			}
 		}
 

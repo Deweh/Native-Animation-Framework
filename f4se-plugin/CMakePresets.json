@@ -5,6 +5,12 @@
       "errors": {
         "deprecated": true
       },
+      "cacheVariables": {
+        "IK_PRECISION": {
+          "type": "STRING",
+          "value": "double"
+        }
+      },
       "hidden": true,
       "name": "cmake-dev",
       "warnings": {

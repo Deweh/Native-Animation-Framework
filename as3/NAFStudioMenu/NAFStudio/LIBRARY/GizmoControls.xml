@@ -1,0 +1,63 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="GizmoControls" itemID="6511d1e0-0000012f" linkageExportForAS="true" linkageClassName="GizmoControls" lastModified="1695761033">
+  <timeline>
+    <DOMTimeline name="GizmoControls" layerDepthEnabled="true">
+      <layers>
+        <DOMLayer name="Vertical" color="#FF800A" locked="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="GizmoVertical" name="Vertical_mc" selected="true">
+                  <matrix>
+                    <Matrix tx="258.55" ty="24"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point y="76.55"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Horizontal" color="#9933CC" current="true" isSelected="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="GizmoHorizontal" name="Horizontal_mc">
+                  <matrix>
+                    <Matrix tx="304" ty="100.55"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="76.55" y="76.55"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Circle" color="#00FFFF" locked="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMSymbolInstance libraryItemName="GizmoCircle" name="Circle_mc" selected="true">
+                  <matrix>
+                    <Matrix a="1.30633544921875" d="1.30633544921875"/>
+                  </matrix>
+                  <transformationPoint>
+                    <Point x="76.55" y="76.55"/>
+                  </transformationPoint>
+                </DOMSymbolInstance>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Layer_2" color="#9933CC" locked="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements/>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

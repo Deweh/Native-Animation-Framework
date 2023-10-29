@@ -1,0 +1,31 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="RotateIcon" itemID="653324fe-0000013b" lastModified="1697910032">
+  <timeline>
+    <DOMTimeline name="RotateIcon" layerDepthEnabled="true">
+      <layers>
+        <DOMLayer name="Layer_1" color="#00FFFF" locked="true" current="true" isSelected="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMShape>
+                  <strokes>
+                    <StrokeStyle index="1">
+                      <SolidStroke scaleMode="normal" weight="11">
+                        <fill>
+                          <SolidColor color="#FFFFFF"/>
+                        </fill>
+                      </SolidStroke>
+                    </StrokeStyle>
+                  </strokes>
+                  <edges>
+                    <Edge strokeStyle="1" edges="!694 128[918 0 1193 0!1193 0[1615 0 1913 298!1913 298[2212 597 2212 1019!2212 1019[2212 1441 1913 1739!1913 1739[1615 2037 1193 2037!1193 2037[771 2037 472 1739!472 1739[174 1441 174 1019!174 1019[174 986 176 954!0 1167|176 811!176 811
+|353 1167"/>
+                  </edges>
+                </DOMShape>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

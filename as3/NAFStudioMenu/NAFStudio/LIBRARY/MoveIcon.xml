@@ -1,0 +1,30 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="MoveIcon" itemID="65340e62-00000159" lastModified="1697910370">
+  <timeline>
+    <DOMTimeline name="MoveIcon" layerDepthEnabled="true">
+      <layers>
+        <DOMLayer name="Layer_1" color="#00FFFF" current="true" isSelected="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMShape>
+                  <strokes>
+                    <StrokeStyle index="1">
+                      <SolidStroke scaleMode="normal" weight="10">
+                        <fill>
+                          <SolidColor color="#FFFFFF"/>
+                        </fill>
+                      </SolidStroke>
+                    </StrokeStyle>
+                  </strokes>
+                  <edges>
+                    <Edge strokeStyle="1" edges="!2246 1061S4|2517 1291!2517 1291|2246 1521!1031 271|1261 0!1261 0|1491 271!271 1521|0 1291!0 1291|271 1061!240 1288|1258 1288!1258 1288|1258 257!1491 2274|1261 2545!1261 2545|1031 2274!1258 1288|2277 1288!1258 2294|1258 1288"/>
+                  </edges>
+                </DOMShape>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

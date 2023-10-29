@@ -1,0 +1,65 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="Scrubber" itemID="6510880b-00000139" linkageExportForAS="true" linkageClassName="Scrubber" lastModified="1695598015">
+  <timeline>
+    <DOMTimeline name="Scrubber" layerDepthEnabled="true">
+      <layers>
+        <DOMLayer name="Lines" color="#9933CC" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMShape>
+                  <strokes>
+                    <StrokeStyle index="1">
+                      <SolidStroke scaleMode="normal" weight="0.2">
+                        <fill>
+                          <SolidColor/>
+                        </fill>
+                      </SolidStroke>
+                    </StrokeStyle>
+                  </strokes>
+                  <edges>
+                    <Edge strokeStyle="1" edges="!-111 110|89 110!-110 145|89 145!-110 180|89 180"/>
+                  </edges>
+                </DOMShape>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+        <DOMLayer name="Base" color="#00FFFF" current="true" isSelected="true" autoNamed="false">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMShape>
+                  <fills>
+                    <FillStyle index="1">
+                      <SolidColor color="#999999"/>
+                    </FillStyle>
+                  </fills>
+                  <edges>
+                    <Edge fillStyle1="1" edges="!-437 0|396 0!396 0[431 0 455 33!455 33[480 68 480 115!480 115|480 185!480 185[480 233 455 266!455 266[432 299 398 300!398 300|30 300!30 300|30 800!30 800|-70 800!-70 800|-70 300!-70 300|-437 300!-437 300[-472 300 -496 266!-496 266[-520
+ 233 -520 185!-520 185|-520 115!-520 115[-520 68 -496 33!-496 33[-472 0 -437 0"/>
+                    <Edge cubics="!396 0(;419,0 439,11 455,33q396 0Q431 0q455 33);"/>
+                    <Edge cubics="!455 33(;472,56 480,84 480,115q455 33Q480 68q480 115);"/>
+                    <Edge cubics="!480 115(;480,115 480,185 480,185q480 115 480 185);"/>
+                    <Edge cubics="!480 185(;480,217 472,244 455,266q480 185Q480 233q455 266);"/>
+                    <Edge cubics="!455 266(;440,288 421,299 398,300q455 266Q432 299q398 300);"/>
+                    <Edge cubics="!-437 300(;-460,300 -480,289 -496,266q-437 300Q-472 300q-496 266);"/>
+                    <Edge cubics="!-496 266(;-512,244 -520,217 -520,185q-496 266Q-520 233q-520 185);"/>
+                    <Edge cubics="!-520 185(;-520,185 -520,115 -520,115q-520 185 -520 115);"/>
+                    <Edge cubics="!-520 115(;-520,84 -512,56 -496,33q-520 115Q-520 68q-496 33);"/>
+                    <Edge cubics="!-496 33(;-480,11 -460,0 -437,0q-496 33Q-472 0q-437 0);"/>
+                    <Edge cubics="!30 800(;30,800 -70,800 -70,800q30 800 -70 800);"/>
+                    <Edge cubics="!30 300(;30,300 30,800 30,800q30 300 30 800);"/>
+                    <Edge cubics="!-70 800(;-70,800 -70,300 -70,300q-70 800 -70 300);"/>
+                    <Edge cubics="!-70 300(;-70,300 -437,300 -437,300q-70 300 -437 300);"/>
+                    <Edge cubics="!-437 0(;-437,0 396,0 396,0q-437 0 396 0);"/>
+                    <Edge cubics="!398 300(;398,300 30,300 30,300q398 300 30 300);"/>
+                  </edges>
+                </DOMShape>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

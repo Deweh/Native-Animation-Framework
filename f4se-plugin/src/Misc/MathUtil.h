@@ -8,6 +8,80 @@ public:
 	inline static constexpr float MAX_RADIAN{ 2.0f * SHORT_PI };
 	inline static constexpr float MAX_DEGREE{ 360.0f };
 
+	static RE::NiTransform CalculateWorldAscending(RE::NiNode* rootNode, const RE::NiAVObject* target, const RE::NiTransform* rootTransformOverride = nullptr)
+	{
+		if (rootNode == nullptr) {
+			return target->world;
+		}
+
+		RE::NiTransform result = target->local;
+		const RE::NiNode* curNode = target->parent;
+
+		while (curNode != rootNode && curNode != nullptr) {
+			result = ApplyCoordinateSpace(curNode->local, result);
+			curNode = curNode->parent;
+		}
+
+		if (curNode == rootNode) {
+			result = ApplyCoordinateSpace(rootTransformOverride != nullptr ? *rootTransformOverride : rootNode->world, result);
+		}
+
+		return result;
+	}
+
+	static RE::NiTransform CalculateWorldDescending(RE::NiNode* rootNode, const RE::NiAVObject* target, const RE::NiTransform* rootTransformOverride = nullptr) {
+		if (rootNode == nullptr) {
+			return target->world;
+		}
+
+		//NiTransform is the current node's parent's calculated global transform.
+		std::stack<std::pair<RE::NiNode*, RE::NiTransform>> pendingNodes;
+
+		for (auto& c : rootNode->children) {
+			if (auto n = c->IsNode(); n != nullptr) {
+				pendingNodes.push({ n, rootTransformOverride != nullptr ? *rootTransformOverride : rootNode->world });
+			}
+		}
+
+		while (!pendingNodes.empty()) {
+			std::pair<RE::NiNode*, RE::NiTransform> current = pendingNodes.top();
+			pendingNodes.pop();
+
+			RE::NiTransform result;
+			if (!current.first->children.empty() || current.first == target) {
+				result = ApplyCoordinateSpace(current.second, current.first->local);
+			}
+
+			if (current.first == target) {
+				return result;
+			}
+
+			for (auto c : current.first->children) {
+				if (auto n = c->IsNode(); n != nullptr) {
+					pendingNodes.push({ n, result });
+				}
+			}
+		}
+
+		return target->world;
+	}
+
+	static RE::NiTransform ApplyCoordinateSpace(const RE::NiTransform& parentSpace, const RE::NiTransform& childSpace) {
+		RE::NiTransform result;
+		parentSpace.Multiply(result, childSpace);
+		return result;
+	}
+
+	static RE::NiQuaternion NormalizeQuat(const RE::NiQuaternion& q) {
+		float magnitude = std::sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+		float scalar = 1.0f / magnitude;
+		return { q.w * scalar, q.x * scalar, q.y * scalar, q.z * scalar };
+	}
+
+	static float NormalizeTime(float begin, float end, float time) {
+		return (time - begin) / (end - begin);
+	}
+
 	static bool CoordsWithinError(const RE::NiPoint3A& a, const RE::NiPoint3& b) {
 		return (
 			fabs(a.x - b.x) < 0.00001f &&
@@ -24,6 +98,12 @@ public:
 	static float DegreeToRadian(float a_degree)
 	{
 		return a_degree * DEGREES_PER_RADIAN;
+	}
+
+	static float Deg2RadCon(float a_degree) {
+		float result = DegreeToRadian(a_degree);
+		ConstrainRadian(result);
+		return result;
 	}
 
 	static RE::NiPoint3 DegreesToRadians(const RE::NiPoint3& a_degrees)
@@ -63,7 +143,7 @@ public:
 		location.z += offset.z;
 	}
 
-	static RE::NiPoint3 GetLookAtRotation(const RE::NiPoint3& a_cameraPos, const RE::NiPoint3& a_objectPos)
+	static RE::NiPoint2 GetLookAtRotation(const RE::NiPoint3& a_cameraPos, const RE::NiPoint3& a_objectPos)
 	{
 		RE::NiPoint3 dirVector;
 		dirVector.x = a_objectPos.x - a_cameraPos.x;
@@ -76,6 +156,6 @@ public:
 		ConstrainRadian(yaw);
 		ConstrainRadian(pitch);
 
-		return { yaw, pitch, 0.0f };
+		return { yaw, pitch };
 	}
 };

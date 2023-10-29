@@ -1,0 +1,38 @@
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="EffectorIcon" itemID="652c6368-0000013b" lastModified="1697407848">
+  <timeline>
+    <DOMTimeline name="EffectorIcon" layerDepthEnabled="true">
+      <layers>
+        <DOMLayer name="Layer_1" color="#00FFFF" current="true" isSelected="true">
+          <frames>
+            <DOMFrame index="0" keyMode="9728">
+              <elements>
+                <DOMShape>
+                  <fills>
+                    <FillStyle index="1">
+                      <SolidColor color="#FFFFFF"/>
+                    </FillStyle>
+                  </fills>
+                  <strokes>
+                    <StrokeStyle index="1">
+                      <SolidStroke scaleMode="normal" weight="10">
+                        <fill>
+                          <SolidColor color="#FFFFFF"/>
+                        </fill>
+                      </SolidStroke>
+                    </StrokeStyle>
+                  </strokes>
+                  <edges>
+                    <Edge fillStyle1="1" edges="!1688 1200S2[1688 1273 1670 1339!1670 1339[1636 1459 1541 1553!1541 1553[1395 1700 1188 1700!1188 1700[981 1700 835 1553!835 1553[739 1457 706 1336!706 1336[688 1272 688 1200!688 1200[688 1108 717 1028!717 1028[754 928 835 847!835 847
+[981 700 1188 700!1188 700[1395 700 1541 847!1541 847[1622 928 1659 1028!1659 1028[1688 1108 1688 1200"/>
+                    <Edge strokeStyle="1" edges="
+!2368 0S4[2422 696 1659 1028!8 0[-46 696 717 1028!706 1336[-50 1668 4 2360!2364 2360[2418 1671 1670 1339"/>
+                  </edges>
+                </DOMShape>
+              </elements>
+            </DOMFrame>
+          </frames>
+        </DOMLayer>
+      </layers>
+    </DOMTimeline>
+  </timeline>
+</DOMSymbolItem>

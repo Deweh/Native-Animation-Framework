@@ -79,17 +79,17 @@ namespace Data
 
 		static bool LoadCache() {
 			std::unique_lock l{ lock };
-			std::ifstream file(cachePath, std::ios::binary);
-			if (!file.is_open() || !file.good()) {
-				logger::warn("Failed to open {}", cachePath);
-				cacheValid = false;
-				return false;
-			}
-
 			try {
+				zstr::ifstream file(cachePath, std::ios::binary);
+				if (file.fail() || !file.good()) {
+					logger::warn("Failed to open {}", cachePath);
+					cacheValid = false;
+					return false;
+				}
+
 				cereal::BinaryInputArchive archive(file);
 				archive(primaryCache);
-			} catch (std::exception& e) {
+			} catch (const std::exception& e) {
 				logger::warn("Failed to load cache. Full Message: {}", e.what());
 				cacheValid = false;
 				primaryCache = Cache();
@@ -128,16 +128,16 @@ namespace Data
 		static void Flush() {
 			std::unique_lock l{ lock };
 			if (!IsCacheValid()) {
-				std::ofstream file(cachePath, std::ios::binary);
-				if (!file.is_open()) {
-					logger::warn("Failed to open {}", cachePath);
-					return;
-				}
-
 				try {
+					zstr::ofstream file(cachePath, std::ios::binary, Z_BEST_SPEED);
+					if (file.fail() || !file.good()) {
+						logger::warn("Failed to open {}", cachePath);
+						return;
+					}
+				
 					cereal::BinaryOutputArchive archive(file);
 					archive(primaryCache);
-				} catch (std::exception& e) {
+				} catch (const std::exception& e) {
 					logger::warn("Failed to save cache. Full Message: {}", e.what());
 				}
 			}

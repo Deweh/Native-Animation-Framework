@@ -4,12 +4,24 @@
 #include <shared_mutex>
 #include <random>
 
+#define ALPHANUMERIC_UNDERSCORE_HYPHEN "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+
 class Utility
 {
 public:
 	inline static bool PCFreqAcquired = false;
 	inline static double PCFreq = 0.0;
 	inline static __int64 CounterStart = 0;
+
+	template <typename T>
+	static std::map<T, size_t> VectorToIndexMap(const std::vector<T>& vk)
+	{
+		std::map<T, size_t> result;
+		for (size_t i = 0; i < vk.size(); i++) {
+			result[vk[i]] = i;
+		}
+		return result;
+	}
 
 	template <typename T>
 	static bool VectorContains(const std::vector<T>& vk, T ele)
@@ -82,6 +94,16 @@ public:
 	static void TransformStringToLower(std::string& str) {
 		std::transform(str.begin(), str.end(), str.begin(),
 			[](unsigned char c) { return (char)std::tolower(c); });
+	}
+
+	static std::string StringRestrictChars(const std::string_view& str, const std::string_view& charsToKeep) {
+		std::string result;
+		for (const char& c : str) {
+			if (charsToKeep.find(c) != std::string::npos) {
+				result.push_back(c);
+			}
+		}
+		return result;
 	}
 
 	static std::string StringToLower(std::string_view str) {

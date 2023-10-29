@@ -361,6 +361,33 @@ namespace Papyrus::NAF
 
 	/*
 	|--------------------------|
+	| Body Animation Functions |
+	|--------------------------|
+	*/
+
+	bool PlayNANIM(std::monostate, RE::Actor* a_actor, std::string a_filePath, std::string a_animID, float a_transitionTime) {
+		return BodyAnimation::GraphHook::LoadAndPlayAnimation(a_actor, USERDATA_DIR + a_filePath, a_transitionTime, a_animID);
+	}
+
+	bool StopNANIM(std::monostate, RE::Actor* a_actor, float a_transitionTime) {
+		return BodyAnimation::GraphHook::StopAnimation(a_actor, a_transitionTime);
+	}
+
+	void SetIKChainTarget(std::monostate, RE::Actor*, std::string, RE::TESObjectREFR*) {
+
+	}
+
+	void SetIKChainEnabled(std::monostate, RE::Actor* a_actor, std::string a_chainName, bool a_enabled) {
+		if (!a_actor)
+			return;
+
+		BodyAnimation::GraphHook::VisitGraph(a_actor, [&](BodyAnimation::NodeAnimationGraph* g) {
+			g->ikManager.SetChainEnabled(a_chainName, a_enabled);
+		});
+	}
+
+	/*
+	|--------------------------|
 	| Face Animation Functions |
 	|--------------------------|
 	*/

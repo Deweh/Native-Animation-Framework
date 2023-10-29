@@ -1,0 +1,74 @@
+<DOMDocument xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" backgroundColor="#666666" width="1920" height="1080" frameRate="60" currentTimeline="1" xflVersion="2.980" creatorInfo="Adobe Animate" platform="Windows" versionInfo="Saved by Animate Windows 21.0 build 35450" majorVersion="21" buildNumber="35450" viewAngle3D="122.353661987282" vanishingPoint3DX="960" vanishingPoint3DY="540" nextSceneIdentifier="2" playOptionsPlayLoop="false" playOptionsPlayPages="false" playOptionsPlayFrameActions="false" filetypeGUID="DD0DDBBF-5BEF-45B2-9F24-A3048D2A676F" fileGUID="71EA548B45DB954DAC8D60F49FC86201">
+     <symbols>
+          <Include href="BottomControls.xml" itemID="651086e2-00000130" lastModified="1697582359"/>
+          <Include href="EffectorIcon.xml" loadImmediate="false" itemID="652c6368-0000013b" lastModified="1697407848"/>
+          <Include href="GizmoCircle.xml" itemID="6509c352-00000125" lastModified="1695667754"/>
+          <Include href="GizmoControls.xml" itemID="6511d1e0-0000012f" lastModified="1695761033"/>
+          <Include href="GizmoHorizontal.xml" itemID="6509c3cd-0000012d" lastModified="1695667681"/>
+          <Include href="GizmoTriangle.xml" itemID="65134d8f-000001a0" lastModified="1695766947"/>
+          <Include href="GizmoVertical.xml" itemID="6509c3b9-00000129" lastModified="1695667739"/>
+          <Include href="Keyframe.xml" itemID="65106487-0000012c" lastModified="1697592614"/>
+          <Include href="KeyframeSelection.xml" loadImmediate="false" itemID="652f34dc-00000138" lastModified="1697592540"/>
+          <Include href="MoveIcon.xml" loadImmediate="false" itemID="65340e62-00000159" lastModified="1697910370"/>
+          <Include href="NAFStudio.xml" itemID="65075ed9-00000122" lastModified="1696639335"/>
+          <Include href="NodeIcon.xml" loadImmediate="false" itemID="652c63e4-00000145" lastModified="1697407972"/>
+          <Include href="NodeMarker.xml" itemID="65075f5d-00000127" lastModified="1697910625"/>
+          <Include href="PauseIcon.xml" itemID="6511a363-0000013d" lastModified="1695654762"/>
+          <Include href="PlayIcon.xml" itemID="6511a1d7-0000012c" lastModified="1695654492"/>
+          <Include href="PlayPauseButton.xml" itemID="6511a279-00000134" lastModified="1695654785"/>
+          <Include href="PoleIcon.xml" loadImmediate="false" itemID="652c6385-00000141" lastModified="1697407877"/>
+          <Include href="RotateIcon.xml" loadImmediate="false" itemID="653324fe-0000013b" lastModified="1697910032"/>
+          <Include href="Scrubber.xml" itemID="6510880b-00000139" lastModified="1695598015"/>
+          <Include href="Timeline.xml" itemID="650b1bc6-00000127" lastModified="1697582075"/>
+     </symbols>
+     <timelines>
+          <DOMTimeline name="Scene 1" layerDepthEnabled="true">
+               <layers>
+                    <DOMLayer name="Layer_2" color="#9933CC" locked="true">
+                         <frames>
+                              <DOMFrame index="0" keyMode="9728">
+                                   <elements/>
+                              </DOMFrame>
+                         </frames>
+                    </DOMLayer>
+                    <DOMLayer name="Content" color="#00FFFF" current="true" isSelected="true" autoNamed="false">
+                         <frames>
+                              <DOMFrame index="0" keyMode="9728">
+                                   <elements>
+                                        <DOMSymbolInstance libraryItemName="NAFStudio" name="Menu_mc" selected="true">
+                                             <transformationPoint>
+                                                  <Point x="960" y="539.95"/>
+                                             </transformationPoint>
+                                        </DOMSymbolInstance>
+                                   </elements>
+                              </DOMFrame>
+                         </frames>
+                    </DOMLayer>
+               </layers>
+          </DOMTimeline>
+     </timelines>
+     <scripts/>
+     <PrinterSettings/>
+     <publishHistory>
+          <PublishItem publishSize="6681" publishTime="1697682255"/>
+          <PublishItem publishSize="6681" publishTime="1697681365"/>
+          <PublishItem publishSize="6681" publishTime="1697681309"/>
+          <PublishItem publishSize="6681" publishTime="1697681307"/>
+          <PublishItem publishSize="6681" publishTime="1697681304"/>
+          <PublishItem publishSize="6657" publishTime="1697675117"/>
+          <PublishItem publishSize="6657" publishTime="1697670173"/>
+          <PublishItem publishSize="6657" publishTime="1697667519"/>
+          <PublishItem publishSize="6657" publishTime="1697667507"/>
+          <PublishItem publishSize="6657" publishTime="1697667031"/>
+          <PublishItem publishSize="6753" publishTime="1697666119"/>
+          <PublishItem publishSize="6753" publishTime="1697666117"/>
+          <PublishItem publishSize="6798" publishTime="1697665692"/>
+          <PublishItem publishSize="6798" publishTime="1697661159"/>
+          <PublishItem publishSize="6798" publishTime="1697661156"/>
+          <PublishItem publishSize="6773" publishTime="1697660643"/>
+          <PublishItem publishSize="6773" publishTime="1697660624"/>
+          <PublishItem publishSize="6773" publishTime="1697660622"/>
+          <PublishItem publishSize="6756" publishTime="1697659971"/>
+          <PublishItem publishSize="6756" publishTime="1697659968"/>
+     </publishHistory>
+</DOMDocument>

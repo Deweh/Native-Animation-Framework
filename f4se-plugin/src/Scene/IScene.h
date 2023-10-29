@@ -20,13 +20,12 @@ namespace Scene
 	{
 		using RE::UserEvents::USER_EVENT_FLAG;
 
-		union enum32
+		union
 		{
 			uint32_t u = 0;
 			F4SE::stl::enumeration<USER_EVENT_FLAG, uint32_t> e;
-		};
+		} disabledInputs;
 
-		enum32 disabledInputs{ 0 };
 		disabledInputs.e.set(USER_EVENT_FLAG::kActivate);
 		disabledInputs.e.set(USER_EVENT_FLAG::kFighting);
 		disabledInputs.e.set(USER_EVENT_FLAG::kJumping);
@@ -149,13 +148,29 @@ namespace Scene
 	using namespace Serialization::General;
 	struct IdleInfo
 	{
-		std::optional<std::string> dynIdle = std::nullopt;
-		SerializableIdle regularIdle;
+		BodyAnimation::SmartIdle idle;
 
 		template <class Archive>
-		void serialize(Archive& ar, const uint32_t)
+		void load(Archive& ar, const uint32_t ver)
 		{
-			ar(dynIdle, regularIdle);
+			if (ver < 2) {
+				std::optional<std::string> dynIdle = std::nullopt;
+				SerializableIdle regularIdle;
+				ar(dynIdle, regularIdle);
+				if (dynIdle.has_value()) {
+					idle.SetHKXPath(dynIdle.value());
+				} else {
+					idle.SetIdleForm(regularIdle.get());
+				}
+			} else {
+				ar(idle);
+			}
+		}
+
+		template <class Archive>
+		void save(Archive& ar, const uint32_t) const
+		{
+			ar(idle);
 		}
 	};
 
@@ -293,3 +308,4 @@ namespace Scene
 }
 
 CEREAL_REGISTER_TYPE(Scene::SceneFunctor);
+CEREAL_CLASS_VERSION(Scene::IdleInfo, 2);

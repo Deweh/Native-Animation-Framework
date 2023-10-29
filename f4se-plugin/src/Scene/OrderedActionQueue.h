@@ -158,7 +158,7 @@ namespace Scene
 				state->equipment[a->GetActorHandle()].addedEquipment.push_back(equipForm);
 			}
 
-			if (a.get() == RE::PlayerCharacter::GetSingleton()) {
+			if (a.get() == player) {
 				RE::SendHUDMessage::ClearMessages();
 			}
 
@@ -188,7 +188,7 @@ namespace Scene
 					state->equipment.erase(iter);
 			}
 
-			if (a.get() == RE::PlayerCharacter::GetSingleton()) {
+			if (a.get() == player) {
 				RE::SendHUDMessage::ClearMessages();
 			}
 

@@ -11,6 +11,8 @@ bool g_gameDataReady = false;
 #include "FaceAnimation/AnimationData.h"
 #include "Data/Global.h"
 #include "Data/CommandEngine.h"
+#include "BodyAnimation/GraphHook.h"
+#include "BodyAnimation/SmartIdle.h"
 #include "CamHook/CamHook.h"
 #include "Misc/GameUtil.h"
 #include "Menu/Menu.h"
@@ -71,10 +73,11 @@ namespace
 		auto& trampoline = F4SE::GetTrampoline();
 		trampoline.create(64);
 		Tasks::GameLoopHook::RegisterHook(trampoline);
+		BodyAnimation::GraphHook::RegisterHook();
 		FaceAnimation::FaceUpdateHook::RegisterHook(trampoline);
 		Menu::HUDManager::RegisterHook(trampoline);
 		PackageOverride::EvalHook::RegisterHook();
-		CamHook::Register();
+		CamHook::RegisterHook();
 	}
 }
 

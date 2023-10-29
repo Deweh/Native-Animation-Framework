@@ -50,8 +50,6 @@ namespace Scene
 	{
 		if (!Data::Settings::Values.bDisableRescaler) {
 			SceneManager::VisitScene(sceneId, [](IScene* scn) {
-				auto player = RE::PlayerCharacter::GetSingleton();
-
 				scn->ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
 					float targetScale = 1.0f;
 					if (auto customScale = GetProperty<float>(props, kScale); customScale.has_value()) {
@@ -75,8 +73,6 @@ namespace Scene
 	void ProcessPostStartFunctor(uint64_t sceneId)
 	{
 		SceneManager::VisitScene(sceneId, [](IScene* scn) {
-			auto player = RE::PlayerCharacter::GetSingleton();
-
 			scn->ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
 				RE::BGSAnimationSystemUtils::InitializeActorInstant(currentActor, false);
 
@@ -105,7 +101,6 @@ namespace Scene
 	{
 		SceneManager::VisitScene(
 			sceneId, [](IScene* scn) {
-				auto player = RE::PlayerCharacter::GetSingleton();
 				bool hasPlayer = false;
 				scn->ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
 					hasPlayer = hasPlayer || currentActor == player;
@@ -196,7 +191,6 @@ namespace Scene
 		}
 
 		virtual bool HasPlayer() override {
-			auto player = RE::PlayerCharacter::GetSingleton();
 			bool result = false;
 			ForEachActor([&](RE::Actor* a, ActorPropertyMap&) {
 				if (a == player)
@@ -221,11 +215,7 @@ namespace Scene
 			for (size_t i = 0; i < order.size(); i++) {
 				const auto& hndl = order[i];
 				if (auto iter = cachedIdlesMap.find(hndl); iter != cachedIdlesMap.end()) {
-					if (iter->second.dynIdle.has_value()) {
-						result[i] = Utility::StringToLower(iter->second.dynIdle.value());
-					} else if (auto idl = iter->second.regularIdle.get(); idl != nullptr) {
-						result[i] = Utility::StringToLower(idl->animFileName);
-					}
+					result[i] = Utility::StringToLower(iter->second.idle.GetFilePath());
 				}
 			}
 
@@ -272,7 +262,6 @@ namespace Scene
 			angle.x = 0;
 			angle.y = 0;
 			SetAnimMult(100);
-			auto player = RE::PlayerCharacter::GetSingleton();
 
 			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
 				currentActor->StopInteractingQuick();
@@ -334,8 +323,6 @@ namespace Scene
 
 			tasks.StopAll();
 			SetAnimMult(100);
-
-			auto player = RE::PlayerCharacter::GetSingleton();
 
 			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
 				currentActor->EnableCollision();
@@ -503,9 +490,13 @@ namespace Scene
 				FaceAnimation::FaceUpdateHook::StopAnimation(hndl);
 
 				if (auto idl = GetProperty<SerializableIdle>(props, kIdle); idl.has_value()) {
-					cachedIdlesMap[hndl] = { std::nullopt, idl.value() };
+					cachedIdlesMap[hndl].idle.SetIdleForm(idl.value());
 				} else if (auto dynIdl = GetProperty<std::string>(props, kDynIdle); dynIdl.has_value()) {
-					cachedIdlesMap[hndl] = { dynIdl.value(), nullptr };
+					if (Utility::StringEndsWith(dynIdl.value(), ".nanim")) {
+						cachedIdlesMap[hndl].idle.SetNAFPath(dynIdl.value(), "default");
+					} else {
+						cachedIdlesMap[hndl].idle.SetHKXPath(dynIdl.value());
+					}
 				}
 
 				if (auto faceAnim = GetProperty<std::string>(props, kFaceAnim); faceAnim.has_value()) {
@@ -576,13 +567,12 @@ namespace Scene
 		}
 
 		void PerformSync() {
-			auto player = RE::PlayerCharacter::GetSingleton();
 			bool noActorsReady = true;
 			bool allActorsReady = true;
 			float minTime = 0.0f;
 			size_t i = 0;
 			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
-				if (GameUtil::GetAnimationGraphTime(currentActor, cachedSyncInfo) &&
+				if (BodyAnimation::SmartIdle::GetGraphTime(currentActor, cachedSyncInfo) &&
 					cachedSyncInfo.current >= 0.0f) {
 
 					if (currentActor == player && cachedSyncInfo.current <= playerSyncOffset) {
@@ -608,7 +598,7 @@ namespace Scene
 			if (minTime > 0 && allActorsReady) {
 				for (auto& info : syncInfoVec) {
 					if (minTime < info.totalAnimTime) {
-						GameUtil::SetAnimationGraphTime(info.actor.get(), minTime - ((info.actor.get() == player) * playerSyncOffset));
+						BodyAnimation::SmartIdle::SetGraphTime(info.actor.get(), minTime - ((info.actor.get() == player) * playerSyncOffset));
 					}
 				}
 
@@ -636,17 +626,7 @@ namespace Scene
 					if (allReady) {
 						for (auto& idl : cachedIdlesMap) {
 							auto a = idl.first.get().get();
-							if (idl.second.dynIdle.has_value()) {
-								std::optional<std::string> startEvent;
-								std::optional<std::string> graph;
-								if (auto r = Data::GetRace(a); r) {
-									startEvent = r->startEvent;
-									graph = r->graph;
-								}
-								DynamicIdle::Play(a, idl.second.dynIdle.value(), startEvent, graph);
-							} else if (a != nullptr && a->currentProcess != nullptr) {
-								a->currentProcess->PlayIdle(a, static_cast<uint32_t>(RE::DEFAULT_OBJECT::kActionIdle), idl.second.regularIdle, false);
-							}
+							idl.second.idle.Play(a);
 						}
 
 						SetAnimMult(animMult);
@@ -659,12 +639,7 @@ namespace Scene
 					std::string idlePath;
 					for (auto& actorIdle : cachedIdlesMap) {
 						auto a = actorIdle.first.get().get();
-						if (actorIdle.second.dynIdle.has_value()) {
-							idlePath = actorIdle.second.dynIdle.value();
-						} else {
-							idlePath = actorIdle.second.regularIdle->animFileName;
-						}
-						if (a != nullptr && (RE::BGSAnimationSystemUtils::IsIdleLoading(a, idlePath) || RE::BGSAnimationSystemUtils::IsActiveGraphInTransition(a))) {
+						if (a != nullptr && (actorIdle.second.idle.IsIdleLoading(a) || RE::BGSAnimationSystemUtils::IsActiveGraphInTransition(a))) {
 							oneLoading = true;
 							break;
 						}
@@ -687,7 +662,7 @@ namespace Scene
 			if (trackAnimTime) {
 				auto trackingActor = actors.begin()->first.get();
 				if (trackingActor != nullptr &&
-					GameUtil::GetAnimationGraphTime(trackingActor.get(), cachedSyncInfo) &&
+					BodyAnimation::SmartIdle::GetGraphTime(trackingActor.get(), cachedSyncInfo) &&
 					cachedSyncInfo.current >= 0.0f) {
 					animTime = cachedSyncInfo.current;
 					if (animTime < lastAnimTime) {
@@ -698,7 +673,6 @@ namespace Scene
 				}
 			}
 
-			auto player = RE::PlayerCharacter::GetSingleton();
 			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
 				if (currentActor == player) {
 					player->UpdatePlayer3D();
