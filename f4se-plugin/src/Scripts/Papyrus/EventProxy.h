@@ -27,9 +27,7 @@ namespace Papyrus
 					actors.push_back(a.get());
 				}
 
-				RE::BSScript::structure_wrapper<"NAF", "SceneData"> sceneData;
-				sceneData.insert("actors", actors);
-				GameUtil::SendPapyrusEvent(PEVENT_SCENE_END_DATA, PackSceneId(d->id), sceneData);
+				GameUtil::SendPapyrusEvent(PEVENT_SCENE_END_DATA, PackSceneId(d->id), actors);
 			}
 		}
 

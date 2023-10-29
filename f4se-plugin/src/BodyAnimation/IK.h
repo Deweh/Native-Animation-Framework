@@ -153,16 +153,22 @@ namespace BodyAnimation
 			nodes[1]->hasPole = hasPole ? 1 : 0;
 		}
 
-		void SetPoleWorld(const RE::NiPoint3& p, const RE::NiTransform& parentTransform) {
+		void SetPoleWorld(const RE::NiPoint3& p, const RE::NiTransform& parentTransform, bool parentIsEffector = false) {
 			RE::NiPoint3 relative = p;
-			relative -= parentTransform.translate;
+			relative -= parentIsEffector ? IK3ToN3(effector->target_position) : parentTransform.translate;
 
-			RE::NiQuaternion worldRot;
-			worldRot.FromRotation(parentTransform.rotate);
-			RE::NiQuaternion inverse;
-			inverse.UnitInverse(worldRot);
+			ik_quat_t parentRotInverse = targetRotation;
+			if (!parentIsEffector) {
+				RE::NiQuaternion worldRot;
+				worldRot.FromRotation(parentTransform.rotate);
+				RE::NiQuaternion inverse;
+				inverse.UnitInverse(worldRot);
+				parentRotInverse = NQToIKQ(inverse);
+			} else {
+				ik.quat.conj(parentRotInverse.f);
+			}
 
-			ik_quat_t ikWorldRot = NQToIKQ(inverse);
+			ik_quat_t ikWorldRot = parentRotInverse;
 			ik_vec3_t ikRelativePos = N3ToIK3(relative);
 
 			ik.vec3.rotate(ikRelativePos.f, ikWorldRot.f);
@@ -171,18 +177,19 @@ namespace BodyAnimation
 			SetHasPole(true);
 		}
 
-		ik_vec3_t GetPoleWorldIK(const RE::NiTransform& parentTransform) {
-			RE::NiQuaternion rot;
-			rot.FromRotation(parentTransform.rotate);
+		ik_vec3_t GetPoleWorldIK(const NodeTransform& parentTransform) {
+			return GetPoleWorldIK(N3ToIK3(parentTransform.translate), NQToIKQ(parentTransform.rotate));
+		}
 
+		ik_vec3_t GetPoleWorldIK(const ik_vec3_t& parentPos, const ik_quat_t& parentRot) {
 			ik_vec3_t result = relativePole;
-			ik.vec3.rotate(result.f, NQToIKQ(rot).f);
-			ik.vec3.add_vec3(result.f, N3ToIK3(parentTransform.translate).f);
+			ik.vec3.rotate(result.f, parentRot.f);
+			ik.vec3.add_vec3(result.f, parentPos.f);
 			return result;
 		}
 
-		RE::NiPoint3 GetPoleWorld(const RE::NiTransform& parentTransform) {
-			return IK3ToN3(GetPoleWorldIK(parentTransform));
+		RE::NiPoint3 GetPoleWorld(const RE::NiTransform& parentTransform, bool parentIsEffector = false) {
+			return IK3ToN3(parentIsEffector ? GetPoleWorldIK(effector->target_position, targetRotation) : GetPoleWorldIK(parentTransform));
 		}
 
 		NodeTransform GetTarget() {
@@ -226,7 +233,11 @@ namespace BodyAnimation
 			CalculateParentWorld(b1, rootNode);
 
 			if (nodes[1]->hasPole > 0) {
-				nodes[1]->pole = GetPoleWorldIK(MathUtil::CalculateWorldAscending(rootNode, poleParent));
+				if (poleParent == b3) {
+					nodes[1]->pole = GetPoleWorldIK(effector->target_position, targetRotation);
+				} else {
+					nodes[1]->pole = GetPoleWorldIK(MathUtil::CalculateWorldAscending(rootNode, poleParent));
+				}
 			}
 
 			RE::NiTransform b2W;
@@ -328,13 +339,13 @@ namespace BodyAnimation
 
 		virtual void SetPole(const RE::NiPoint3& p) {
 			if (poleParent != nullptr) {
-				chain.SetPoleWorld(p, poleParent->world);
+				chain.SetPoleWorld(p, poleParent->world, poleParent.get() == targetNodes[2].get());
 			}
 		}
 
 		virtual RE::NiPoint3 GetPole() {
 			if (poleParent != nullptr) {
-				return chain.GetPoleWorld(poleParent->world);
+				return chain.GetPoleWorld(poleParent->world, poleParent.get() == targetNodes[2].get());
 			}
 			return { 0.0f, 0.0f, 0.0f };
 		}

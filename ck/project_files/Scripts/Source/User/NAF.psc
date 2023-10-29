@@ -5,10 +5,6 @@ Struct SceneId
     Int id2 = 0
 EndStruct
 
-Struct SceneData
-    Actor[] actors
-EndStruct
-
 Struct StartSceneResult
     Bool successful = False
     Int id1 = 0
@@ -282,8 +278,8 @@ String Function SceneEndEvent() Global
     Return "NAF::SceneEnded"
 EndFunction
 
-;Same as SceneEndEvent, but passes data about the ended scene as an extra parameter.
-;Parameters: (NAF:SceneId akScene, NAF:SceneData akData)
+;Same as SceneEndEvent, but passes data about the ended scene as extra parameters.
+;Parameters: (NAF:SceneId akScene, Actor[] akActors)
 ;Register for this event using RegisterForExternalEvent(NAF.SceneEndDataEvent(), YourFunctionName)
 String Function SceneEndDataEvent() Global
     Return "NAF::SceneEndedData"
