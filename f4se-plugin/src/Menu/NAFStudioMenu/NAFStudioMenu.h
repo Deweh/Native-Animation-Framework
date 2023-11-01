@@ -31,15 +31,50 @@ namespace Menu
 		static std::optional<std::string> BakeAnimation() {
 			std::optional<std::string> result = std::nullopt;
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
-			if (auto inst = GetInstance(); inst != nullptr && data->activeBodyAnim.has_value()) {
-				auto path = std::format("{}_{}.nanim", data->GetSavePath(), Utility::StringRestrictChars(data->activeBodyAnim.value(), ALPHANUMERIC_UNDERSCORE_HYPHEN));
-				inst->VisitTargetGraph([&](Graph* g) {
-					BodyAnimation::NANIM animContainer;
-					g->creator->BakeToNANIM("default", animContainer);
-					if (animContainer.SaveToFile(path)) {
-						result = path;
+			if (auto inst = GetInstance(); inst != nullptr) {
+
+				std::unordered_map<SerializableActorHandle, Creator::BAKE_DATA> bakeData;
+				for (const auto& hndl : inst->managedActors) {
+					BodyAnimation::GraphHook::VisitGraph(hndl.get().get(), [&](Graph* g) {
+						bakeData[hndl] = g->creator->SetupBake();
+					});
+				}
+
+				bool stepsLeft = true;
+				while (stepsLeft) {
+					//This is a bit ugly, but it's needed for IK targets parented to other actors.
+					for (auto& pair : bakeData) {
+						BodyAnimation::GraphHook::VisitGraph(pair.first.get().get(), [&](Graph* g) {
+							g->creator->GenerateAtTime(pair.second);
+						});
 					}
-				});
+					for (auto& pair : bakeData) {
+						BodyAnimation::GraphHook::VisitGraph(pair.first.get().get(), [&](Graph* g) {
+							g->creator->CalculateInverseKinematics();
+						});
+					}
+					for (auto& pair : bakeData) {
+						BodyAnimation::GraphHook::VisitGraph(pair.first.get().get(), [&](Graph* g) {
+							g->creator->SampleAtTime(pair.second);
+						});
+					}
+					for (auto& pair : bakeData) {
+						stepsLeft = stepsLeft && pair.second.StepForward();
+					}
+				}
+
+				auto path = std::format("{}_bakedAnim.nanim", data->GetSavePath());
+				size_t num = 0;
+				BodyAnimation::NANIM animContainer;
+
+				for (auto& pair : bakeData) {
+					BodyAnimation::GraphHook::VisitGraph(pair.first.get().get(), [&](Graph* g) {
+						animContainer.SetAnimation(std::format("{}", num++), g->nodeMap, pair.second.animData.get());
+					});
+				}
+				if (animContainer.SaveToFile(path)) {
+					result = path;
+				}
 			}
 			return result;
 		}
@@ -99,6 +134,12 @@ namespace Menu
 
 		//Menu Functions
 
+		void VisitManagedGraphs(const std::function<void(Graph*)>& visitFunc) {
+			for (const auto& hndl : managedActors) {
+				BodyAnimation::GraphHook::VisitGraph(hndl.get().get(), visitFunc);
+			}
+		}
+
 		bool VisitTargetGraph(const std::function<void(Graph*)>& visitFunc) {
 			if (targetHandle.has_value()) {
 				return BodyAnimation::GraphHook::VisitGraph(targetHandle->get().get(), visitFunc);
@@ -120,14 +161,28 @@ namespace Menu
 			return result;
 		}
 
-		Creator::LoadResult SetTarget(RE::TESObjectREFR* a_target, const BodyAnimation::NANIM& animContainer, const std::string& animId, float sampleRate) {
-			Creator::LoadResult result = Creator::LoadResult::kFailed;
-			
-			if (!a_target)
-				return result;
+		void InitActors() {
+			auto data = PersistentMenuState::CreatorData::GetSingleton();
+			for (auto& a : data->studioActors) {
+				AddManagedRef(a.actor.get(), data->bodyAnims, a.animId, a.sampleRate);
+			}
+		}
+
+		bool SetTarget(size_t idx) {
+			if (idx >= managedActors.size())
+				return false;
+
+			auto a_target = managedActors[idx].get();
+
+			if (a_target == nullptr)
+				return false;
+
+			location = a_target->data.location;
+			angle.z = a_target->data.angle.z;
 
 			ClearTarget();
-			targetHandle = a_target->GetHandle();
+			targetHandle = a_target->GetActorHandle();
+
 			VisitTargetGraph([&](Graph* g) {
 				RE::Scaleform::GFx::Value result;
 				RE::Scaleform::GFx::Value args[1];
@@ -145,15 +200,26 @@ namespace Menu
 					}
 				}
 
+				SetTimelineSize(g->creator->GetMaxFrame());
+			});
+			UpdateTimelineData();
+			return true;
+		}
+
+		Creator::LoadResult AddManagedRef(RE::Actor* a_target, const BodyAnimation::NANIM& animContainer, const std::string& animId, float sampleRate) {
+			Creator::LoadResult result = Creator::LoadResult::kFailed;
+			
+			if (!a_target)
+				return result;
+			
+			managedActors.push_back(a_target->GetActorHandle());
+			BodyAnimation::GraphHook::VisitGraph(a_target, [&](Graph* g) {
 				if (g->creator == nullptr) {
 					g->creator = std::make_unique<Creator>(&g->generator, &g->nodes, &g->nodeMap, &g->ikManager);
 				}
 				result = g->creator->LoadFromNANIM(animId, animContainer, sampleRate);
 				g->state = Graph::kGenerator;
-
-				SetTimelineSize(g->creator->GetMaxFrame());
 			});
-			UpdateTimelineData();
 			return result;
 		}
 
@@ -164,14 +230,25 @@ namespace Menu
 				menuObj.Invoke("DestroyNodeMarker", nullptr, args, 1);
 			}
 			nodeMarkers.clear();
-			VisitTargetGraph([](Graph* g) {
-				for (auto& c : g->ikManager.GetChainList()) {
-					g->ikManager.SetChainEnabled(c, false);
-				}
-				g->generator.paused = false;
-				g->TransitionToAnimation(nullptr, 1.0f);
-			});
 			targetHandle = std::nullopt;
+		}
+
+		void ClearManagedRefs() {
+			for (auto& hndl : managedActors) {
+				if (auto a = hndl.get(); a != nullptr) {
+					BodyAnimation::GraphHook::VisitGraph(a.get(), [&](Graph* g) {
+						for (auto& c : g->ikManager.GetChainList()) {
+							g->ikManager.SetChainEnabled(c, false);
+						}
+						g->generator.paused = false;
+						g->TransitionToAnimation(nullptr, 1.0f);
+						g->creator.reset();
+					});
+					a->EnableCollision();
+					a->SetNoCollision(false);
+				}
+			}
+			managedActors.clear();
 		}
 
 		static NAFStudioMenu* GetInstance() {
@@ -232,6 +309,7 @@ namespace Menu
 		{
 			GameMenuBase::AdvanceMovie(a_timeDelta, a_time);
 			RE::NiPoint3 orbitTarget = { 0.0f, 0.0f, 0.0f };
+			float localTime = 0.0f;
 			VisitTargetGraph([&](Graph* g) {
 				for (size_t i = 0; i < nodeMarkers.size(); i++) {
 					auto currentTransform = g->creator->GetCurrentWorldTransform(i).translate;
@@ -244,7 +322,26 @@ namespace Menu
 				if (g->creator->IsPlaying()) {
 					SetScrubberPosition(g->creator->GetUINormalizedTime());
 				}
+				localTime = g->generator.localTime;
 			});
+			for (auto& hndl : managedActors) {
+				if (auto a = hndl.get(); a != nullptr) {
+					if (!MathUtil::CoordsWithinError(a->data.angle, angle)) {
+						a->SetAngleOnReference(angle);
+					}
+					if (!MathUtil::CoordsWithinError(a->data.location, location)) {
+						a->SetPosition(location, true);
+						a->DisableCollision();
+						a->SetNoCollision(true);
+					}
+					if (targetHandle.has_value() && targetHandle.value() != hndl) {
+						BodyAnimation::GraphHook::VisitGraph(a.get(), [&](Graph* g) {
+							g->generator.localTime = localTime;
+						});
+					}
+					
+				}
+			}
 			CamHook::orbitTarget = orbitTarget;
 		}
 
@@ -389,8 +486,8 @@ namespace Menu
 
 		void SetPlayState(bool playing) {
 			bool updateRequired = false;
-			VisitTargetGraph([&](Graph* g) {
-				updateRequired = g->creator->IsPlaying() != playing;
+			VisitManagedGraphs([&](Graph* g) {
+				updateRequired = updateRequired || (g->creator->IsPlaying() != playing);
 				g->creator->SetPlaying(playing);
 			});
 			if (updateRequired) {
@@ -460,11 +557,11 @@ namespace Menu
 				SetNodesVisible(false);
 				UpdateTimelineData();
 			} else if (a_type == "Play") {
-				VisitTargetGraph([](Graph* g) {
+				VisitManagedGraphs([](Graph* g) {
 					g->creator->SetPlaying(false);
 				});
 			} else if (a_type == "Pause") {
-				VisitTargetGraph([](Graph* g) {
+				VisitManagedGraphs([](Graph* g) {
 					g->creator->SetPlaying(true);
 				});
 			}
@@ -506,7 +603,7 @@ namespace Menu
 
 		void OnScrubberPositionChanged(double p) {
 			SetPlayState(false);
-			VisitTargetGraph([&](Graph* g) {
+			VisitManagedGraphs([&](Graph* g) {
 				g->creator->SetUINormalizedTime(static_cast<float>(p));
 			});
 		}
@@ -737,14 +834,17 @@ namespace Menu
 		void CloseImpl() {
 			SaveChangesImpl(true);
 			ClearTarget();
+			ClearManagedRefs();
 		}
 
 		void SaveChangesImpl(bool clearActiveProject = false) {
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
-			if (data->activeBodyAnim.has_value()) {
-				VisitTargetGraph([&](Graph* g) {
-					g->creator->SaveToNANIM(data->activeBodyAnim.value(), data->bodyAnims);
+			for (auto& a : data->studioActors) {
+				BodyAnimation::GraphHook::VisitGraph(a.actor.get(), [&](Graph* g) {
+					g->creator->SaveToNANIM(a.animId, data->bodyAnims);
 				});
+			}
+			if (data->activeBodyAnim.has_value()) {
 				if (clearActiveProject) {
 					data->ClearActiveBodyAnimProject();
 				}
@@ -813,7 +913,12 @@ namespace Menu
 		bool movingGizmo = false;
 		bool showTargetNodes = true;
 		std::vector<RE::Scaleform::GFx::Value> nodeMarkers;
-		std::optional<SerializableRefHandle> targetHandle = std::nullopt;
+		std::optional<SerializableActorHandle> targetHandle = std::nullopt;
+
+		std::vector<SerializableActorHandle> managedActors;
+		RE::NiPoint3 location;
+		RE::NiPoint3 angle;
+
 		inline static std::atomic<NAFStudioMenu*> studioInstance = nullptr;
 	};
 }

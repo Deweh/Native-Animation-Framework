@@ -12,7 +12,8 @@ namespace Menu::NAF
 		enum Stage
 		{
 			kManageIK,
-			kManageNodes
+			kManageNodes,
+			kSelectTarget
 		};
 
 		Stage currentStage = kManageNodes;
@@ -25,10 +26,18 @@ namespace Menu::NAF
 
 			ConfigurePanel({
 				{ "Save Changes", Button, Bind(&BodyCreatorHandler::SaveChanges) },
-				{ "Bake Animation", Button, Bind(&BodyCreatorHandler::BakeAnim) }
+				{ "Bake Animation", Button, Bind(&BodyCreatorHandler::BakeAnim) },
+				{ "Select Target", Button, Bind(&BodyCreatorHandler::GotoSelectTarget) }
 			});
 
 			switch (currentStage) {
+				case kSelectTarget:
+				{
+					for (size_t i = 0; i < data->studioActors.size(); i++) {
+						result.push_back({ GameUtil::GetActorName(data->studioActors[i].actor.get()), Bind(&BodyCreatorHandler::SelectTarget, i) });
+					}
+					break;
+				}
 				case kManageNodes:
 				{
 					result.push_back({ "[Manage IK Chains]", Bind(&BodyCreatorHandler::ManageIKChains) });
@@ -51,6 +60,19 @@ namespace Menu::NAF
 			}
 			
 			return result;
+		}
+
+		void GotoSelectTarget(int) {
+			currentStage = kSelectTarget;
+			manager->RefreshList(true);
+		}
+
+		void SelectTarget(size_t idx, int) {
+			if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
+				inst->SetTarget(idx);
+			}
+			currentStage = kManageNodes;
+			manager->RefreshList(true);
 		}
 
 		void SaveChanges(int) {
@@ -96,7 +118,7 @@ namespace Menu::NAF
 
 		virtual void BackImpl() override
 		{
-			if (currentStage == kManageIK) {
+			if (currentStage == kManageIK || currentStage == kSelectTarget) {
 				currentStage = kManageNodes;
 				manager->RefreshList(true);
 			} else {

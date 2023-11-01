@@ -74,11 +74,19 @@ namespace Menu
 				size_t duration;
 			};
 
+			struct StudioData
+			{
+				RE::NiPointer<RE::Actor> actor;
+				std::string animId;
+				float sampleRate;
+			};
+
 			std::string projectName = "";
 			std::vector<ProjectFaceAnim> faceAnims;
 			BodyAnimation::NANIM bodyAnims;
 			std::optional<size_t> activeFaceAnim = std::nullopt;
 			std::optional<std::string> activeBodyAnim = std::nullopt;
+			std::vector<StudioData> studioActors;
 			std::optional<RE::ActorHandle> faceAnimTarget = std::nullopt;
 
 			ProjectFaceAnim* QActiveFaceAnimProject() {
@@ -95,6 +103,14 @@ namespace Menu
 				}
 
 				return &bodyAnims.animations.value[activeBodyAnim.value()];
+			}
+
+			BodyAnimation::NANIM::AnimationData* QBodyAnimProject(const std::string& id) {
+				if (!Utility::VectorContains(bodyAnims.GetAnimationList(), id)) {
+					return nullptr;
+				}
+
+				return &bodyAnims.animations.value[id];
 			}
 
 			void ClearActiveFaceAnimProject() {

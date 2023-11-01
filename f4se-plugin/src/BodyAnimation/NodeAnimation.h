@@ -107,6 +107,23 @@ namespace BodyAnimation
 			}
 		};
 
+		struct BAKE_DATA
+		{
+			std::unique_ptr<NodeAnimation> animData;
+			size_t updateCount;
+			float curTime = 0.0f;
+			float sampleRate = 0.1f;
+
+			bool StepForward() {
+				auto next = curTime + sampleRate;
+				if (next < animData->duration) {
+					curTime = next;
+					return true;
+				}
+				return false;
+			}
+		};
+
 		enum FrameAction
 		{
 			kNoChange,
@@ -151,31 +168,48 @@ namespace BodyAnimation
 			PushDataToGenerator(false);
 		}
 
-		void BakeToNANIM(const std::string& name, NANIM& container) {
+		BAKE_DATA SetupBake() {
 			PushDataToGenerator(true);
-			auto data = std::make_unique<NodeAnimation>();
-			data->duration = animData->GetRuntimeDuration();
-			data->timelines.resize(animData->timelines.size());
-			size_t updateCount = animData->timelines.size() < nodeList->size() ? animData->timelines.size() : nodeList->size();
+			BAKE_DATA result;
+			result.animData = std::make_unique<NodeAnimation>();
+			result.animData->duration = animData->GetRuntimeDuration();
+			result.animData->timelines.resize(animData->timelines.size());
+			result.updateCount = animData->timelines.size() < nodeList->size() ? animData->timelines.size() : nodeList->size();
+			result.sampleRate = animData->sampleRate;
+			return result;
+		}
 
-			for (float t = 0; t < data->duration; t += animData->sampleRate) {
-				generator->localTime = t;
-				generator->Update(0.0f);
+		void GenerateAtTime(const BAKE_DATA& data) {
+			generator->localTime = data.curTime;
+			generator->Update(0.0f);
 
-				for (size_t i = 0; i < updateCount; i++) {
-					if (nodeList->at(i) != nullptr && !generator->output[i].IsIdentity())
-						generator->output[i].ToComplex(nodeList->at(i)->local);
-				}
-
-				ikManager->Update(generator->output, true);
-
-				for (size_t i = 0; i < updateCount; i++) {
-					if (nodeList->at(i) != nullptr)
-						data->timelines[i].keys[t].value = nodeList->at(i)->local;
-				}
+			for (size_t i = 0; i < data.updateCount; i++) {
+				if (nodeList->at(i) != nullptr && !generator->output[i].IsIdentity())
+					generator->output[i].ToComplex(nodeList->at(i)->local);
 			}
+		}
+
+		void CalculateInverseKinematics() {
+			ikManager->Update(generator->output, true);
+		}
+
+		void SampleAtTime(BAKE_DATA& data) {
+			for (size_t i = 0; i < data.updateCount; i++) {
+				if (nodeList->at(i) != nullptr)
+					data.animData->timelines[i].keys[data.curTime].value = nodeList->at(i)->local;
+			}
+		}
+
+		void BakeToNANIM(const std::string& name, NANIM& container) {
+			auto data = SetupBake();
+
+			do {
+				GenerateAtTime(data);
+				CalculateInverseKinematics();
+				SampleAtTime(data);
+			} while (data.StepForward());
 			
-			container.SetAnimation(name, *nodeMap, data.get());
+			container.SetAnimation(name, *nodeMap, data.animData.get());
 		}
 
 		void SaveToNANIM(const std::string& name, NANIM& container) {

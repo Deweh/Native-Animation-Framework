@@ -8,7 +8,12 @@ namespace Menu::NAF
 	public:
 		using BindableMenu::BindableMenu;
 
-		virtual ~CreatorMenuHandler() {}
+		virtual ~CreatorMenuHandler()
+		{
+			if (clearActors) {
+				PersistentMenuState::CreatorData::GetSingleton()->studioActors.clear();
+			}
+		}
 
 		enum Stage
 		{
@@ -21,7 +26,11 @@ namespace Menu::NAF
 			
 			kNewBodyAnim,
 			kBodyAnimMain,
-			kChangeBodyAnimDur
+			kChangeBodyAnimDur,
+
+			kMultiCharSetup,
+			kMultiCharSelection,
+			kMultiCharAnimPick
 		};
 
 		enum RetimeMode
@@ -38,6 +47,10 @@ namespace Menu::NAF
 		int32_t newDur = 0;
 		PersistentMenuState::CreatorData::ProjectFaceAnim newFaceAnim;
 		PersistentMenuState::CreatorData* data = PersistentMenuState::CreatorData::GetSingleton();
+		bool clearActors = true;
+
+		int32_t studioActorCount = 1;
+		size_t selectedStudioActor = 0;
 
 		bool doActorSelection = false;
 		std::function<void(bool, RE::Actor*)> actorSelectionCallback = nullptr;
@@ -71,6 +84,43 @@ namespace Menu::NAF
 			}
 
 			switch (currentStage) {
+				case kMultiCharSetup:
+				{
+					result.push_back({ "Number of Actors:", MENU_BINDING(CreatorMenuHandler::NumCharsChanged), true, 1, 10, studioActorCount });
+
+					bool oneMissing = false;
+					for (size_t i = 0; i < data->studioActors.size(); i++) {
+						const auto& a = data->studioActors[i];
+						if (a.actor == nullptr || a.animId.empty()) {
+							result.push_back({ "[ Empty Slot ]", MENU_BINDING_WARG(CreatorMenuHandler::SelectMultiChar, i) });
+							oneMissing = true;
+						} else {
+							result.push_back({ std::format("[ {} - {} ]", a.animId, GameUtil::GetActorName(a.actor.get())), MENU_BINDING_WARG(CreatorMenuHandler::SelectMultiChar, i) });
+						}
+					}
+
+					if (!oneMissing) {
+						result.push_back({ "Confirm", MENU_BINDING(CreatorMenuHandler::MultiCharFinish) });
+					}
+
+					return result;
+				}
+				case kMultiCharSelection:
+				{
+					auto& selection = data->studioActors[selectedStudioActor];
+					return {
+						{ "Animation: " + (selection.animId.empty() ? "[None]" : selection.animId), MENU_BINDING(CreatorMenuHandler::EditAnimMultiChar) },
+						{ "Actor: " + (selection.actor == nullptr ? "[None]" : GameUtil::GetActorName(selection.actor.get())), MENU_BINDING(CreatorMenuHandler::EditActorMultiChar) },
+						{ "Confirm", MENU_BINDING(CreatorMenuHandler::MultiCharConfirmSlot) }
+					};
+				}
+				case kMultiCharAnimPick:
+				{
+					for (auto& a : data->bodyAnims.GetAnimationList()) {
+						result.push_back({ a, MENU_BINDING_WARG(CreatorMenuHandler::MultiCharChooseAnim, a) });
+					}
+					return result;
+				}
 				case kMain:
 				{
 					ConfigurePanel({
@@ -94,6 +144,7 @@ namespace Menu::NAF
 
 					result.push_back({ "[+] New Face Animation", MENU_BINDING(CreatorMenuHandler::NewFaceAnim) });
 					result.push_back({ "[+] New Body Animation", MENU_BINDING(CreatorMenuHandler::NewBodyAnim) });
+					result.push_back({ "[*] Setup Multi-Actor Studio Instance", MENU_BINDING(CreatorMenuHandler::GotoMultiChar) });
 
 					return result;
 				}
@@ -182,6 +233,82 @@ namespace Menu::NAF
 				}
 			}
 		}
+
+		//Multi-Char Setup
+
+		void GotoMultiChar(int) {
+			studioActorCount = 1;
+			data->studioActors.clear();
+			data->studioActors.resize(1);
+			currentStage = kMultiCharSetup;
+			manager->RefreshList(true);
+		}
+
+		void NumCharsChanged(int val) {
+			studioActorCount = val;
+			data->studioActors.resize(val);
+			manager->RefreshList(false);
+		}
+
+		void SelectMultiChar(size_t idx, int) {
+			selectedStudioActor = idx;
+			currentStage = kMultiCharSelection;
+			manager->RefreshList(true);
+		}
+
+		void MultiCharConfirmSlot(int) {
+			data->studioActors[selectedStudioActor].sampleRate = QBodyAnimSampleRate();
+			currentStage = kMultiCharSetup;
+			manager->RefreshList(true);
+		}
+
+		void EditActorMultiChar(int) {
+			GetActorInput([&](bool ok, RE::Actor* a) {
+				if (ok) {
+					data->studioActors[selectedStudioActor].actor.reset(a);
+				}
+				manager->RefreshList(true);
+			});
+		}
+
+		void EditAnimMultiChar(int) {
+			currentStage = kMultiCharAnimPick;
+			manager->RefreshList(true);
+		}
+
+		void MultiCharChooseAnim(std::string animName, int) {
+			data->studioActors[selectedStudioActor].animId = animName;
+			currentStage = kMultiCharSelection;
+			manager->RefreshList(true);
+		}
+
+		void MultiCharFinish(int) {
+			for (auto& a : data->studioActors) {
+				if (a.actor == nullptr || a.animId.empty()) {
+					manager->ShowNotification("All slots must be filled.");
+					return;
+				}
+			}
+
+			auto UI = RE::UI::GetSingleton();
+			auto UIMessageQueue = RE::UIMessageQueue::GetSingleton();
+			if (UI->GetMenuOpen("NAFStudioMenu")) {
+				UIMessageQueue->AddMessage("NAFStudioMenu", RE::UI_MESSAGE_TYPE::kHide);
+			}
+			UIMessageQueue->AddMessage("NAFStudioMenu", RE::UI_MESSAGE_TYPE::kShow);
+
+			F4SE::GetTaskInterface()->AddUITask([] {
+				if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
+					inst->InitActors();
+					inst->SetTarget(0);
+				}
+			});
+
+			clearActors = false;
+			manager->CloseMenu();
+		}
+
+		//General Funcs
 
 		void SavePoseSnapshot(int) {
 			manager->SetMenuTitle("Select Actor");
@@ -677,6 +804,10 @@ namespace Menu::NAF
 			manager->SetMenuTitle("Select Target Actor");
 			GetActorInput([&](bool ok, RE::Actor* a) {
 				if (ok) {
+					data->studioActors.clear();
+					data->studioActors.emplace_back(RE::NiPointer<RE::Actor>(a), data->activeBodyAnim.value(), QBodyAnimSampleRate());
+					data->ClearActiveBodyAnimProject();
+
 					auto UI = RE::UI::GetSingleton();
 					auto UIMessageQueue = RE::UIMessageQueue::GetSingleton();
 					if (UI->GetMenuOpen("NAFStudioMenu")) {
@@ -684,13 +815,14 @@ namespace Menu::NAF
 					}
 					UIMessageQueue->AddMessage("NAFStudioMenu", RE::UI_MESSAGE_TYPE::kShow);
 
-					F4SE::GetTaskInterface()->AddUITask([sampleRate = QBodyAnimSampleRate(), a = a] {
-						auto data = PersistentMenuState::CreatorData::GetSingleton();
+					F4SE::GetTaskInterface()->AddUITask([] {
 						if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
-							inst->SetTarget(a, data->bodyAnims, data->activeBodyAnim.value(), sampleRate);
+							inst->InitActors();
+							inst->SetTarget(0);
 						}
 					});
 
+					clearActors = false;
 					manager->CloseMenu();
 				}
 			});
@@ -726,11 +858,24 @@ namespace Menu::NAF
 				data->ClearActiveBodyAnimProject();
 			}
 
-			if (currentStage == kMain) {
+			switch (currentStage) {
+			case kMain:
 				manager->GotoMenu(Menu::kMain, true);
-			} else {
+				break;
+			case kMultiCharSelection:
+				currentStage = kMultiCharSetup;
+				manager->RefreshList(true);
+				break;
+			case kMultiCharAnimPick:
+				currentStage = kMultiCharSelection;
+				manager->RefreshList(true);
+				break;
+			case kMultiCharSetup:
+				data->studioActors.clear();
+			default:
 				currentStage = kMain;
 				manager->RefreshList(true);
+				break;
 			}
 		}
 	};
