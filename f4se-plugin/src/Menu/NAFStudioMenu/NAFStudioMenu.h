@@ -212,6 +212,7 @@ namespace Menu
 			if (!a_target)
 				return result;
 			
+			PackageOverride::Set(a_target->GetActorHandle(), Data::Forms::NAFLockPackage, true);
 			managedActors.push_back(a_target->GetActorHandle());
 			BodyAnimation::GraphHook::VisitGraph(a_target, [&](Graph* g) {
 				if (g->creator == nullptr) {
@@ -235,6 +236,7 @@ namespace Menu
 
 		void ClearManagedRefs() {
 			for (auto& hndl : managedActors) {
+				PackageOverride::Clear(hndl, true);
 				if (auto a = hndl.get(); a != nullptr) {
 					BodyAnimation::GraphHook::VisitGraph(a.get(), [&](Graph* g) {
 						for (auto& c : g->ikManager.GetChainList()) {

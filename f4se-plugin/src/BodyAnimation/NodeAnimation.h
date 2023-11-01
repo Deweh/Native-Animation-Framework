@@ -525,20 +525,40 @@ namespace BodyAnimation
 			}
 		}
 
-		void IncrementalAdjust(float x, float y, float z) {
+		void IncrementalAdjust(float x, float y, float z, bool local = true) {
 			if (!currentDelta.has_value() || !FrameExists(currentDelta->nodeIndex, currentDelta->frame))
 				return;
 
 			NodeTransform targetTransform = GetTransform(currentDelta->nodeIndex, currentDelta->frame).value();
 
 			if (adjustMode == kRotation) {
-				EulerAngleOrder eulerOrder = y != 0 ? EulerAngleOrder::ZXY : EulerAngleOrder::XYZ;
-				RE::NiPoint3 euler = targetTransform.RotationToEulerAngles(true, eulerOrder);
-				euler.x += x * 0.5f;
-				euler.y += y * 0.5f;
-				euler.z += z * 0.5f;
+				RE::NiPoint3 xAxis;
+				RE::NiPoint3 yAxis;
+				RE::NiPoint3 zAxis;
 
-				targetTransform.RotationFromEulerAngles(euler.x, euler.y, euler.z, true, eulerOrder);
+				if (local) {
+					RE::NiMatrix3 mat;
+					targetTransform.rotate.ToRotation(mat);
+					xAxis = { mat.entry[0].pt[0], mat.entry[0].pt[1], mat.entry[0].pt[2] };
+					yAxis = { mat.entry[1].pt[0], mat.entry[1].pt[1], mat.entry[1].pt[2] };
+					zAxis = { mat.entry[2].pt[0], mat.entry[2].pt[1], mat.entry[2].pt[2] };
+				} else {
+					xAxis = { 1, 0, 0 };
+					yAxis = { 0, 1, 0 };
+					zAxis = { 0, 0, 1 };
+				}
+
+				RE::NiQuaternion adjustRot1;
+				RE::NiQuaternion adjustRot2;
+				RE::NiQuaternion adjustRot3;
+				adjustRot1.FromAngleAxis(MathUtil::DegreeToRadian(x * 0.5f), xAxis);
+				adjustRot2.FromAngleAxis(MathUtil::DegreeToRadian(y * 0.5f), yAxis);
+				adjustRot3.FromAngleAxis(MathUtil::DegreeToRadian(z * 0.5f), zAxis);
+
+				targetTransform.rotate = adjustRot1 * targetTransform.rotate;
+				targetTransform.rotate = adjustRot2 * targetTransform.rotate;
+				targetTransform.rotate = adjustRot3 * targetTransform.rotate;
+				targetTransform.rotate = MathUtil::NormalizeQuat(targetTransform.rotate);
 			} else {
 				targetTransform.translate.x += x * 0.2f;
 				targetTransform.translate.y += y * 0.2f;
