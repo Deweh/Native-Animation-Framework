@@ -312,5 +312,21 @@ namespace BodyAnimation
 			vec3 r1_sub_r0 = quat_to_scaled_angle_axis(quat_abs(quat_mul_inv(r1, r0)));
 			rot = quat_normalize(quat_mul(quat_from_scaled_angle_axis(w1 * r1_sub_r0 + w2 * v0 + w3 * v1), r0));
 		}
+
+		void quat_catmull_rom_velocity(
+			vec3& v1,
+			vec3& v2,
+			quat r0,
+			quat r1,
+			quat r2,
+			quat r3)
+		{
+			vec3 r1_sub_r0 = quat_to_scaled_angle_axis(quat_abs(quat_mul_inv(r1, r0)));
+			vec3 r2_sub_r1 = quat_to_scaled_angle_axis(quat_abs(quat_mul_inv(r2, r1)));
+			vec3 r3_sub_r2 = quat_to_scaled_angle_axis(quat_abs(quat_mul_inv(r3, r2)));
+
+			v1 = (r1_sub_r0 + r2_sub_r1) / 2;
+			v2 = (r2_sub_r1 + r3_sub_r2) / 2;
+		}
 	}
 }

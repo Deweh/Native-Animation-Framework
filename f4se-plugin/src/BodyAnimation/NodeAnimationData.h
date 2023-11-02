@@ -301,28 +301,39 @@ namespace BodyAnimation
 		inline static std::vector<QuatSplineSegment> CalculateAngularVelocities(const std::vector<std::pair<float, RE::NiQuaternion>>& XY)
 		{
 			std::vector<QuatSplineSegment> result;
-			QuatSpline::vec3 lastVel{ 0, 0, 0 };
+			QuatSpline::quat lastRot = reinterpret_cast<const QuatSpline::quat&>(XY.begin()->second);
+			QuatSpline::quat nextRot;
+			QuatSpline::vec3 v1;
+			QuatSpline::vec3 v2;
+
+			bool first = true;
+			bool last = false;
 
 			for (auto iter = ++XY.begin(); iter != XY.end(); iter++) {
 				auto prevKey = std::prev(iter);
 
 				const QuatSpline::quat& end = reinterpret_cast<const QuatSpline::quat&>(iter->second);
 				const QuatSpline::quat& begin = reinterpret_cast<const QuatSpline::quat&>(prevKey->second);
-				QuatSpline::vec3 curVel{ 0, 0, 0 };
+				nextRot = end;
 
-				if (std::next(iter) != XY.end()) {
-					curVel = QuatSpline::quat_differentiate_angular_velocity(end, begin, iter->first - prevKey->first);
+				if (auto nxt = std::next(iter); nxt != XY.end()) {
+					nextRot = reinterpret_cast<const QuatSpline::quat&>(nxt->second);
+				} else {
+					last = true;
 				}
+
+				QuatSpline::quat_catmull_rom_velocity(v1, v2, lastRot, begin, end, nextRot);
 
 				result.emplace_back(
 					prevKey->first,
 					iter->first,
 					begin,
 					end,
-					lastVel,
-					curVel);
+					first ? QuatSpline::vec3{ 0, 0, 0} : v1,
+					last ? QuatSpline::vec3{ 0, 0, 0} : v2);
 
-				lastVel = curVel;
+				lastRot = begin;
+				first = false;
 			}
 			return result;
 		}
