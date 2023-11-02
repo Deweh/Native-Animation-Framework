@@ -77,9 +77,11 @@ namespace BodyAnimation
 		};
 
 		inline static std::unique_ptr<PersistentState> state = std::make_unique<PersistentState>();
-		inline static std::shared_mutex graphsLock;
-		inline static std::unordered_map<Serialization::General::SerializableRefHandle, AnimationInfo> loadingAnims;
+		inline static std::shared_mutex stateLock;
+		inline static std::unordered_map<SerializableRefHandle, AnimationInfo> loadingAnims;
 		inline static std::mutex loadingAnimsLock;
+		inline static std::unordered_map<SerializableRefHandle, std::set<RE::IAnimationGraphManagerHolder*>> regsFor3d;
+		inline static std::shared_mutex regsFor3dLock;
 
 		static std::unique_ptr<NodeAnimation> LoadAnimation(RE::TESObjectREFR* ref, const std::string& filePath, const std::string& id)
 		{
@@ -156,7 +158,7 @@ namespace BodyAnimation
 			if (!ref || !anim)
 				return false;
 
-			std::unique_lock l{ graphsLock };
+			std::unique_lock l{ stateLock };
 			auto g = GetOrCreateGraph(ref);
 			g->TransitionToAnimation(std::move(anim), transitionDur);
 			g->animationFilePath = filePath;
@@ -172,7 +174,7 @@ namespace BodyAnimation
 			std::unique_lock l1{ loadingAnimsLock };
 			loadingAnims.erase(ref->GetHandle());
 
-			std::unique_lock l2{ graphsLock };
+			std::unique_lock l2{ stateLock };
 			auto g = GetGraph(ref);
 			if (!g)
 				return false;
@@ -185,8 +187,8 @@ namespace BodyAnimation
 			if (!ref)
 				return false;
 
-			std::unique_lock le{ graphsLock, std::defer_lock };
-			std::shared_lock ls{ graphsLock };
+			std::unique_lock le{ stateLock, std::defer_lock };
+			std::shared_lock ls{ stateLock };
 			NodeAnimationGraph* g = nullptr;
 			g = GetGraph(ref);
 			if (g == nullptr && createIfNeeded) {
@@ -212,15 +214,41 @@ namespace BodyAnimation
 			if (!ref)
 				return false;
 
-			std::unique_lock l{ graphsLock };
+			std::unique_lock l{ stateLock };
 			state->graphs.erase(ref);
 			return true;
+		}
+
+		static void RegisterGraphFor3DChange(RE::IAnimationGraphManagerHolder* a_graphHolder, SerializableRefHandle a_ref) {
+			std::unique_lock l{ regsFor3dLock };
+			regsFor3d[a_ref].insert(a_graphHolder);
+		}
+
+		static void UnregisterGraphFor3DChange(RE::IAnimationGraphManagerHolder* a_graphHolder, SerializableRefHandle a_ref) {
+			std::unique_lock l{ regsFor3dLock };
+			auto& target = regsFor3d[a_ref];
+			target.erase(a_graphHolder);
+			if (target.empty()) {
+				regsFor3d.erase(a_ref);
+			}
+		}
+
+		static void UnregisterGraphForAll3DChanges(RE::IAnimationGraphManagerHolder* a_graphHolder) {
+			std::unique_lock l{ regsFor3dLock };
+			for (auto iter = regsFor3d.begin(); iter != regsFor3d.end();) {
+				iter->second.erase(a_graphHolder);
+				if (iter->second.empty()) {
+					iter = regsFor3d.erase(iter);
+				} else {
+					iter++;
+				}
+			}
 		}
 
 		static void HookedGraphUpdate(RE::IAnimationGraphManagerHolder* a_graphHolder, float* a_deltaTime)
 		{
 			OriginalUpdate(a_graphHolder, a_deltaTime);
-			std::shared_lock l1{ graphsLock };
+			std::shared_lock l1{ stateLock };
 
 			auto iter = state->graphs.find(a_graphHolder);
 			if (iter == state->graphs.end() || !a_graphHolder->ShouldUpdateAnimation())
@@ -240,22 +268,26 @@ namespace BodyAnimation
 
 		static void HookedSet3D(RE::TESObjectREFR* a_ref, RE::NiAVObject* a_object, bool a_queue) {
 			OriginalSet3d(a_ref, a_object, a_queue);
-			std::shared_lock l1{ graphsLock };
+			std::shared_lock l1{ stateLock };
+			std::shared_lock l2{ regsFor3dLock };
 
-			auto iter = state->graphs.find(a_ref);
-			if (iter == state->graphs.end())
+			auto iter = regsFor3d.find(a_ref->GetHandle());
+			if (iter == regsFor3d.end())
 				return;
 
-			auto& g = iter->second;
-
-			std::unique_lock l2{ g.updateLock };
-			g.UpdateNodes(a_ref);
+			for (auto& g : iter->second) {
+				if (auto iter2 = state->graphs.find(g); iter2 != state->graphs.end()) {
+					std::unique_lock l3{ iter2->second.updateLock };
+					iter2->second.UpdateNodes(a_ref);
+				}
+			}
 		}
 
 		static void Reset() {
-			std::scoped_lock l{ loadingAnimsLock, graphsLock };
+			std::scoped_lock l{ loadingAnimsLock, stateLock, regsFor3dLock };
 			state->graphs.clear();
 			loadingAnims.clear();
+			regsFor3d.clear();
 		}
 
 		static void RegisterHook()
@@ -299,6 +331,11 @@ namespace BodyAnimation
 		static NodeAnimationGraph* CreateGraph(RE::TESObjectREFR* ref)
 		{
 			NodeAnimationGraph* result = &state->graphs[ref];
+			result->targetHandle = ref->GetHandle();
+			result->reg3dCallback = std::bind(RegisterGraphFor3DChange, static_cast<RE::IAnimationGraphManagerHolder*>(ref), std::placeholders::_1);
+			result->ikManager.reg3dCallback = &result->reg3dCallback;
+			result->unreg3dCallback = std::bind(UnregisterGraphForAll3DChanges, static_cast<RE::IAnimationGraphManagerHolder*>(ref));
+			RegisterGraphFor3DChange(ref, ref->GetHandle());
 			if (auto info = GetGraphInfo(ref); info != nullptr) {
 				result->SetGraphData(*info);
 			}
@@ -307,7 +344,7 @@ namespace BodyAnimation
 		}
 
 		static void DeleteGraphInternal(RE::IAnimationGraphManagerHolder* a_graphHolder) {
-			std::unique_lock l{ graphsLock };
+			std::unique_lock l{ stateLock };
 			state->graphs.erase(a_graphHolder);
 		}
 

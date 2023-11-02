@@ -4,6 +4,9 @@
 
 namespace BodyAnimation
 {
+	using namespace Serialization::General;
+	using RegisterFor3DChangeFunctor = std::function<void(SerializableRefHandle a_ref)>;
+
 	enum EulerAngleOrder : uint8_t
 	{
 		XYZ,

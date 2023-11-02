@@ -113,6 +113,18 @@ namespace Menu
 			}
 		}
 
+		static std::vector<std::string> GetManagedRefNodes(size_t idx) {
+			std::vector<std::string> result;
+			if (auto inst = GetInstance(); inst != nullptr && idx <= inst->managedActors.size()) {
+				BodyAnimation::GraphHook::VisitGraph(inst->managedActors[idx].get().get(), [&](Graph* g) {
+					for (size_t i = 0; i < g->nodeMap.size(); i++) {
+						result.emplace_back(g->nodeMap[i]);
+					}
+				});
+			}
+			return result;
+		}
+
 		static std::vector<std::pair<std::string, bool>> GetTargetNodes() {
 			std::vector<std::pair<std::string, bool>> result;
 			if (auto inst = GetInstance(); inst != nullptr) {

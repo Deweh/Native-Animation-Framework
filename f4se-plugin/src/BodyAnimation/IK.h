@@ -271,6 +271,8 @@ namespace BodyAnimation
 
 	struct IKHolder
 	{
+		std::string targetNode;
+		SerializableRefHandle targetRef;
 		std::string holderId = "";
 		bool holderEnabled = false;
 
@@ -286,6 +288,7 @@ namespace BodyAnimation
 		virtual RE::NiPoint3 GetPole() = 0;
 		virtual void SetPoleLocal(const RE::NiPoint3& p) = 0;
 		virtual RE::NiPoint3 GetPoleLocal() = 0;
+		virtual void SetTargetParent(RE::NiAVObject* parent) = 0;
 
 		virtual ~IKHolder(){};
 	};
@@ -296,6 +299,7 @@ namespace BodyAnimation
 		std::string poleParentName;
 		RE::NiPointer<RE::NiNode> rootNode = nullptr;
 		RE::NiPointer<RE::NiAVObject> poleParent = nullptr;
+		RE::NiPointer<RE::NiAVObject> targetParent = nullptr;
 		RE::NiPointer<RE::NiAVObject> targetNodes[3];
 		IKTwoBoneChain chain;
 
@@ -310,7 +314,9 @@ namespace BodyAnimation
 
 		virtual void Reset()
 		{
-			if (targetNodes[2] != nullptr) {
+			if (targetParent != nullptr) {
+				SetTarget(targetParent->world);
+			} else if (targetNodes[2] != nullptr) {
 				SetTarget(targetNodes[2]->world);
 			}
 		}
@@ -325,16 +331,24 @@ namespace BodyAnimation
 		}
 
 		virtual void SetTargetLocal(const NodeTransform& target) {
-			if (rootNode != nullptr) {
+			if (targetParent != nullptr) {
+				chain.SetTargetLocal(target, targetParent->world);
+			} else if (rootNode != nullptr) {
 				chain.SetTargetLocal(target, rootNode->world);
 			}
 		}
 
 		virtual NodeTransform GetTargetLocal() {
-			if (rootNode != nullptr) {
+			if (targetParent != nullptr) {
+				return chain.GetTargetLocal(targetParent->world);
+			} else if (rootNode != nullptr) {
 				return chain.GetTargetLocal(rootNode->world);
 			}
 			return NodeTransform::Identity();
+		}
+
+		virtual void SetTargetParent(RE::NiAVObject* parent) {
+			targetParent.reset(parent);
 		}
 
 		virtual void SetPole(const RE::NiPoint3& p) {
@@ -387,10 +401,9 @@ namespace BodyAnimation
 			if (auto curTarget = GetTarget();
 				curTarget.translate.x == 0.0f &&
 				curTarget.translate.y == 0.0f &&
-				curTarget.translate.z == 0.0f &&
-				targetNodes[2] != nullptr)
+				curTarget.translate.z == 0.0f)
 			{
-				SetTarget(targetNodes[2]->world);
+				Reset();
 			}
 		}
 
@@ -501,6 +514,25 @@ namespace BodyAnimation
 			}
 		}
 
+		void SetChainTargetParent(const std::string& id, SerializableRefHandle a_ref, const std::string& a_nodeName) {
+			for (auto& h : holders) {
+				if (h->holderId == id) {
+					h->targetRef = a_ref;
+					h->targetNode = a_nodeName;
+					h->SetTargetParent(nullptr);
+					if (auto refPtr = a_ref.get(); refPtr != nullptr) {
+						if (auto _3d = refPtr->Get3D(); _3d != nullptr) {
+							h->SetTargetParent(_3d->GetObjectByName(h->targetNode));
+							if (reg3dCallback != nullptr) {
+								(*reg3dCallback)(a_ref);
+							}
+						}
+					}
+					break;
+				}
+			}
+		}
+
 		bool GetChainEnabled(const std::string& id) {
 			bool result = false;
 			for (auto& h : holders) {
@@ -557,6 +589,22 @@ namespace BodyAnimation
 		void GetNodes(const std::vector<RE::NiPointer<RE::NiAVObject>>& nodes, RE::NiAVObject* root){
 			for (auto& h : holders) {
 				h->GetTargetNodes(nodes, nodeMap, root);
+			}
+		}
+
+		void OnOther3DChange(RE::TESObjectREFR* a_ref) {
+			if (!a_ref)
+				return;
+
+			auto hndl = a_ref->GetHandle();
+			auto _3d = a_ref->Get3D();
+			for (auto& h : holders) {
+				if (h->targetRef.hash() == hndl.native_handle_const()) {
+					h->SetTargetParent(nullptr);
+					if (_3d != nullptr) {
+						h->SetTargetParent(_3d->GetObjectByName(h->targetNode));
+					}
+				}
 			}
 		}
 
@@ -624,6 +672,8 @@ namespace BodyAnimation
 				return NodeTransform::Identity();
 			}
 		}
+
+		RegisterFor3DChangeFunctor* reg3dCallback = nullptr;
 
 	private:
 		const std::function<void(bool)> chainActiveCallback;

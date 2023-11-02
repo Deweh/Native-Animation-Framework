@@ -38,7 +38,13 @@ namespace BodyAnimation
 		std::vector<RE::NiPointer<RE::NiAVObject>> nodes;
 		std::vector<std::string> nodeMap;
 
-		IKManager ikManager = IKManager(nodeMap, std::function<void(bool)>(std::bind(&NodeAnimationGraph::OnIKChainActiveChanged, this, std::placeholders::_1)));
+		RegisterFor3DChangeFunctor reg3dCallback = nullptr;
+		std::function<void()> unreg3dCallback = nullptr;
+
+		IKManager ikManager = IKManager(
+			nodeMap,
+			std::function<void(bool)>(std::bind(&NodeAnimationGraph::OnIKChainActiveChanged, this, std::placeholders::_1))
+		);
 
 		std::string animationFilePath = "";
 		std::string animationId = "";
@@ -51,6 +57,11 @@ namespace BodyAnimation
 		std::vector<NodeTransform> transitionOutput;
 		float transitionLocalTime = 0.0f;
 		float transitionDuration = 0.01f;
+
+		~NodeAnimationGraph() {
+			if (unreg3dCallback != nullptr)
+				unreg3dCallback();
+		}
 
 		NodeAnimationGraph() {
 			flags.set(kTemporary, kNoActiveIKChains);
@@ -92,30 +103,35 @@ namespace BodyAnimation
 
 		bool UpdateNodes(RE::TESObjectREFR* ref)
 		{
-			rootNode.reset();
-			nodes.clear();
-			ikManager.ClearNodes();
-			if (ref == nullptr) {
-				flags.set(kUnloaded3D);
-				return false;
+			if (ref->GetHandle().native_handle_const() == targetHandle.hash()) {
+				rootNode.reset();
+				nodes.clear();
+				ikManager.ClearNodes();
+				if (ref == nullptr) {
+					flags.set(kUnloaded3D);
+					return false;
+				}
+
+				targetHandle = ref->GetHandle();
+
+				auto _3d = ref->Get3D();
+				if (_3d == nullptr) {
+					flags.set(kUnloaded3D);
+					return false;
+				}
+
+				rootNode = RE::NiPointer<RE::NiAVObject>(_3d);
+
+				for (const auto& n : nodeMap) {
+					nodes.emplace_back(_3d->GetObjectByName(n));
+				}
+
+				flags.reset(kUnloaded3D);
+				ikManager.GetNodes(nodes, _3d);
+			} else {
+				ikManager.OnOther3DChange(ref);
 			}
-
-			targetHandle = ref->GetHandle();
-
-			auto _3d = ref->Get3D();
-			if (_3d == nullptr) {
-				flags.set(kUnloaded3D);
-				return false;
-			}
-
-			rootNode = RE::NiPointer<RE::NiAVObject>(_3d);
-
-			for (const auto& n : nodeMap) {
-				nodes.emplace_back(_3d->GetObjectByName(n));
-			}
-
-			flags.reset(kUnloaded3D);
-			ikManager.GetNodes(nodes, _3d);
+			
 			return true;
 		}
 

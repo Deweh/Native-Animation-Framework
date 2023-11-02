@@ -127,37 +127,15 @@ namespace CamHook
 				if (useExternalInput) {
 					if (leftRightInput != 0.0f || forwardBackInput != 0.0f || upDownInput != 0.0f) {
 						doUpdate = true;
-						RE::NiQuaternion cameraRot;
-						cameraRot.FromRotation(camNode->local.rotate);
-						cameraRot = MathUtil::NormalizeQuat(cameraRot);
+						auto& mat = camNode->local.rotate;
 
-						ik_quat_t rot = ik.quat.quat(cameraRot.x, cameraRot.y, cameraRot.z, cameraRot.w);
-						ik_vec3_t pos = ik.vec3.vec3(camNode->local.translate.x, camNode->local.translate.y, camNode->local.translate.z);
-						ik_vec3_t up = ik.vec3.vec3(0, 0, 1);
-						ik_vec3_t forward = ik.vec3.vec3(0, 1, 0);
-						ik_vec3_t left = ik.vec3.vec3(1, 0, 0);
+						RE::NiPoint3 up = { mat.entry[2].pt[0], mat.entry[2].pt[1], mat.entry[2].pt[2] };
+						RE::NiPoint3 forward = { mat.entry[1].pt[0], mat.entry[1].pt[1], mat.entry[1].pt[2] };
+						RE::NiPoint3 left = { mat.entry[0].pt[0], mat.entry[0].pt[1], mat.entry[0].pt[2] };
 
-						ik.vec3.rotate(up.f, rot.f);
-						ik.vec3.rotate(forward.f, rot.f);
-						ik.vec3.rotate(left.f, rot.f);
-
-						ik.vec3.normalize(up.f);
-						ik.vec3.normalize(forward.f);
-						ik.vec3.normalize(left.f);
-						
-						ik.vec3.mul_scalar(up.f, upDownInput);
-						ik.vec3.mul_scalar(forward.f, forwardBackInput);
-						ik.vec3.mul_scalar(left.f, leftRightInput);
-
-						ik.vec3.add_vec3(pos.f, up.f);
-						ik.vec3.add_vec3(pos.f, forward.f);
-						ik.vec3.add_vec3(pos.f, left.f);
-
-						camNode->local.translate = {
-							static_cast<float>(pos.x),
-							static_cast<float>(pos.y),
-							static_cast<float>(pos.z)
-						};
+						camNode->local.translate += (up * upDownInput);
+						camNode->local.translate += (forward * forwardBackInput);
+						camNode->local.translate += (left * leftRightInput);
 
 						s->x = camNode->local.translate.x;
 						s->y = camNode->local.translate.y;
