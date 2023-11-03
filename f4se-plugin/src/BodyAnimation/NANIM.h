@@ -25,7 +25,7 @@ namespace BodyAnimation
 				return false;
 			}
 
-			void to_json(nlohmann::json& j)
+			void to_json(nlohmann::json& j) const
 			{
 				j["version"] = value;
 			}
@@ -33,6 +33,41 @@ namespace BodyAnimation
 
 		struct AnimationData
 		{
+			struct MetaData
+			{
+				struct IKTargetParent
+				{
+					std::string chain;
+					std::string targetAnim;
+					std::string targetNode;
+				};
+
+				std::map<std::string, std::vector<std::string>> data;
+
+				bool from_json(const nlohmann::json& j)
+				{
+					for (auto& pair : j.items()) {
+						if (JUtil::IsTypedArray(pair.value(), jt::string)) {
+							auto& arr = data[pair.key()];
+							for (auto& v : pair.value()) {
+								arr.push_back(v);
+							}
+						}
+					}
+					return true;
+				}
+
+				void to_json(nlohmann::json& j) const
+				{
+					for (const auto& pair : data) {
+						auto& arr = j[pair.first];
+						for (const auto& v : pair.second) {
+							arr.push_back(v);
+						}
+					}
+				}
+			};
+
 			struct AnimationKey
 			{
 				float time = 0.0f;
@@ -67,7 +102,7 @@ namespace BodyAnimation
 					return true;
 				}
 
-				void to_json(nlohmann::json& j)
+				void to_json(nlohmann::json& j) const
 				{
 					j["time"] = time;
 					j["position"] = { position.x, position.y, position.z };
@@ -79,12 +114,17 @@ namespace BodyAnimation
 
 			float duration;
 			std::map<std::string, AnimationTimeline> timelines;
+			MetaData meta;
 
 			bool from_json(const nlohmann::json& j)
 			{
 				JUtil ju(&j);
 				if (!ju.ContainsType("duration", jt::number_float) || !ju.ContainsType("timelines", jt::object)) {
 					return false;
+				}
+
+				if (ju.ContainsType("metadata", jt::object)) {
+					meta.from_json(j["metadata"]);
 				}
 
 				duration = j["duration"];
@@ -109,8 +149,11 @@ namespace BodyAnimation
 				return true;
 			}
 
-			void to_json(nlohmann::json& j)
+			void to_json(nlohmann::json& j) const
 			{
+				if (!meta.data.empty()) {
+					meta.to_json(j["metadata"]);
+				}
 				j["duration"] = duration;
 				auto& jTimelines = j["timelines"];
 				for (auto& tl : timelines) {
@@ -146,7 +189,7 @@ namespace BodyAnimation
 				return true;
 			}
 
-			void to_json(nlohmann::json& j) {
+			void to_json(nlohmann::json& j) const {
 				auto& anims = j["animations"];
 				for (auto& pair : value) {
 					nlohmann::json element;
@@ -184,7 +227,7 @@ namespace BodyAnimation
 			return data.is_object() && version.from_json(data) && animations.from_json(data);
 		}
 
-		bool SaveToFile(const std::string& fileName) {
+		bool SaveToFile(const std::string& fileName) const {
 			try {
 				zstr::ofstream file(fileName, std::ios::binary, Z_BEST_COMPRESSION);
 
@@ -200,7 +243,7 @@ namespace BodyAnimation
 			}
 		}
 
-		bool SaveToStream(std::ostream& s) {
+		bool SaveToStream(std::ostream& s) const {
 			nlohmann::json output;
 			version.to_json(output);
 			animations.to_json(output);
@@ -245,7 +288,7 @@ namespace BodyAnimation
 			return false;
 		}
 
-		bool GetAnimationAsPose(const std::string& name, const std::vector<std::string>& graphNodeList, std::vector<NodeTransform>& poseOut) {
+		bool GetAnimationAsPose(const std::string& name, const std::vector<std::string>& graphNodeList, std::vector<NodeTransform>& poseOut) const {
 			auto nodeMap = Utility::VectorToIndexMap(graphNodeList);
 
 			if (auto iter = animations.value.find(name); iter != animations.value.end()) {
@@ -333,6 +376,22 @@ namespace BodyAnimation
 			} else {
 				return false;
 			}
+		}
+
+		std::optional<AnimationData::MetaData> GetMetaData(const std::string& name) const
+		{
+			if (auto iter = animations.value.find(name); iter != animations.value.end()) {
+				return iter->second.meta;
+			}
+			return std::nullopt;
+		}
+
+		bool SetMetaData(const std::string& name, const AnimationData::MetaData& d) {
+			if (auto iter = animations.value.find(name); iter != animations.value.end()) {
+				iter->second.meta = d;
+				return true;
+			}
+			return false;
 		}
 
 		Version version;

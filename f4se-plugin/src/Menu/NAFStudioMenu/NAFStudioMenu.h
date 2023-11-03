@@ -33,10 +33,10 @@ namespace Menu
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
 			if (auto inst = GetInstance(); inst != nullptr) {
 
-				std::unordered_map<SerializableActorHandle, Creator::BAKE_DATA> bakeData;
+				std::vector<std::pair<SerializableActorHandle, Creator::BAKE_DATA>> bakeData;
 				for (const auto& hndl : inst->managedActors) {
 					BodyAnimation::GraphHook::VisitGraph(hndl.get().get(), [&](Graph* g) {
-						bakeData[hndl] = g->creator->SetupBake();
+						bakeData.emplace_back(hndl, g->creator->SetupBake());
 					});
 				}
 
@@ -63,18 +63,18 @@ namespace Menu
 					}
 				}
 
-				auto path = std::format("{}_bakedAnim.nanim", data->GetSavePath());
-				size_t num = 0;
+				auto path = data->GetSavePath() + "_";
 				BodyAnimation::NANIM animContainer;
 
-				for (auto& pair : bakeData) {
+				for (size_t i = 0; i < bakeData.size(); i++) {
+					auto& pair = bakeData[i];
+					auto& a = data->studioActors[i];
 					BodyAnimation::GraphHook::VisitGraph(pair.first.get().get(), [&](Graph* g) {
-						animContainer.SetAnimation(std::format("{}", num++), g->nodeMap, pair.second.animData.get());
+						animContainer.SetAnimation("default", g->nodeMap, pair.second.animData.get());
 					});
+					animContainer.SaveToFile(std::format("{}{}.nanim", path, a.animId));
 				}
-				if (animContainer.SaveToFile(path)) {
-					result = path;
-				}
+				result = (path + "*.nanim");
 			}
 			return result;
 		}
@@ -223,7 +223,8 @@ namespace Menu
 			
 			if (!a_target)
 				return result;
-			
+
+			auto data = PersistentMenuState::CreatorData::GetSingleton();
 			PackageOverride::Set(a_target->GetActorHandle(), Data::Forms::NAFLockPackage, true);
 			managedActors.push_back(a_target->GetActorHandle());
 			BodyAnimation::GraphHook::VisitGraph(a_target, [&](Graph* g) {
@@ -232,6 +233,26 @@ namespace Menu
 				}
 				result = g->creator->LoadFromNANIM(animId, animContainer, sampleRate);
 				g->state = Graph::kGenerator;
+
+				if (auto meta = animContainer.GetMetaData(animId); meta.has_value()) {
+					if (auto iter = meta->data.find("enabled_ik_chains"); iter != meta->data.end()) {
+						for (auto& c : iter->second) {
+							g->ikManager.SetChainEnabled(c, true);
+						}
+					}
+					for (auto& c : g->ikManager.GetChainList()) {
+						if (auto iter = meta->data.find(std::format("ik_target_parent_{}", c)); iter != meta->data.end() && iter->second.size() >= 2) {
+							const auto& targetAnim = iter->second[0];
+							const auto& targetNode = iter->second[1];
+							for (auto& sData : data->studioActors) {
+								if (sData.animId == targetAnim) {
+									g->ikManager.SetChainTargetParent(c, sData.actor->GetHandle(), targetNode);
+									break;
+								}
+							}
+						}
+					}
+				}
 			});
 			return result;
 		}
@@ -309,8 +330,9 @@ namespace Menu
 			screenPos.x = stageWidth * screenPos.x;
 			obj.SetMember("x", screenPos.x);
 			obj.SetMember("y", screenPos.y);
-			obj.SetMember("scaleX", 3.5f * (1.0f - screenPos.z));
-			obj.SetMember("scaleY", 3.5f * (1.0f - screenPos.z));
+			float s = (3.5f * (1.0f - screenPos.z)) * nodeSizeModifier;
+			obj.SetMember("scaleX", s);
+			obj.SetMember("scaleY", s);
 		}
 
 		void SetScrubberPosition(double p) {
@@ -806,6 +828,20 @@ namespace Menu
 						}
 						break;
 					}
+					case RE::BS_BUTTON_CODE::kLBracket:
+					{
+						if (a_event->QJustPressed() && IsCtrlModifierActive()) {
+							nodeSizeModifier -= 0.05f;
+						}
+						break;
+					}
+					case RE::BS_BUTTON_CODE::kRBracket:
+					{
+						if (a_event->QJustPressed() && IsCtrlModifierActive()) {
+							nodeSizeModifier += 0.05f;
+						}
+						break;
+					}
 					default:
 					{
 						HandleCameraInput(a_event);
@@ -856,6 +892,27 @@ namespace Menu
 			for (auto& a : data->studioActors) {
 				BodyAnimation::GraphHook::VisitGraph(a.actor.get(), [&](Graph* g) {
 					g->creator->SaveToNANIM(a.animId, data->bodyAnims);
+
+					BodyAnimation::NANIM::AnimationData::MetaData meta;
+					auto& enabledChains = meta.data["enabled_ik_chains"];
+					for (auto& c : g->ikManager.GetChainList()) {
+						if (g->ikManager.GetChainEnabled(c)) {
+							enabledChains.push_back(c);
+						}
+
+						auto p = g->ikManager.GetChainTargetParent(c);
+						if (auto actor = p.first.get(); actor != nullptr) {
+							std::string targetAnim = "";
+							for (auto& sData : data->studioActors) {
+								if (sData.actor.get() == actor.get()) {
+									targetAnim = sData.animId;
+									break;
+								}
+							}
+							meta.data[std::format("ik_target_parent_{}", c)] = { targetAnim, p.second };
+						}
+					}
+					data->bodyAnims.SetMetaData(a.animId, meta);
 				});
 			}
 			if (data->activeBodyAnim.has_value()) {
@@ -910,6 +967,7 @@ namespace Menu
 
 		float stageHeight = 0.0f;
 		float stageWidth = 0.0f;
+		float nodeSizeModifier = 1.0f;
 
 	private:
 		enum SelectionType

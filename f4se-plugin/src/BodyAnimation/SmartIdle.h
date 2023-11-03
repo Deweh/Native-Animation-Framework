@@ -43,9 +43,12 @@ namespace BodyAnimation
 
 			std::optional<std::string> animEvent = std::nullopt;
 			std::optional<std::string> graph = std::nullopt;
+			RE::BGSAction* resetGraph = RE::BGSAnimationSystemUtils::GetDefaultObjectForActionInitializeToBaseState();
+			RE::TESActionData action(RE::ActionInput::ACTIONPRIORITY::kTry, targetActor, resetGraph);
 
 			switch (_type) {
 			case kForm:
+				BodyAnimation::GraphHook::StopAnimation(targetActor, 0.6f);
 				if (targetActor->currentProcess) {
 					auto idl = RE::TESForm::GetFormByEditorID<RE::TESIdleForm>(_data);
 					if (idl == nullptr)
@@ -55,6 +58,7 @@ namespace BodyAnimation
 				}
 				return false;
 			case kHKX:
+				BodyAnimation::GraphHook::StopAnimation(targetActor, 0.6f);
 				if (auto r = Data::GetRace(targetActor); r != nullptr) {
 					animEvent = r->startEvent;
 					graph = r->graph;
@@ -62,10 +66,23 @@ namespace BodyAnimation
 				Scene::DynamicIdle::Play(targetActor, _data, animEvent, graph);
 				return true;
 			case kNAF:
-				return BodyAnimation::GraphHook::LoadAndPlayAnimation(targetActor, USERDATA_DIR + _data, 1.0f, _id);
+				RE::BGSAnimationSystemUtils::RunActionOnActor(targetActor, action);
+				return BodyAnimation::GraphHook::LoadAndPlayAnimation(targetActor, USERDATA_DIR + _data, 0.6f, _id);
 			default:
 				return false;
 			}
+		}
+
+		static void Stop(RE::Actor* targetActor, const std::optional<std::string>& stopEvent = std::nullopt) {
+			if (!targetActor)
+				return;
+
+			BodyAnimation::GraphHook::StopAnimation(targetActor, 0.6f);
+			RE::BGSAction* resetGraph = RE::BGSAnimationSystemUtils::GetDefaultObjectForActionInitializeToBaseState();
+			RE::TESActionData action(RE::ActionInput::ACTIONPRIORITY::kTry, targetActor, resetGraph);
+			RE::BGSAnimationSystemUtils::RunActionOnActor(targetActor, action);
+			if (stopEvent.has_value())
+				targetActor->NotifyAnimationGraphImpl(stopEvent.value());
 		}
 
 		static bool GetGraphTime(RE::Actor* a, GameUtil::GraphTime& result)

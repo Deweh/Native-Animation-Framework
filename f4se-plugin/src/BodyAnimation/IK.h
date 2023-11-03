@@ -288,7 +288,7 @@ namespace BodyAnimation
 		virtual RE::NiPoint3 GetPole() = 0;
 		virtual void SetPoleLocal(const RE::NiPoint3& p) = 0;
 		virtual RE::NiPoint3 GetPoleLocal() = 0;
-		virtual void SetTargetParent(RE::NiAVObject* parent) = 0;
+		virtual void SetTargetParent(RE::NiAVObject* parent, RE::NiNode* parentRoot) = 0;
 
 		virtual ~IKHolder(){};
 	};
@@ -299,9 +299,11 @@ namespace BodyAnimation
 		std::string poleParentName;
 		RE::NiPointer<RE::NiNode> rootNode = nullptr;
 		RE::NiPointer<RE::NiAVObject> poleParent = nullptr;
-		RE::NiPointer<RE::NiAVObject> targetParent = nullptr;
 		RE::NiPointer<RE::NiAVObject> targetNodes[3];
 		IKTwoBoneChain chain;
+
+		RE::NiPointer<RE::NiAVObject> targetParent = nullptr;
+		RE::NiPointer<RE::NiNode> targetParentRoot = nullptr;
 
 		IKTwoBoneHolder(const std::string_view& b1, const std::string_view& b2, const std::string_view& b3, const std::string& poleParentName, const RE::NiPoint3& poleStartPos) :
 			poleParentName(poleParentName)
@@ -332,7 +334,11 @@ namespace BodyAnimation
 
 		virtual void SetTargetLocal(const NodeTransform& target) {
 			if (targetParent != nullptr) {
-				chain.SetTargetLocal(target, targetParent->world);
+				if (targetParentRoot != nullptr) {
+					chain.SetTargetLocal(target, MathUtil::CalculateWorldAscending(targetParentRoot.get(), targetParent.get()));
+				} else {
+					chain.SetTargetLocal(target, targetParent->world);
+				}
 			} else if (rootNode != nullptr) {
 				chain.SetTargetLocal(target, rootNode->world);
 			}
@@ -347,8 +353,9 @@ namespace BodyAnimation
 			return NodeTransform::Identity();
 		}
 
-		virtual void SetTargetParent(RE::NiAVObject* parent) {
+		virtual void SetTargetParent(RE::NiAVObject* parent, RE::NiNode* parentRoot) {
 			targetParent.reset(parent);
+			targetParentRoot.reset(parentRoot);
 		}
 
 		virtual void SetPole(const RE::NiPoint3& p) {
@@ -505,6 +512,18 @@ namespace BodyAnimation
 			chainActiveCallback(oneEnabled);
 		}
 
+		bool GetChainEnabled(const std::string& id)
+		{
+			bool result = false;
+			for (auto& h : holders) {
+				if (h->holderId == id) {
+					result = h->holderEnabled;
+					break;
+				}
+			}
+			return result;
+		}
+
 		void SetChainTarget(const std::string& id, const NodeTransform& a_target) {
 			for (auto& h : holders) {
 				if (h->holderId == id) {
@@ -519,10 +538,10 @@ namespace BodyAnimation
 				if (h->holderId == id) {
 					h->targetRef = a_ref;
 					h->targetNode = a_nodeName;
-					h->SetTargetParent(nullptr);
+					h->SetTargetParent(nullptr, nullptr);
 					if (auto refPtr = a_ref.get(); refPtr != nullptr) {
 						if (auto _3d = refPtr->Get3D(); _3d != nullptr) {
-							h->SetTargetParent(_3d->GetObjectByName(h->targetNode));
+							h->SetTargetParent(_3d->GetObjectByName(h->targetNode), _3d->IsNode());
 							if (reg3dCallback != nullptr) {
 								(*reg3dCallback)(a_ref);
 							}
@@ -533,11 +552,25 @@ namespace BodyAnimation
 			}
 		}
 
-		bool GetChainEnabled(const std::string& id) {
-			bool result = false;
+		void ClearChainTargetParent(const std::string& id) {
 			for (auto& h : holders) {
 				if (h->holderId == id) {
-					result = h->holderEnabled;
+					h->targetRef.reset();
+					h->targetNode.clear();
+					h->SetTargetParent(nullptr, nullptr);
+					break;
+				}
+			}
+		}
+
+		std::pair<SerializableRefHandle, std::string> GetChainTargetParent(const std::string& id) {
+			std::pair<SerializableRefHandle, std::string> result;
+			for (auto& h : holders) {
+				if (h->holderId == id) {
+					if (h->targetRef.get() != nullptr) {
+						result.first = h->targetRef;
+						result.second = h->targetNode;
+					}
 					break;
 				}
 			}
@@ -600,9 +633,9 @@ namespace BodyAnimation
 			auto _3d = a_ref->Get3D();
 			for (auto& h : holders) {
 				if (h->targetRef.hash() == hndl.native_handle_const()) {
-					h->SetTargetParent(nullptr);
+					h->SetTargetParent(nullptr, nullptr);
 					if (_3d != nullptr) {
-						h->SetTargetParent(_3d->GetObjectByName(h->targetNode));
+						h->SetTargetParent(_3d->GetObjectByName(h->targetNode), _3d->IsNode());
 					}
 				}
 			}

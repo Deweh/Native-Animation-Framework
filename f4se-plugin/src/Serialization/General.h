@@ -223,6 +223,10 @@ namespace Serialization
 				return data;
 			}
 
+			void reset() {
+				data = EmptyHandle<T>();
+			}
+
 			RE::NiPointer<T> get() const {
 				return data.get();
 			}

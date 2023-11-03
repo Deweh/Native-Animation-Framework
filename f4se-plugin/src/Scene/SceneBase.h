@@ -459,11 +459,7 @@ namespace Scene
 					stopEvent = r->stopEvent;
 				}
 				if (requiresReset || anim == nullptr) {
-					RE::BGSAction* resetGraph = RE::BGSAnimationSystemUtils::GetDefaultObjectForActionInitializeToBaseState();
-					RE::TESActionData action(RE::ActionInput::ACTIONPRIORITY::kTry, currentActor, resetGraph);
-					RE::BGSAnimationSystemUtils::RunActionOnActor(currentActor, action);
-					if (stopEvent.has_value())
-						currentActor->NotifyAnimationGraphImpl(stopEvent.value());
+					BodyAnimation::SmartIdle::Stop(currentActor, stopEvent);
 				}
 			});
 

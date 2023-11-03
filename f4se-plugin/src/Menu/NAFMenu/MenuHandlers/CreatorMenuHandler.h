@@ -265,7 +265,17 @@ namespace Menu::NAF
 		void EditActorMultiChar(int) {
 			GetActorInput([&](bool ok, RE::Actor* a) {
 				if (ok) {
-					data->studioActors[selectedStudioActor].actor.reset(a);
+					bool inSlot = false;
+					for (size_t i = 0; i < data->studioActors.size(); i++) {
+						if (i != selectedStudioActor && data->studioActors[i].actor.get() == a) {
+							manager->ShowNotification("Multiple slots cannot use the same actor.");
+							inSlot = true;
+							break;
+						}
+					}
+					if (!inSlot) {
+						data->studioActors[selectedStudioActor].actor.reset(a);
+					}
 				}
 				manager->RefreshList(true);
 			});
@@ -277,16 +287,33 @@ namespace Menu::NAF
 		}
 
 		void MultiCharChooseAnim(std::string animName, int) {
-			data->studioActors[selectedStudioActor].animId = animName;
+			bool inSlot = false;
+			for (size_t i = 0; i < data->studioActors.size(); i++) {
+				if (i != selectedStudioActor && data->studioActors[i].animId == animName) {
+					manager->ShowNotification("Multiple slots cannot use the same animation.");
+					inSlot = true;
+					break;
+				}
+			}
+			if (!inSlot) {
+				data->studioActors[selectedStudioActor].animId = animName;
+			}
 			currentStage = kMultiCharSelection;
 			manager->RefreshList(true);
 		}
 
 		void MultiCharFinish(int) {
+			float sharedTime = 0.0f;
 			for (auto& a : data->studioActors) {
 				if (a.actor == nullptr || a.animId.empty()) {
 					manager->ShowNotification("All slots must be filled.");
 					return;
+				} else if (auto anim = data->QBodyAnimProject(a.animId);
+					anim == nullptr || (sharedTime != 0.0f && std::fabs(anim->duration - sharedTime) > 0.001f)) {
+					manager->ShowNotification("All animations must have the same duration.");
+					return;
+				} else {
+					sharedTime = anim->duration;
 				}
 			}
 
