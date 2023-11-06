@@ -121,7 +121,7 @@ namespace Data
 			return m;
 		}
 
-		bool hidden;
+		bool hidden = false;
 		Type posType;
 		std::string idForType;
 		std::string startEquipSet;

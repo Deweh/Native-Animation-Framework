@@ -52,7 +52,7 @@ namespace Data
 			bool dynamicIdle = false;
 			bool loopFaceAnim = false;
 			std::string rootBehavior;
-			std::string idle;
+			std::string idle[2];
 			integrated_optional<std::string> faceAnim;
 			integrated_optional<Morphs> morphs;
 			integrated_optional<std::string> startEquipSet;
@@ -65,7 +65,7 @@ namespace Data
 				Slot result;
 				result.rootBehavior = a->race->behaviorGraphProjectName->c_str();
 				result.gender = static_cast<ActorGender>(a->GetSex());
-				result.idle = hkxPath;
+				result.idle[0] = hkxPath;
 				result.dynamicIdle = true;
 				return result;
 			}
@@ -93,11 +93,13 @@ namespace Data
 				}
 
 				if (dynamicIdle) {
-					m[Scene::PropType::kDynIdle].value = idle;
+					m[Scene::PropType::kDynIdle].value = idle[0];
+					m[Scene::PropType::kDynIdleID].value = idle[1];
 					m.erase(Scene::PropType::kIdle);
 				} else {
 					m[Scene::PropType::kIdle].value = GetIdle();
 					m.erase(Scene::PropType::kDynIdle);
+					m.erase(Scene::PropType::kDynIdleID);
 				}
 
 				m[Scene::PropType::kLoopFaceAnim].value = loopFaceAnim;
@@ -111,16 +113,21 @@ namespace Data
 			}
 
 			RE::TESIdleForm* GetIdle() const {
-				RE::TESIdleForm* result = RE::TESForm::GetFormByEditorID<RE::TESIdleForm>(idle);
+				RE::TESIdleForm* result = RE::TESForm::GetFormByEditorID<RE::TESIdleForm>(idle[0]);
 				if (!result)
 					result = Data::Forms::LooseIdleStop;
 				return result;
 			}
 
 			template <class Archive>
-			void serialize(Archive& ar, const uint32_t)
+			void serialize(Archive& ar, const uint32_t ver)
 			{
-				ar(rootBehavior, gender, idle, dynamicIdle, faceAnim, morphs, startEquipSet, stopEquipSet, actions);
+				if (ver < 2) {
+					ar(rootBehavior, gender, idle[0], dynamicIdle, faceAnim, morphs, startEquipSet, stopEquipSet, actions);
+				} else {
+					ar(rootBehavior, gender, idle[0], idle[1], dynamicIdle, faceAnim, morphs, startEquipSet, stopEquipSet, actions);
+				}
+				
 			}
 		};
 
@@ -248,13 +255,13 @@ namespace Data
 				if (tmp.size() > 0) {
 					s.idleRequiresConvert = false;
 					s.dynamicIdle = true;
-					s.idle = tmp;
+					s.idle[0] = tmp;
+					s.idle[1] = "default";
 				} else {
 					m.GetOptNode(&tmp, ""s, "idle", true, true, "Animation actor node has no idle source!", "idleSource", "source");
-					s.idle.append(tmp);
-					s.idle.append(IDLE_DELIMITER);
+					s.idle[0] = tmp;
 					m.GetOptNode(&tmp, ""s, "idle", true, true, "Animation actor node has no idle form!", "idleForm", "idle", "form");
-					s.idle.append(tmp);
+					s.idle[1] = tmp;
 				}
 				
 				m(&s.rootBehavior, "Human"s, true, false, "", "skeleton");
@@ -410,3 +417,5 @@ namespace Data
 		}
 	};
 }
+
+CEREAL_CLASS_VERSION(Data::Animation::Slot, 2);

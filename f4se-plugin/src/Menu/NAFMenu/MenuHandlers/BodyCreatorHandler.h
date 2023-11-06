@@ -14,31 +14,36 @@ namespace Menu::NAF
 			kManageIK,
 			kManageNodes,
 			kSelectTarget,
-			kSelectAttachChain,
-			kSelectAttachNode
+			kManageIKChain,
+			kSelectAttachNode,
+			kPackage
 		};
 
 		Stage currentStage = kManageNodes;
 		bool attachingNode = false;
-		std::string attachChain = "";
 		size_t attachTarget = 0;
+		std::string activeChain = "";
+
+		std::string pkgId = "";
+		bool restrictGenders = true;
 
 		virtual BindingsVector GetBindings() override
 		{
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
-			manager->SetMenuTitle(data->activeBodyAnim.has_value() ? data->activeBodyAnim.value() : "<Error>");
 			BindingsVector result;
 
 			ConfigurePanel({
 				{ "Save Changes", Button, Bind(&BodyCreatorHandler::SaveChanges) },
-				{ "Bake Animation", Button, Bind(&BodyCreatorHandler::BakeAnim) },
-				{ "Select Target", Button, Bind(&BodyCreatorHandler::GotoSelectTarget) },
-				{ "Attach IK Target", Button, Bind(&BodyCreatorHandler::GotoAttachChain) }
+				{ "Bake Animation(s)", Button, Bind(&BodyCreatorHandler::BakeAnim) },
+				{ "Package Animation(s)", Button, Bind(&BodyCreatorHandler::GotoPackageAnim) },
+				{ "Manage IK Chains", Button, Bind(&BodyCreatorHandler::ManageIKChains) },
+				{ "Select Target", Button, Bind(&BodyCreatorHandler::GotoSelectTarget) }
 			});
 
 			switch (currentStage) {
 				case kSelectTarget:
 				{
+					manager->SetMenuTitle("Select Target");
 					for (size_t i = 0; i < data->studioActors.size(); i++) {
 						result.push_back({ GameUtil::GetActorName(data->studioActors[i].actor.get()), Bind(&BodyCreatorHandler::SelectTarget, i) });
 					}
@@ -46,8 +51,7 @@ namespace Menu::NAF
 				}
 				case kManageNodes:
 				{
-					result.push_back({ "[Manage IK Chains]", Bind(&BodyCreatorHandler::ManageIKChains) });
-
+					manager->SetMenuTitle("Node Visibility");
 					auto nodes = NAFStudioMenu::GetTargetNodes();
 					for (size_t i = 0; i < nodes.size(); i++) {
 						const auto& n = nodes[i];
@@ -57,31 +61,69 @@ namespace Menu::NAF
 				}
 				case kManageIK:
 				{
+					manager->SetMenuTitle("IK Chains");
 					auto chains = NAFStudioMenu::GetTargetChains();
 					for (const auto& c : chains) {
-						result.push_back({ std::format("[{}] {}", (c.second ? "X" : " "), c.first), Bind(&BodyCreatorHandler::SetChainEnabled, c.first, !c.second) });
+						result.push_back({ std::format("[{}] {}", (c.second ? "X" : " "), c.first), Bind(&BodyCreatorHandler::GotoManageChain, c.first) });
 					}
 					break;
 				}
-				case kSelectAttachChain:
+				case kManageIKChain:
 				{
-					auto chains = NAFStudioMenu::GetTargetChains();
-					for (const auto& c : chains) {
-						result.push_back({ c.first, Bind(&BodyCreatorHandler::AttachChainSelected, c.first) });
+					manager->SetMenuTitle(activeChain);
+					std::pair<SerializableRefHandle, std::string> curTargetParent;
+					if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
+						inst->VisitTargetGraph([&](BodyAnimation::NodeAnimationGraph* g) {
+							curTargetParent = g->ikManager.GetChainTargetParent(activeChain);
+						});
 					}
+					std::string prntStr = "Target Parent: [None]";
+					if (auto a = curTargetParent.first.get(); a != nullptr && !curTargetParent.second.empty()) {
+						prntStr = std::format("Target Parent: {} - {}", a->GetBaseFullName(), curTargetParent.second);
+					}
+					result.push_back({ NAFStudioMenu::GetTargetChainEnabled(activeChain) ? "Disable" : "Enable", Bind(&BodyCreatorHandler::ToggleChainEnabled) });
+					result.push_back({ prntStr, Bind(&BodyCreatorHandler::GotoAttachTarget) });
+					result.push_back({ "Clear Target Parent", Bind(&BodyCreatorHandler::ClearAttachNode) });
 					break;
 				}
 				case kSelectAttachNode:
 				{
+					manager->SetMenuTitle("Select Node");
 					auto nodes = NAFStudioMenu::GetManagedRefNodes(attachTarget);
 					for (auto& n : nodes) {
 						result.push_back({ n, Bind(&BodyCreatorHandler::AttachNodeSelected, n) });
 					}
 					break;
 				}
+				case kPackage:
+				{
+					result.push_back({ std::format("Position ID: {}", pkgId.empty() ? "[None]" : pkgId), Bind(&BodyCreatorHandler::SetPackageID) });
+					result.push_back({ std::format("Restrict Genders: {}", restrictGenders ? "ON" : "OFF"), Bind(&BodyCreatorHandler::ToggleRestrictGenders) });
+					result.push_back({ "Package", Bind(&BodyCreatorHandler::PackageAnim) });
+					break;
+				}
 			}
 			
 			return result;
+		}
+
+		void SetPackageID(int) {
+			GetTextInput([&](bool ok, const std::string& text) {
+				if (ok) {
+					pkgId = text;
+					manager->RefreshList(false);
+				}
+			});
+		}
+
+		void ToggleRestrictGenders(int) {
+			restrictGenders = !restrictGenders;
+			manager->RefreshList(false);
+		}
+
+		void GotoPackageAnim(int) {
+			currentStage = kPackage;
+			manager->RefreshList(true);
 		}
 
 		void GotoSelectTarget(int) {
@@ -90,15 +132,15 @@ namespace Menu::NAF
 			manager->RefreshList(true);
 		}
 
-		void GotoAttachChain(int) {
-			currentStage = kSelectAttachChain;
+		void GotoAttachTarget(int) {
+			attachingNode = true;
+			currentStage = kSelectTarget;
 			manager->RefreshList(true);
 		}
 
-		void AttachChainSelected(const std::string& id, int) {
-			attachChain = id;
-			attachingNode = true;
-			currentStage = kSelectTarget;
+		void GotoManageChain(const std::string& id, int) {
+			activeChain = id;
+			currentStage = kManageIKChain;
 			manager->RefreshList(true);
 		}
 
@@ -120,12 +162,21 @@ namespace Menu::NAF
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
 			if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
 				inst->VisitTargetGraph([&](BodyAnimation::NodeAnimationGraph* g) {
-					g->ikManager.SetChainTargetParent(attachChain, data->studioActors[attachTarget].actor->GetHandle(), nodeName);
+					g->ikManager.SetChainTargetParent(activeChain, data->studioActors[attachTarget].actor->GetHandle(), nodeName);
 				});
 			}
-			NAFStudioMenu::ResetTargetChain(attachChain);
-			currentStage = kManageNodes;
+			NAFStudioMenu::ResetTargetChain(activeChain);
+			currentStage = kManageIKChain;
 			manager->RefreshList(true);
+		}
+
+		void ClearAttachNode(int) {
+			if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
+				inst->VisitTargetGraph([&](BodyAnimation::NodeAnimationGraph* g) {
+					g->ikManager.ClearChainTargetParent(activeChain);
+				});
+			}
+			manager->RefreshList(false);
 		}
 
 		void SaveChanges(int) {
@@ -145,10 +196,20 @@ namespace Menu::NAF
 
 		void BakeAnim(int) {
 			if (auto res = NAFStudioMenu::BakeAnimation(); res.has_value()) {
-				manager->ShowNotification(std::format("Saved baked animation to {}", res.value()));
+				manager->ShowNotification(std::format("Saved baked animation(s) to {}", res.value()));
 			} else {
-				manager->ShowNotification("Failed to save baked animation.");
+				manager->ShowNotification("Failed to save baked animation(s).");
 			}
+		}
+
+		void PackageAnim(int) {
+			if (auto res = NAFStudioMenu::BakeAnimation(true, pkgId, restrictGenders); res.has_value()) {
+				manager->ShowNotification(std::format("Saved packaged animation(s) to {}", res.value()));
+			} else {
+				manager->ShowNotification("Failed to save packaged animation(s).");
+			}
+			currentStage = kManageNodes;
+			manager->RefreshList(true);
 		}
 
 		void ManageIKChains(int) {
@@ -161,22 +222,45 @@ namespace Menu::NAF
 			manager->RefreshList(false);
 		}
 
-		void SetChainEnabled(const std::string& c, bool enable, int) {
+		void ToggleChainEnabled(int) {
+			bool enable = !NAFStudioMenu::GetTargetChainEnabled(activeChain);
+
 			if (enable) {
-				NAFStudioMenu::ResetTargetChain(c);
+				NAFStudioMenu::ResetTargetChain(activeChain);
 			}
-			NAFStudioMenu::SetTargetChainEnabled(c, enable);
+			NAFStudioMenu::SetTargetChainEnabled(activeChain, enable);
 			manager->RefreshList(false);
 		}
 
 		virtual void BackImpl() override
 		{
-			if (currentStage == kManageIK || currentStage == kSelectTarget ||
-				currentStage == kSelectAttachChain || currentStage == kSelectAttachNode) {
+			bool exit = false;
+			switch (currentStage) {
+			case kManageIKChain:
+				currentStage = kManageIK;
+				break;
+			case kManageIK:
+			case kPackage:
 				currentStage = kManageNodes;
-				manager->RefreshList(true);
-			} else {
+				break;
+			case kSelectAttachNode:
+				currentStage = kSelectTarget;
+				break;
+			case kSelectTarget:
+				if (attachingNode) {
+					currentStage = kManageIKChain;
+				} else {
+					currentStage = kManageNodes;
+				}
+				break;
+			default:
+				exit = true;
+			}
+
+			if (exit) {
 				manager->CloseMenu();
+			} else {
+				manager->RefreshList(true);
 			}
 		}
 	};

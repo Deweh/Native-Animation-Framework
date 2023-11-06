@@ -57,6 +57,8 @@ namespace Data
 #include "Data/User/Race.h"
 #include "Data/User/FaceAnim.h"
 #include <shared_mutex>
+#include "BodyAnimation/NodeAnimationData.h"
+#include "BodyAnimation/NANIM.h"
 
 namespace Data
 {
@@ -276,20 +278,23 @@ namespace Data
 			}
 
 			std::vector<std::pair<const std::string, const std::filesystem::file_time_type>> xmlFiles;
+			std::vector<std::string> nanimFiles;
 
 			try {
-				for (auto& f : std::filesystem::directory_iterator(USERDATA_DIR)) {
+				for (auto& f : std::filesystem::recursive_directory_iterator(USERDATA_DIR)) {
 					auto p = f.path();
-					if (f.exists() && !f.is_directory() && p.has_filename() && p.has_extension() && p.extension().generic_string() == ".xml") {
-						xmlFiles.push_back({ p.generic_string(), std::filesystem::last_write_time(p) });
+					if (f.exists() && !f.is_directory() && p.has_filename() && p.has_extension()) {
+						auto ex = p.extension().generic_string();
+						if (ex == ".xml") {
+							xmlFiles.push_back({ p.generic_string(), std::filesystem::last_write_time(p) });
+						} else if (ex == ".nanim") {
+							nanimFiles.push_back(p.generic_string());
+						}
 					}
 				}
 			} catch (std::exception ex) {
 				logger::warn("Failed to get contents of '{}' directory. Full message: {}", USERDATA_DIR, ex.what());
 			}
-
-			if (verbose)
-				logger::info(FMT_STRING("Number of XML files in NAF directory: {}"), xmlFiles.size());
 
 			Utility::StartPerformanceCounter();
 			
@@ -306,14 +311,19 @@ namespace Data
 			}
 
 			concurrency::parallel_for_each(XMLCache::primaryCache.files.begin(), XMLCache::primaryCache.files.end(), [&](auto& iter) {
-				if (ParseXML(iter.data, iter.filename, verbose)) {
-					if (verbose)
-						logger::info("Loaded {}", iter.filename);
+				if (ParseXML(iter.data, iter.filename, verbose) && verbose) {
+					logger::info("Loaded {}", iter.filename);
 				}
 			});
 
 			XMLCache::primaryCache.nextFaceAnimId = FaceAnim::nextFileId;
 			XMLCache::Flush();
+
+			concurrency::parallel_for_each(nanimFiles.begin(), nanimFiles.end(), [&](const std::string& f) {
+				if (ParseNANIM(f, verbose) && verbose) {
+					logger::info("Loaded {}", f);
+				}
+			});
 
 			if (verbose) {
 				auto performanceSeconds = Utility::GetPerformanceCounter();
@@ -401,6 +411,36 @@ namespace Data
 			{ "tag", [](auto& m) { TagData::Parse(m); } },
 			{ "graph", [](auto& m) { ParseXMLType<GraphInfo>(GraphInfos, m); } }
 		};
+
+		static bool ParseNANIM(const std::string& fName, bool = true) {
+			BodyAnimation::NANIM container;
+			if (!container.LoadFromFile(fName, true))
+				return false;
+			auto& info = container.characters;
+			if (info.data.empty())
+				return false;
+
+			auto anim = std::make_shared<Data::Animation>();
+			anim->id = info.animId;
+			anim->loadPriority = 1;
+			for (const auto& c : info.data) {
+				auto& slot = anim->slots.emplace_back();
+				slot.dynamicIdle = true;
+				slot.gender = c.gender;
+				slot.idle[0] = std::filesystem::path(fName).lexically_relative(USERDATA_DIR).generic_string();
+				slot.idle[1] = c.animId;
+				slot.rootBehavior = c.behaviorGraphProject;
+			}
+			Animations.priority_insert(anim);
+
+			auto pos = std::make_shared<Data::Position>();
+			pos->id = info.animId;
+			pos->idForType = info.animId;
+			pos->loadPriority = 1;
+			pos->posType = Data::Position::kAnimation;
+			Positions.priority_insert(pos);
+			return true;
+		}
 
 		static bool ParseXML(const std::string& f, std::string_view fName, bool verbose = true)
 		{
@@ -527,16 +567,11 @@ namespace Data
 					auto& s = *it;
 
 					if (s.idleRequiresConvert) {
-						size_t delimiterPos = s.idle.find(IDLE_DELIMITER);
-						const std::string idleSource = s.idle.substr(0, delimiterPos);
-						delimiterPos += (IDLE_DELIMITER).size();
-						const std::string idleForm = s.idle.substr(delimiterPos, s.idle.size() - delimiterPos);
-
-						const auto iForm = IdentifiableObject::StringsToForm<RE::TESIdleForm>(idleSource, idleForm, verbose);
+						const auto iForm = IdentifiableObject::StringsToForm<RE::TESIdleForm>(s.idle[0], s.idle[1], verbose);
 						if (iForm == nullptr) {
-							s.idle = "LooseIdleStop";
+							s.idle[0] = "LooseIdleStop";
 						} else {
-							s.idle = iForm->GetFormEditorID();
+							s.idle[0] = iForm->GetFormEditorID();
 						}
 
 						s.idleRequiresConvert = false;

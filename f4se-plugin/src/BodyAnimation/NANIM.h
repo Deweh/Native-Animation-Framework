@@ -35,13 +35,6 @@ namespace BodyAnimation
 		{
 			struct MetaData
 			{
-				struct IKTargetParent
-				{
-					std::string chain;
-					std::string targetAnim;
-					std::string targetNode;
-				};
-
 				std::map<std::string, std::vector<std::string>> data;
 
 				bool from_json(const nlohmann::json& j)
@@ -199,7 +192,81 @@ namespace BodyAnimation
 			}
 		};
 
-		bool LoadFromFile(const std::string& fileName) {
+		struct CharacterData
+		{
+			struct Character
+			{
+				ActorGender gender = ActorGender::Any;
+				std::string behaviorGraphProject;
+				std::string animId;
+			};
+
+			std::vector<Character> data;
+			std::string animId;
+
+			static std::string GetGenderString(ActorGender g) {
+				switch (g) {
+				case ActorGender::Male:
+					return "Male";
+				case ActorGender::Female:
+					return "Female";
+				default:
+					return "Any";
+				}
+			}
+
+			bool from_json(const nlohmann::json& j) {
+				if (!JUtil::ContainsType(j, "character_data", jt::object)) {
+					return false;
+				}
+
+				auto& info = j["character_data"];
+				if (!JUtil::ContainsType(info, "id", jt::string) || !JUtil::ContainsTypedArray(info, "characters", jt::object)) {
+					return false;
+				}
+
+				animId = info["id"];
+
+				for (auto& i : info["characters"]) {
+					if (!JUtil::ContainsType(i, "gender", jt::string) ||
+						!JUtil::ContainsType(i, "graph", jt::string) ||
+						!JUtil::ContainsType(i, "id", jt::string)) {
+						continue;
+					}
+
+					auto& d = data.emplace_back();
+					std::string g = i["gender"];
+					if (g == "Male") {
+						d.gender = ActorGender::Male;
+					} else if (g == "Female") {
+						d.gender = ActorGender::Female;
+					} else {
+						d.gender = ActorGender::Any;
+					}
+					d.animId = i["id"];
+					d.behaviorGraphProject = i["graph"];
+				}
+				return true;
+			}
+
+			void to_json(nlohmann::json& j) const
+			{
+				if (!data.empty()) {
+					auto& d = j["character_data"];
+					d["id"] = animId;
+					auto& arr = d["characters"];
+
+					for (auto& i : data) {
+						auto& cur = arr.emplace_back();
+						cur["gender"] = GetGenderString(i.gender);
+						cur["id"] = i.animId;
+						cur["graph"] = i.behaviorGraphProject;
+					}
+				}
+			}
+		};
+
+		bool LoadFromFile(const std::string& fileName, bool loadCharacters = false) {
 			try {
 				zstr::ifstream file(fileName, std::ios::binary);
 
@@ -208,14 +275,15 @@ namespace BodyAnimation
 					return false;
 				}
 
-				return LoadFromStream(file);
+				return LoadFromStream(file, loadCharacters);
 			} catch (const std::exception&) {
 				logger::warn("Failed to open {}", fileName);
 				return false;
 			}
 		}
 
-		bool LoadFromStream(std::istream& s) {
+		bool LoadFromStream(std::istream& s, bool loadCharacters = false)
+		{
 			nlohmann::json data;
 			try {
 				data = nlohmann::json::from_bson(s);
@@ -224,7 +292,12 @@ namespace BodyAnimation
 				return false;
 			}
 
-			return data.is_object() && version.from_json(data) && animations.from_json(data);
+			if (loadCharacters) {
+				return data.is_object() && characters.from_json(data);
+			} else {
+				return data.is_object() && version.from_json(data) && animations.from_json(data);
+			}
+			
 		}
 
 		bool SaveToFile(const std::string& fileName) const {
@@ -247,6 +320,7 @@ namespace BodyAnimation
 			nlohmann::json output;
 			version.to_json(output);
 			animations.to_json(output);
+			characters.to_json(output);
 
 			try {
 				nlohmann::json::to_bson(output, s);
@@ -396,5 +470,6 @@ namespace BodyAnimation
 
 		Version version;
 		AnimationCollection animations;
+		CharacterData characters;
 	};
 }

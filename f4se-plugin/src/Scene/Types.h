@@ -21,7 +21,8 @@ namespace Scene
 		kLoopFaceAnim = 9,
 		kHadReadyWeapon = 10,
 		kWasCommandable = 11,
-		kOffset = 12
+		kOffset = 12,
+		kDynIdleID = 13
 	};
 
 	class ActorProperty

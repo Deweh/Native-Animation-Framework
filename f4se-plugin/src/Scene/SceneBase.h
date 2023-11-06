@@ -242,7 +242,6 @@ namespace Scene
 
 		virtual bool Init(std::shared_ptr<const Data::Position> position) override
 		{
-			IScene::Init(position);
 			startEquipSet = position->startEquipSet;
 			stopEquipSet = position->stopEquipSet;
 			controlSystem = GetControlSystem(position);
@@ -489,7 +488,8 @@ namespace Scene
 					cachedIdlesMap[hndl].idle.SetIdleForm(idl.value());
 				} else if (auto dynIdl = GetProperty<std::string>(props, kDynIdle); dynIdl.has_value()) {
 					if (Utility::StringEndsWith(dynIdl.value(), ".nanim")) {
-						cachedIdlesMap[hndl].idle.SetNAFPath(dynIdl.value(), "default");
+						auto idleId = GetProperty<std::string>(props, kDynIdleID);
+						cachedIdlesMap[hndl].idle.SetNAFPath(dynIdl.value(), idleId.has_value() ? idleId.value() : "default");
 					} else {
 						cachedIdlesMap[hndl].idle.SetHKXPath(dynIdl.value());
 					}
@@ -725,6 +725,7 @@ namespace Scene
 		if (overrideId) {
 			newScene->uid = sceneIdInOut;
 		} else {
+			newScene->uid = Data::Uid::Get();
 			sceneIdInOut = newScene->uid;
 		}
 		newScene->Init(position);

@@ -28,7 +28,8 @@ namespace Menu
 			return studioInstance.load() != nullptr;
 		}
 
-		static std::optional<std::string> BakeAnimation() {
+		static std::optional<std::string> BakeAnimation(bool doPackage = false, const std::string_view& pkgId = "", bool restrictGenders = true)
+		{
 			std::optional<std::string> result = std::nullopt;
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
 			if (auto inst = GetInstance(); inst != nullptr) {
@@ -66,15 +67,35 @@ namespace Menu
 				auto path = data->GetSavePath() + "_";
 				BodyAnimation::NANIM animContainer;
 
-				for (size_t i = 0; i < bakeData.size(); i++) {
-					auto& pair = bakeData[i];
-					auto& a = data->studioActors[i];
-					BodyAnimation::GraphHook::VisitGraph(pair.first.get().get(), [&](Graph* g) {
-						animContainer.SetAnimation("default", g->nodeMap, pair.second.animData.get());
-					});
-					animContainer.SaveToFile(std::format("{}{}.nanim", path, a.animId));
+				if (doPackage) {
+					path += "packaged.nanim";
+					animContainer.characters.animId = pkgId;
+					for (size_t i = 0; i < bakeData.size(); i++) {
+						auto& pair = bakeData[i];
+						auto& a = data->studioActors[i];
+						BodyAnimation::GraphHook::VisitGraph(pair.first.get().get(), [&](Graph* g) {
+							animContainer.SetAnimation(a.animId, g->nodeMap, pair.second.animData.get());
+						});
+						auto& c = animContainer.characters.data.emplace_back();
+						c.animId = a.animId;
+						c.gender = restrictGenders ? static_cast<ActorGender>(a.actor->GetSex()) : ActorGender::Any;
+						RE::BSFixedString behGraph;
+						a.actor->GetAnimationGraphProjectName(behGraph);
+						c.behaviorGraphProject = behGraph;
+					}
+					animContainer.SaveToFile(path);
+					result = path;
+				} else {
+					for (size_t i = 0; i < bakeData.size(); i++) {
+						auto& pair = bakeData[i];
+						auto& a = data->studioActors[i];
+						BodyAnimation::GraphHook::VisitGraph(pair.first.get().get(), [&](Graph* g) {
+							animContainer.SetAnimation("default", g->nodeMap, pair.second.animData.get());
+						});
+						animContainer.SaveToFile(std::format("{}{}.nanim", path, Utility::StringRestrictChars(a.animId, ALPHANUMERIC_UNDERSCORE_HYPHEN)));
+					}
+					result = (path + "*.nanim");
 				}
-				result = (path + "*.nanim");
 			}
 			return result;
 		}
@@ -92,6 +113,17 @@ namespace Menu
 					for (auto& c : g->ikManager.GetChainList()) {
 						result.emplace_back(c, g->ikManager.GetChainEnabled(c));
 					}
+				});
+			}
+			return result;
+		}
+
+		static bool GetTargetChainEnabled(const std::string& id)
+		{
+			bool result = false;
+			if (auto inst = GetInstance(); inst != nullptr) {
+				inst->VisitTargetGraph([&](Graph* g) {
+					result = g->ikManager.GetChainEnabled(id);
 				});
 			}
 			return result;
