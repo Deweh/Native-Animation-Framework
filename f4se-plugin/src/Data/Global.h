@@ -213,8 +213,8 @@ namespace Data
 				if (excludeHidden && p.second->hidden) {
 					continue;
 				}
-				if ((doLocFilter && (!p.second->location.has_value() || !locations.contains(p.second->location.value())))
-					|| (!doLocFilter && !outputLocations && p.second->location.has_value()) ) {
+				if ((doLocFilter && (p.second->locations.empty() || !Utility::SetContainsAnyInVector(p.second->locations, locations)))
+					|| (!doLocFilter && !outputLocations && !p.second->locations.empty()) ) {
 					continue;
 				}
 				auto a = p.second->GetBaseAnimation();
@@ -253,8 +253,10 @@ namespace Data
 						}
 						if (!outputLocations) {
 							filteredPositions.push_back(p.second->id);
-						} else if (p.second->location.has_value()) {
-							filteredPositions.push_back(p.second->location.value());
+						} else if (!p.second->locations.empty()) {
+							for (auto& i : p.second->locations) {
+								filteredPositions.push_back(i);
+							}
 						}
 					}
 				}

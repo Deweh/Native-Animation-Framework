@@ -102,7 +102,14 @@ namespace Data
 			m(&out.stopMorphSet, ""s, true, false, "", "stopMorphSet");
 			m(&out.startEquipSet, ""s, true, false, "", "startEquipmentSet");
 			m(&out.stopEquipSet, ""s, true, false, "", "stopEquipmentSet");
-			m(&out.location, std::optional<std::string>(std::nullopt), true, false, "", "location");
+			
+			std::string locs;
+			m(&locs, ""s, true, false, "", "location");
+			if (!locs.empty()) {
+				Utility::ForEachSubstring(locs, ",", [&](const std::string_view& s) {
+					out.locations.emplace_back(s);
+				});
+			}
 
 			out.posType = kAnimation;
 			std::string foundId = "";
@@ -128,12 +135,30 @@ namespace Data
 		std::string stopEquipSet;
 		std::string startMorphSet;
 		std::string stopMorphSet;
-		std::optional<std::string> location;
+		std::vector<std::string> locations;
 
 		template <class Archive>
-		void serialize(Archive& ar, const uint32_t)
+		void save(Archive& ar, const uint32_t) const
 		{
-			ar(id, hidden, posType, idForType, startEquipSet, stopEquipSet, startMorphSet, stopMorphSet, location);
+			ar(id, hidden, posType, idForType, startEquipSet, stopEquipSet, startMorphSet, stopMorphSet, locations);
+		}
+
+		template <class Archive>
+		void load(Archive& ar, const uint32_t ver)
+		{
+			ar(id, hidden, posType, idForType, startEquipSet, stopEquipSet, startMorphSet, stopMorphSet);
+			if (ver < 2) {
+				std::optional<std::string> loc;
+				ar(loc);
+				if (loc.has_value()) {
+					locations.push_back(loc.value());
+				}
+			} else {
+				ar(locations);
+			}
+			
 		}
 	};
 }
+
+CEREAL_CLASS_VERSION(Data::Position, 2);

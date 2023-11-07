@@ -14,6 +14,17 @@ public:
 	inline static __int64 CounterStart = 0;
 
 	template <typename T>
+	static bool SetContainsAnyInVector(const std::vector<T>& vk, const std::unordered_set<T>& s)
+	{
+		for (auto& i : vk) {
+			if (s.contains(i))
+				return true;
+		}
+
+		return false;
+	}
+
+	template <typename T>
 	static std::map<T, size_t> VectorToIndexMap(const std::vector<T>& vk)
 	{
 		std::map<T, size_t> result;
