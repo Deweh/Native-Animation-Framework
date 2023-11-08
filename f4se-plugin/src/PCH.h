@@ -36,3 +36,4 @@ using namespace std::literals;
 #include "nlohmann/json.hpp"
 #include "ik/ik.h"
 #include "BodyAnimation/Spline.h"
+#include "libzippp/libzippp.h"

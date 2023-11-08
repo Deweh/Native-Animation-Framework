@@ -79,6 +79,7 @@ if (NOT TARGET CommonLibF4)
 endif ()
 
 find_package(spdlog REQUIRED CONFIG)
+find_package(libzippp 3.0 REQUIRED)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/ik")
 
@@ -131,6 +132,7 @@ target_link_libraries(
 		CommonLibF4::CommonLibF4
 		spdlog::spdlog
 		ik
+		libzippp::libzippp
 )
 
 target_precompile_headers(

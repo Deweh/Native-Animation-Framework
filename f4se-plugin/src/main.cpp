@@ -92,7 +92,7 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* a
 		return false;
 	}
 
-	*path /= fmt::format(FMT_STRING("{}.log"), Version::PROJECT);
+	*path /= std::format("{}.log", Version::PROJECT);
 	auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
 
 	auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
@@ -102,7 +102,7 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* a
 	spdlog::set_default_logger(std::move(log));
 	spdlog::set_pattern("[%m/%d/%Y - %T] [%^%l%$] %v"s);
 
-	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
+	logger::info("{} v{}", Version::PROJECT, Version::NAME);
 
 	if (a_f4se->IsEditor()) {
 		return false;
@@ -110,7 +110,7 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface* a
 
 	const auto ver = a_f4se->RuntimeVersion();
 	if (ver < F4SE::RUNTIME_1_10_162) {
-		logger::critical(FMT_STRING("{} does not support runtime v{}"), Version::PROJECT, ver.string());
+		logger::critical("{} does not support runtime v{}", Version::PROJECT, ver.string());
 		return false;
 	}
 
@@ -151,7 +151,7 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface* a_f
 
 	Data::Global::Init();
 
-	logger::info(FMT_STRING("{:s} initialization successful, waiting for game data load."), Version::PROJECT);
+	logger::info("{:s} initialization successful, waiting for game data load.", Version::PROJECT);
 
 	return true;
 }

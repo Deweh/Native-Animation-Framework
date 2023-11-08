@@ -11,6 +11,7 @@
     "spdlog",
     "zstr",
     "nlohmann-json",
-    "cereal"
+    "cereal",
+    "libzippp"
   ]
 }

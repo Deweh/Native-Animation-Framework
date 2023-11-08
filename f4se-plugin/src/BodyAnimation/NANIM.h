@@ -268,14 +268,31 @@ namespace BodyAnimation
 
 		bool LoadFromFile(const std::string& fileName, bool loadCharacters = false) {
 			try {
-				zstr::ifstream file(fileName, std::ios::binary);
+				libzippp::ZipArchive arch(fileName);
+				if (!arch.open(libzippp::ZipArchive::ReadOnly)) {
+					if (loadCharacters) {
+						return false;
+					}
 
-				if (!file.good() || file.fail()) {
-					logger::warn("Failed to open {}", fileName);
-					return false;
+					zstr::ifstream file(fileName, std::ios::binary);
+
+					if (!file.good() || file.fail()) {
+						logger::warn("Failed to open {}", fileName);
+						return false;
+					}
+
+					return LoadFromStream(file, false);
 				}
 
-				return LoadFromStream(file, loadCharacters);
+				auto entry = arch.getEntry(loadCharacters ? "character_data" : "anim_data", true);
+				if (entry.isNull())
+					return false;
+
+				std::stringstream dataStream(std::ios::binary | std::ios::out | std::ios::in);
+				if (auto res = arch.readEntry(entry, dataStream); res != LIBZIPPP_OK)
+					return false;
+
+				return LoadFromStream(dataStream, loadCharacters);
 			} catch (const std::exception&) {
 				logger::warn("Failed to open {}", fileName);
 				return false;
@@ -288,7 +305,7 @@ namespace BodyAnimation
 			try {
 				data = nlohmann::json::from_bson(s);
 			} catch (std::exception ex) {
-				logger::warn("Failed to load NANIM: {}", ex.what());
+				logger::warn("Failed to load NANIM data: {}", ex.what());
 				return false;
 			}
 
@@ -297,39 +314,41 @@ namespace BodyAnimation
 			} else {
 				return data.is_object() && version.from_json(data) && animations.from_json(data);
 			}
-			
 		}
 
 		bool SaveToFile(const std::string& fileName) const {
 			try {
-				zstr::ofstream file(fileName, std::ios::binary, Z_BEST_COMPRESSION);
+				libzippp::ZipArchive arch(fileName);
+				if (!arch.open(libzippp::ZipArchive::New))
+					return false;
 
-				if (!file.good() || file.fail()) {
-					logger::warn("Failed to open {}", fileName);
+				std::vector<uint8_t> buffer;
+				nlohmann::json output;
+				version.to_json(output);
+				animations.to_json(output);
+				nlohmann::json::to_bson(output, buffer);
+
+				if (!arch.addData("anim_data", buffer.data(), buffer.size())) {
 					return false;
 				}
 
-				return SaveToStream(file);
+				if (!characters.data.empty()) {
+					output.clear();
+					std::vector<uint8_t> buffer2;
+					characters.to_json(output);
+					nlohmann::json::to_bson(output, buffer2);
+
+					if (!arch.addData("character_data", buffer2.data(), buffer2.size())) {
+						return false;
+					}
+				}
+
+				arch.close();
+				return true;
 			} catch (const std::exception&) {
 				logger::warn("Failed to open {}", fileName);
 				return false;
 			}
-		}
-
-		bool SaveToStream(std::ostream& s) const {
-			nlohmann::json output;
-			version.to_json(output);
-			animations.to_json(output);
-			characters.to_json(output);
-
-			try {
-				nlohmann::json::to_bson(output, s);
-			} catch (std::exception ex) {
-				logger::warn("Failed to save NANIM: {}", ex.what());
-				return false;
-			}
-
-			return true;
 		}
 
 		bool GetAnimation(const std::string& name, const std::vector<std::string>& graphNodeList, std::unique_ptr<NodeAnimation>& animOut) const

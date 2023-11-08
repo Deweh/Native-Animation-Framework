@@ -243,7 +243,7 @@ public:
 			if (dist >= 0.1)
 				dist = dist / 25.0;
 
-			auto name = r->GetBaseFullName();
+			auto name = r->GetDisplayFullName();
 			result.push_back({ dist, name ? std::string(name) : "", r });
 		}
 
