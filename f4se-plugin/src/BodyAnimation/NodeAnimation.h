@@ -28,11 +28,11 @@ namespace BodyAnimation
 		}
 
 		void Update(float deltaTime) {
-			if (!paused)
+			if (!paused) {
 				localTime += deltaTime;
-
-			while (localTime >= animData->duration) {
-				localTime -= animData->duration;
+				while (localTime >= animData->duration) {
+					localTime -= animData->duration;
+				}
 			}
 
 			for (size_t i = 0; i < animData->timelines.size(); i++) {
@@ -119,8 +119,12 @@ namespace BodyAnimation
 				if (next < animData->duration) {
 					curTime = next;
 					return true;
+				} else if (std::fabs(curTime - animData->duration) < 0.001f) {
+					return false;
+				} else {
+					curTime = animData->duration;
+					return true;
 				}
-				return false;
 			}
 		};
 
@@ -172,7 +176,7 @@ namespace BodyAnimation
 			PushDataToGenerator(true);
 			BAKE_DATA result;
 			result.animData = std::make_unique<NodeAnimation>();
-			result.animData->duration = animData->GetRuntimeDuration();
+			result.animData->duration = animData->GetRuntimeDuration() - animData->sampleRate;
 			result.animData->timelines.resize(animData->timelines.size());
 			result.updateCount = animData->timelines.size() < nodeList->size() ? animData->timelines.size() : nodeList->size();
 			result.sampleRate = animData->sampleRate;
@@ -213,7 +217,7 @@ namespace BodyAnimation
 		}
 
 		void SaveToNANIM(const std::string& name, NANIM& container) {
-			auto data = animData->ToRuntime();
+			auto data = animData->ToRuntime(false);
 			container.SetAnimation(name, *nodeMap, data.get());
 		}
 
@@ -248,7 +252,7 @@ namespace BodyAnimation
 
 		void SetTime(float t) {
 			if (generator->HasAnimation()) {
-				generator->localTime = std::clamp(t, 0.00001f, generator->animData->duration - 0.001f);
+				generator->localTime = std::clamp(t, 0.00001f, (generator->animData->duration + animData->sampleRate) - 0.001f);
 			}
 		}
 

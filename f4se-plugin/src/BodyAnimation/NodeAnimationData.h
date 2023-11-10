@@ -270,16 +270,16 @@ namespace BodyAnimation
 			return static_cast<float>(duration) * sampleRate;
 		}
 
-		std::unique_ptr<NodeAnimation> ToRuntime() {
+		std::unique_ptr<NodeAnimation> ToRuntime(bool properLoop = true) {
 			std::unique_ptr<NodeAnimation> result = std::make_unique<NodeAnimation>();
-			UpdateRuntime(result.get());
+			UpdateRuntime(result.get(), properLoop);
 			return result;
 		}
 
-		void UpdateRuntime(NodeAnimation* target) {
+		void UpdateRuntime(NodeAnimation* target, bool properLoop = true) {
 			if (target->timelines.size() < timelines.size())
 				target->timelines.resize(timelines.size());
-			target->duration = GetRuntimeDuration();
+			target->duration = GetRuntimeDuration() - (properLoop ? sampleRate : 0.0f);
 
 			for (size_t i = 0; i < timelines.size(); i++) {
 				UpdateRuntimeSelective(i, target->timelines[i], true);
@@ -329,8 +329,8 @@ namespace BodyAnimation
 					iter->first,
 					begin,
 					end,
-					first ? QuatSpline::vec3{ 0, 0, 0} : v1,
-					last ? QuatSpline::vec3{ 0, 0, 0} : v2);
+					first ? QuatSpline::vec3{ 0, 0, 0 } : v1,
+					last ? QuatSpline::vec3{ 0, 0, 0 } : v2);
 
 				lastRot = begin;
 				first = false;
@@ -353,6 +353,43 @@ namespace BodyAnimation
 				Yr.reserve(s);
 
 				if (tl.keys.size() > 1) {
+					//If the timeline has at least 3 keys, and the first & last keys are
+					//on the first and last frames, do loop smoothing.
+					//The loop is smoothed by copying the first two keys after the end,
+					//and the last two keys before the beginning, effectively shaping the
+					//spline curve for a seamless loop.
+					bool doLoopSmoothing =
+						tl.keys.size() > 2 &&
+						tl.keys.begin()->first < 0.001f &&
+						std::fabs(std::prev(tl.keys.end())->first - result->duration) < 0.001f;
+					size_t curIndex = 0;
+
+					RE::NiQuaternion firstRot = tl.keys.begin()->second.value.rotate;
+					RE::NiQuaternion lastRot = std::prev(tl.keys.end())->second.value.rotate;
+
+					if (doLoopSmoothing) {
+						curIndex = 2;
+
+						auto secondToLast = std::prev(std::prev(tl.keys.end()));
+						auto thirdToLast = std::prev(secondToLast);
+
+						float timeDiff = 0 - (result->duration - thirdToLast->first);
+						X.push_back(timeDiff);
+						auto val = thirdToLast->second.value;
+						Yx.push_back(val.translate.x);
+						Yy.push_back(val.translate.y);
+						Yz.push_back(val.translate.z);
+						Yr.emplace_back(timeDiff, val.rotate);
+
+						timeDiff = 0 - (result->duration - secondToLast->first);
+						X.push_back(timeDiff);
+						val = secondToLast->second.value;
+						Yx.push_back(val.translate.x);
+						Yy.push_back(val.translate.y);
+						Yz.push_back(val.translate.z);
+						Yr.emplace_back(timeDiff, val.rotate);
+					}
+
 					for (auto& k : tl.keys) {
 						auto& val = k.second.value;
 						X.push_back(k.first);
@@ -360,6 +397,27 @@ namespace BodyAnimation
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
 						Yr.emplace_back(k.first, val.rotate);
+					}
+
+					if (doLoopSmoothing) {
+						auto secondToFirst = std::next(tl.keys.begin());
+						auto thirdToFirst = std::next(secondToFirst);
+
+						float timeDiff = result->duration + secondToFirst->first;
+						X.push_back(timeDiff);
+						auto val = secondToFirst->second.value;
+						Yx.push_back(val.translate.x);
+						Yy.push_back(val.translate.y);
+						Yz.push_back(val.translate.z);
+						Yr.emplace_back(timeDiff, val.rotate);
+
+						timeDiff = result->duration + thirdToFirst->first;
+						X.push_back(timeDiff);
+						val = thirdToFirst->second.value;
+						Yx.push_back(val.translate.x);
+						Yy.push_back(val.translate.y);
+						Yz.push_back(val.translate.z);
+						Yr.emplace_back(timeDiff, val.rotate);
 					}
 
 					//Set velocity to 0 at start and end of the spline.
@@ -383,23 +441,28 @@ namespace BodyAnimation
 						0.0);
 					std::vector<QuatSplineSegment> vels = CalculateAngularVelocities(Yr);
 
+					float minT = static_cast<float>(tl.keys.begin()->first);
+					float maxT = static_cast<float>(std::prev(tl.keys.end())->first);
 					tl.keys.clear();
-					size_t curIndex = 0;
-					float minT = static_cast<float>(X.front());
-					float maxT = static_cast<float>(X.back());
-					for (float t = 0; t < result->duration; t += sampleRate) {
+					float t = 0;
+					bool doSample = true;
+					while(doSample) {
+						if (t >= result->duration) {
+							t = result->duration;
+							doSample = false;
+						}
 						auto& val = tl.keys[t].value;
 						float clampedT = std::clamp(t, minT, maxT);
 						val.translate.x = static_cast<float>(translateX(clampedT));
 						val.translate.y = static_cast<float>(translateY(clampedT));
 						val.translate.z = static_cast<float>(translateZ(clampedT));
-						
+
 						if (std::fabs(clampedT - minT) < 0.001f) {
-							val.rotate = Yr.front().second;
+							val.rotate = firstRot;
 						} else if (std::fabs(clampedT - maxT) < 0.001f) {
-							val.rotate = Yr.back().second;
+							val.rotate = lastRot;
 						} else {
-							if (clampedT > vels[curIndex].endTime && (curIndex + 1) < vels.size())
+							while (clampedT > vels[curIndex].endTime && (curIndex + 1) < vels.size())
 								curIndex += 1;
 
 							auto& v = vels[curIndex];
@@ -407,6 +470,7 @@ namespace BodyAnimation
 							float normalizedTime = (clampedT - v.startTime) / (v.endTime - v.startTime);
 							QuatSpline::quat_hermite(reinterpret_cast<QuatSpline::quat&>(val.rotate), normalizedTime, v.q1, v.q2, v.v1, v.v2);
 						}
+						t += sampleRate;
 					}
 				}
 			});
@@ -421,12 +485,15 @@ namespace BodyAnimation
 			float frameRate = 1.0f / a_sampleRate;
 			result.data->sampleRate = a_sampleRate;
 			result.data->duration = static_cast<size_t>(std::round(a_data->duration * frameRate));
+			size_t maxFrame = result.data->duration - 1;
 
 			for (size_t i = 0; i < a_data->timelines.size(); i++) {
 				auto& runtimeTimeline = a_data->timelines[i];
 				auto& resultTimeline = result.data->timelines[i];
 				for (const auto& k : runtimeTimeline.keys) {
 					size_t targetFrame = static_cast<size_t>(std::round(k.first * frameRate));
+					if (targetFrame > maxFrame)
+						targetFrame = maxFrame;
 					if (resultTimeline.keys.contains(targetFrame)) {
 						result.dataLoss = true;
 					} else {
