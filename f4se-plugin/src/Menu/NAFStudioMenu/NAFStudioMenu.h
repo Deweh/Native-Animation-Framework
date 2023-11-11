@@ -362,7 +362,10 @@ namespace Menu
 			screenPos.x = stageWidth * screenPos.x;
 			obj.SetMember("x", screenPos.x);
 			obj.SetMember("y", screenPos.y);
-			float s = (3.5f * (1.0f - screenPos.z)) * nodeSizeModifier;
+			float s = 0.000001f;
+			if (screenPos.z >= 0.0f && !(p.x == 0.0f && p.y == 0.0f && p.z == 0.0f)) {
+				s = (3.5f * (1.0f - screenPos.z)) * nodeSizeModifier;
+			}
 			obj.SetMember("scaleX", s);
 			obj.SetMember("scaleY", s);
 		}
