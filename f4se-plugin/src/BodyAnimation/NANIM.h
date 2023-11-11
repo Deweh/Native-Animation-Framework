@@ -10,7 +10,7 @@ namespace BodyAnimation
 
 		struct Version
 		{
-			inline static uint32_t currentValue = 1;
+			inline static uint32_t currentValue = 2;
 			uint32_t value = currentValue;
 
 			bool from_json(const nlohmann::json& j)
@@ -69,6 +69,53 @@ namespace BodyAnimation
 
 				bool from_json(const nlohmann::json& j)
 				{
+					if (!j.is_array()) {
+						return false;
+					}
+					size_t i = 0;
+					for (auto& n : j) {
+						if (!n.is_number_float())
+							return false;
+
+						switch (i) {
+						case 0:
+							time = n;
+							break;
+						case 1:
+							position.x = n;
+							break;
+						case 2:
+							position.y = n;
+							break;
+						case 3:
+							position.z = n;
+							break;
+						case 4:
+							rotation.w = n;
+							break;
+						case 5:
+							rotation.x = n;
+							break;
+						case 6:
+							rotation.y = n;
+							break;
+						case 7:
+							rotation.z = n;
+							break;
+						}
+
+						i++;
+					}
+					return true;
+				}
+
+				void to_json(nlohmann::json& j) const
+				{
+					j = { time, position.x, position.y, position.z, rotation.w, rotation.x, rotation.y, rotation.z };
+				}
+
+				bool from_json_v1(const nlohmann::json& j)
+				{
 					JUtil ju(&j);
 					if (!j.is_object() || !ju.ContainsType("time", jt::number_float) ||
 						!ju.ContainsTypedArray("rotation", jt::number_float, 4) ||
@@ -95,7 +142,7 @@ namespace BodyAnimation
 					return true;
 				}
 
-				void to_json(nlohmann::json& j) const
+				void to_json_v1(nlohmann::json& j) const
 				{
 					j["time"] = time;
 					j["position"] = { position.x, position.y, position.z };
@@ -109,7 +156,7 @@ namespace BodyAnimation
 			std::map<std::string, AnimationTimeline> timelines;
 			MetaData meta;
 
-			bool from_json(const nlohmann::json& j)
+			bool from_json(const nlohmann::json& j, uint32_t ver)
 			{
 				JUtil ju(&j);
 				if (!ju.ContainsType("duration", jt::number_float) || !ju.ContainsType("timelines", jt::object)) {
@@ -130,15 +177,24 @@ namespace BodyAnimation
 						continue;
 					}
 					auto& targetTL = timelines[tl.key()];
-					for (auto& k : tl.value()) {
-						AnimationKey curKey;
-						if (!curKey.from_json(k)) {
-							continue;
+					if (ver >= 2) {
+						for (auto& k : tl.value()) {
+							AnimationKey curKey;
+							if (!curKey.from_json(k)) {
+								continue;
+							}
+							targetTL.push_back(curKey);
 						}
-						targetTL.push_back(curKey);
+					} else {
+						for (auto& k : tl.value()) {
+							AnimationKey curKey;
+							if (!curKey.from_json_v1(k)) {
+								continue;
+							}
+							targetTL.push_back(curKey);
+						}
 					}
 				}
-
 				return true;
 			}
 
@@ -164,14 +220,14 @@ namespace BodyAnimation
 		{
 			std::map<std::string, AnimationData> value;
 
-			bool from_json(const nlohmann::json& j) {
+			bool from_json(const nlohmann::json& j, uint32_t ver) {
 				if (!JUtil::ContainsType(j, "animations", jt::object)) {
 					return false;
 				}
 
 				for (auto& pair : j["animations"].items()) {
 					AnimationData d;
-					if (!d.from_json(pair.value())) {
+					if (!d.from_json(pair.value(), ver)) {
 						continue;
 					}
 					if (value.contains(pair.key())) {
@@ -312,7 +368,7 @@ namespace BodyAnimation
 			if (loadCharacters) {
 				return data.is_object() && characters.from_json(data);
 			} else {
-				return data.is_object() && version.from_json(data) && animations.from_json(data);
+				return data.is_object() && version.from_json(data) && animations.from_json(data, version.value);
 			}
 		}
 
@@ -324,7 +380,7 @@ namespace BodyAnimation
 
 				std::vector<uint8_t> buffer;
 				nlohmann::json output;
-				version.to_json(output);
+				Version().to_json(output);
 				animations.to_json(output);
 				nlohmann::json::to_bson(output, buffer);
 
