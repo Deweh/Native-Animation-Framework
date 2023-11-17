@@ -79,6 +79,7 @@ namespace Menu
 				RE::NiPointer<RE::Actor> actor;
 				std::string animId;
 				float sampleRate;
+				float originalScale;
 			};
 
 			std::string projectName = "";

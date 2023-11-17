@@ -274,7 +274,9 @@ namespace Menu::NAF
 						}
 					}
 					if (!inSlot) {
-						data->studioActors[selectedStudioActor].actor.reset(a);
+						auto& s = data->studioActors[selectedStudioActor];
+						s.actor.reset(a);
+						s.originalScale = a->GetScale();
 					}
 				}
 				manager->RefreshList(true);
@@ -832,7 +834,7 @@ namespace Menu::NAF
 			GetActorInput([&](bool ok, RE::Actor* a) {
 				if (ok) {
 					data->studioActors.clear();
-					data->studioActors.emplace_back(RE::NiPointer<RE::Actor>(a), data->activeBodyAnim.value(), QBodyAnimSampleRate());
+					data->studioActors.emplace_back(RE::NiPointer<RE::Actor>(a), data->activeBodyAnim.value(), QBodyAnimSampleRate(), a->GetScale());
 					data->ClearActiveBodyAnimProject();
 
 					auto UI = RE::UI::GetSingleton();

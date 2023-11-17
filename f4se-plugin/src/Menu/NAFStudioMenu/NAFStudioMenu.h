@@ -267,6 +267,18 @@ namespace Menu
 				g->state = Graph::kGenerator;
 
 				if (auto meta = animContainer.GetMetaData(animId); meta.has_value()) {
+					if (auto iter = meta->data.find("actor_scale"); iter != meta->data.end() && iter->second.size() > 0) {
+						std::optional<float> s = std::nullopt;
+						try {
+							s = std::stof(iter->second[0]);
+						} catch (...) {
+							s = std::nullopt;
+						}
+
+						if (s) {
+							a_target->SetScale(s.value() / a_target->GetScale());
+						}
+					}
 					if (auto iter = meta->data.find("enabled_ik_chains"); iter != meta->data.end()) {
 						for (auto& c : iter->second) {
 							g->ikManager.SetChainEnabled(c, true);
@@ -300,20 +312,20 @@ namespace Menu
 		}
 
 		void ClearManagedRefs() {
-			for (auto& hndl : managedActors) {
-				PackageOverride::Clear(hndl, true);
-				if (auto a = hndl.get(); a != nullptr) {
-					BodyAnimation::GraphHook::VisitGraph(a.get(), [&](Graph* g) {
-						for (auto& c : g->ikManager.GetChainList()) {
-							g->ikManager.SetChainEnabled(c, false);
-						}
-						g->generator.paused = false;
-						g->TransitionToAnimation(nullptr, 1.0f);
-						g->creator.reset();
-					});
-					a->EnableCollision();
-					a->SetNoCollision(false);
-				}
+			auto data = PersistentMenuState::CreatorData::GetSingleton();
+			for (auto& a : data->studioActors) {
+				PackageOverride::Clear(a.actor->GetActorHandle(), true);
+				a.actor->SetScale(a.originalScale / a.actor->GetScale());
+				BodyAnimation::GraphHook::VisitGraph(a.actor.get(), [&](Graph* g) {
+					for (auto& c : g->ikManager.GetChainList()) {
+						g->ikManager.SetChainEnabled(c, false);
+					}
+					g->generator.paused = false;
+					g->TransitionToAnimation(nullptr, 1.0f);
+					g->creator.reset();
+				});
+				a.actor->EnableCollision();
+				a.actor->SetNoCollision(false);
 			}
 			managedActors.clear();
 		}
@@ -929,6 +941,7 @@ namespace Menu
 					g->creator->SaveToNANIM(a.animId, data->bodyAnims);
 
 					BodyAnimation::NANIM::AnimationData::MetaData meta;
+					meta.data["actor_scale"].push_back(std::format("{}", a.actor->GetScale()));
 					auto& enabledChains = meta.data["enabled_ik_chains"];
 					for (auto& c : g->ikManager.GetChainList()) {
 						if (g->ikManager.GetChainEnabled(c)) {
