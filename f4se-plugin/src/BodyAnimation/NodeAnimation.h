@@ -418,14 +418,19 @@ namespace BodyAnimation
 			return result;
 		}
 
-		NodeTransform GetCurrentWorldTransform(size_t nodeIndex)
+		NodeTransform GetCurrentWorldTransform(size_t nodeIndex, bool parentRotation = false)
 		{
 			auto& ikMappings = ikManager->GetLookupMap();
 			if (auto iter = ikMappings.find(nodeIndex); iter != ikMappings.end()) {
-				return ikManager->GetWorldTransform(iter->second);
+				return ikManager->GetWorldTransform(iter->second, parentRotation);
 			}
 			if (nodeIndex < nodeList->size() && nodeList->at(nodeIndex) != nullptr) {
-				return nodeList->at(nodeIndex)->world;
+				auto& n = nodeList->at(nodeIndex);
+				NodeTransform res = n->world;
+				if (parentRotation && n->parent != nullptr) {
+					res.rotate.FromRotation(n->parent->world.rotate);
+				}
+				return res;
 			}
 			return NodeTransform::Identity();
 		}

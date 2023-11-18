@@ -367,19 +367,52 @@ namespace Menu
 		{
 		}
 
-		void SetObjectPositionInWorld(RE::Scaleform::GFx::Value& obj, const RE::NiPoint3& p) {
+		void SetObjectPositionInWorld(RE::Scaleform::GFx::Value& obj, const BodyAnimation::NodeTransform& transform, bool isGizmo) {
 			RE::NiPoint3 screenPos{ -100.0f, -100.0f, 0.99999f };
-			WorldPtToScreenPt3(p, screenPos);
+			WorldPtToScreenPt3(transform.translate, screenPos);
 			screenPos.y = stageHeight * (1.0f - screenPos.y);
 			screenPos.x = stageWidth * screenPos.x;
 			obj.SetMember("x", screenPos.x);
 			obj.SetMember("y", screenPos.y);
 			float s = 0.000001f;
-			if (screenPos.z >= 0.0f && !(p.x == 0.0f && p.y == 0.0f && p.z == 0.0f)) {
+			if (screenPos.z >= 0.0f && !(transform.translate.x == 0.0f && transform.translate.y == 0.0f && transform.translate.z == 0.0f)) {
 				s = (3.5f * (1.0f - screenPos.z)) * nodeSizeModifier;
 			}
 			obj.SetMember("scaleX", s);
 			obj.SetMember("scaleY", s);
+
+			if (isGizmo) {
+				float distScale = (3.5f * screenPos.z) * nodeSizeModifier;
+				RE::NiMatrix3 mat;
+				transform.rotate.ToRotation(mat);
+
+				RE::NiPoint3 xPoint = { mat.entry[0].pt[0], mat.entry[0].pt[1], mat.entry[0].pt[2] };
+				RE::NiPoint3 yPoint = { mat.entry[1].pt[0], mat.entry[1].pt[1], mat.entry[1].pt[2] };
+				RE::NiPoint3 zPoint = { mat.entry[2].pt[0], mat.entry[2].pt[1], mat.entry[2].pt[2] };
+				xPoint *= 18.0f * distScale;
+				yPoint *= 18.0f * distScale;
+				zPoint *= 18.0f * distScale;
+				xPoint += transform.translate;
+				yPoint += transform.translate;
+				zPoint += transform.translate;
+
+				RE::NiPoint2 baseRel{ screenPos.x, screenPos.y };
+				WorldPtToScreenPt3(xPoint, screenPos);
+				RE::NiPoint2 xRel{ (screenPos.x * stageWidth) - baseRel.x, ((1.0f - screenPos.y) * stageHeight) - baseRel.y };
+				WorldPtToScreenPt3(yPoint, screenPos);
+				RE::NiPoint2 yRel{ (screenPos.x * stageWidth) - baseRel.x, ((1.0f - screenPos.y) * stageHeight) - baseRel.y };
+				WorldPtToScreenPt3(zPoint, screenPos);
+				RE::NiPoint2 zRel{ (screenPos.x * stageWidth) - baseRel.x, ((1.0f - screenPos.y) * stageHeight) - baseRel.y };
+
+				RE::Scaleform::GFx::Value args[6];
+				args[0] = xRel.x;
+				args[1] = xRel.y;
+				args[2] = yRel.x;
+				args[3] = yRel.y;
+				args[4] = zRel.x;
+				args[5] = zRel.y;
+				obj.Invoke("SetGizmoPoints", nullptr, args, 6);
+			}
 		}
 
 		void SetScrubberPosition(double p) {
@@ -395,11 +428,12 @@ namespace Menu
 			float localTime = 0.0f;
 			VisitTargetGraph([&](Graph* g) {
 				for (size_t i = 0; i < nodeMarkers.size(); i++) {
-					auto currentTransform = g->creator->GetCurrentWorldTransform(i).translate;
-					if (i == gizmoIndex && gizmoActive)
-						orbitTarget = currentTransform;
+					bool isGizmo = i == gizmoIndex && gizmoActive;
+					auto currentTransform = g->creator->GetCurrentWorldTransform(i, isGizmo && adjustMode == Creator::kPosition);
+					if (isGizmo)
+						orbitTarget = currentTransform.translate;
 
-					SetObjectPositionInWorld(nodeMarkers[i], currentTransform);
+					SetObjectPositionInWorld(nodeMarkers[i], currentTransform, isGizmo);
 				}
 
 				if (g->creator->IsPlaying()) {
@@ -655,13 +689,13 @@ namespace Menu
 
 			switch (a_type) {
 			case 0:
-				changePt3.z = movementX;
+				changePt3.x = movementX;
 				break;
 			case 1:
 				changePt3.y = movementX;
 				break;
 			case 2:
-				changePt3.x = movementX;
+				changePt3.z = movementX;
 				break;
 			}
 

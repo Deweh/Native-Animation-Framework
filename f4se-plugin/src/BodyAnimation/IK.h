@@ -285,10 +285,12 @@ namespace BodyAnimation
 		virtual NodeTransform GetTargetLocal() = 0;
 		virtual void Reset() {}
 		virtual void SetPole(const RE::NiPoint3& p) = 0;
-		virtual RE::NiPoint3 GetPole() = 0;
+		virtual NodeTransform GetPole() = 0;
 		virtual void SetPoleLocal(const RE::NiPoint3& p) = 0;
 		virtual RE::NiPoint3 GetPoleLocal() = 0;
 		virtual void SetTargetParent(RE::NiAVObject* parent, RE::NiNode* parentRoot) = 0;
+		virtual RE::NiMatrix3 GetPoleParentRotation() = 0;
+		virtual RE::NiMatrix3 GetTargetParentRotation() = 0;
 
 		virtual ~IKHolder(){};
 	};
@@ -364,11 +366,14 @@ namespace BodyAnimation
 			}
 		}
 
-		virtual RE::NiPoint3 GetPole() {
+		virtual NodeTransform GetPole() {
 			if (poleParent != nullptr) {
-				return chain.GetPoleWorld(poleParent->world, poleParent.get() == targetNodes[2].get());
+				NodeTransform result;
+				result.translate = chain.GetPoleWorld(poleParent->world, poleParent.get() == targetNodes[2].get());
+				result.rotate.FromRotation(poleParent->world.rotate);
+				return result;
 			}
-			return { 0.0f, 0.0f, 0.0f };
+			return NodeTransform::Identity();
 		}
 
 		virtual void SetPoleLocal(const RE::NiPoint3& p) {
@@ -378,6 +383,26 @@ namespace BodyAnimation
 
 		virtual RE::NiPoint3 GetPoleLocal() {
 			return IK3ToN3(chain.relativePole);
+		}
+
+		virtual RE::NiMatrix3 GetPoleParentRotation() {
+			if (poleParent != nullptr) {
+				return poleParent->world.rotate;
+			}
+			RE::NiMatrix3 res;
+			res.MakeIdentity();
+			return res;
+		}
+
+		virtual RE::NiMatrix3 GetTargetParentRotation() {
+			if (targetParent != nullptr) {
+				return targetParent->world.rotate;
+			} else if (rootNode != nullptr) {
+				return rootNode->world.rotate;
+			}
+			RE::NiMatrix3 res;
+			res.MakeIdentity();
+			return res;
 		}
 
 		virtual void ClearNodes()
@@ -405,20 +430,13 @@ namespace BodyAnimation
 				}
 			}
 
-			if (auto curTarget = GetTarget();
+			if (auto curTarget = chain.GetTarget();
 				curTarget.translate.x == 0.0f &&
 				curTarget.translate.y == 0.0f &&
 				curTarget.translate.z == 0.0f)
 			{
 				Reset();
 			}
-		}
-
-		void DebugLogMidTransform()
-		{
-			RE::NiQuaternion temp;
-			temp.FromRotation(targetNodes[1]->world.rotate);
-			OutputDebugStringA(std::format("W: {:.3f}, X: {:.3f}, Y: {:.3f}, Z: {:.3f}\n", temp.w, temp.x, temp.y, temp.z).c_str());
 		}
 
 		virtual void Update()
@@ -692,18 +710,24 @@ namespace BodyAnimation
 			}
 		}
 
-		inline static NodeTransform GetWorldTransform(const IKMapping& m) {
+		inline static NodeTransform GetWorldTransform(const IKMapping& m, bool parentRotation = false) {
+			NodeTransform result;
 			switch (m.target) {
 			case IKMapping::kPole:
-				return {
-					{ 0, 0, 0, 0 },
-					{ m.holder->GetPole() }
-				};
+				result = m.holder->GetPole();
+				if (parentRotation)
+					result.rotate.FromRotation(m.holder->GetPoleParentRotation());
+				break;
 			case IKMapping::kEffector:
-				return m.holder->GetTarget();
+				result = m.holder->GetTarget();
+				if (parentRotation)
+					result.rotate.FromRotation(m.holder->GetTargetParentRotation());
+				break;
 			default:
-				return NodeTransform::Identity();
+				result.MakeIdentity();
 			}
+
+			return result;
 		}
 
 		RegisterFor3DChangeFunctor* reg3dCallback = nullptr;
