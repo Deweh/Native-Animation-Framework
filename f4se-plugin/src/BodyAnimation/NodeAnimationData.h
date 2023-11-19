@@ -295,13 +295,38 @@ namespace BodyAnimation
 
 				RE::NiPoint3 axis;
 				std::vector<double> X, Yx, Yy, Yz, YrX, YrY, YrZ;
+				std::vector<RE::NiQuaternion> Yr;
 				X.reserve(s);
 				Yx.reserve(s);
 				Yy.reserve(s);
 				Yz.reserve(s);
+				Yr.reserve(s);
 				YrX.reserve(s);
 				YrY.reserve(s);
 				YrZ.reserve(s);
+
+				size_t lastIdx = 0;
+				const auto addKeyData = [&](const NodeTransform& val, float t) {
+					X.push_back(t);
+					Yx.push_back(val.translate.x);
+					Yy.push_back(val.translate.y);
+					Yz.push_back(val.translate.z);
+					RE::NiQuaternion q = val.rotate;
+					if (lastIdx > 0) {
+						const auto& q1 = Yr[lastIdx - 1];
+						const auto& q2 = q;
+						float dot = q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z;
+						if (dot < 0.0f) {
+							q = -q;
+						}
+					}
+					axis = MathUtil::QuatToScaledAngleAxis(q);
+					YrX.push_back(axis.x);
+					YrY.push_back(axis.y);
+					YrZ.push_back(axis.z);
+					Yr.push_back(q);
+					lastIdx++;
+				};
 
 				if (tl.keys.size() > 1) {
 					//If the timeline has at least 3 keys, and the first & last keys are
@@ -325,38 +350,13 @@ namespace BodyAnimation
 						auto thirdToLast = std::prev(secondToLast);
 
 						float timeDiff = 0 - (result->duration - thirdToLast->first);
-						X.push_back(timeDiff);
-						auto val = thirdToLast->second.value;
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
-						YrX.push_back(axis.x);
-						YrY.push_back(axis.y);
-						YrZ.push_back(axis.z);
-
+						addKeyData(thirdToLast->second.value, timeDiff);
 						timeDiff = 0 - (result->duration - secondToLast->first);
-						X.push_back(timeDiff);
-						val = secondToLast->second.value;
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
-						YrX.push_back(axis.x);
-						YrY.push_back(axis.y);
-						YrZ.push_back(axis.z);
+						addKeyData(secondToLast->second.value, timeDiff);
 					}
 
 					for (auto& k : tl.keys) {
-						auto& val = k.second.value;
-						X.push_back(k.first);
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
-						YrX.push_back(axis.x);
-						YrY.push_back(axis.y);
-						YrZ.push_back(axis.z);
+						addKeyData(k.second.value, k.first);
 					}
 
 					if (doLoopSmoothing) {
@@ -364,26 +364,9 @@ namespace BodyAnimation
 						auto thirdToFirst = std::next(secondToFirst);
 
 						float timeDiff = result->duration + secondToFirst->first;
-						X.push_back(timeDiff);
-						auto val = secondToFirst->second.value;
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
-						YrX.push_back(axis.x);
-						YrY.push_back(axis.y);
-						YrZ.push_back(axis.z);
-
+						addKeyData(secondToFirst->second.value, timeDiff);
 						timeDiff = result->duration + thirdToFirst->first;
-						X.push_back(timeDiff);
-						val = thirdToFirst->second.value;
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
-						YrX.push_back(axis.x);
-						YrY.push_back(axis.y);
-						YrZ.push_back(axis.z);
+						addKeyData(thirdToFirst->second.value, timeDiff);
 					}
 
 					//Set velocity to 0 at start and end of the spline.
