@@ -584,7 +584,7 @@ namespace Scene
 					//Use arithmetic here instead of a conditional to avoid an unneccesary branch.
 					minTime += ele.currentAnimTime * noActorsReady;
 					noActorsReady = false;
-					minTime = std::min(minTime, ele.currentAnimTime);
+					minTime = min(minTime, ele.currentAnimTime);
 					i++;
 				} else {
 					allActorsReady = false;

@@ -59,23 +59,12 @@ namespace BodyAnimation
 		float transitionDuration = 0.01f;
 
 		~NodeAnimationGraph() {
-			SetDisableOCBP(false);
-
 			if (unreg3dCallback != nullptr)
 				unreg3dCallback();
 		}
 
 		NodeAnimationGraph() {
 			flags.set(kTemporary, kNoActiveIKChains);
-		}
-
-		void SetDisableOCBP(bool a_disable) {
-			if (F4SE::GetPluginInfo("OCBP plugin").has_value()) {
-				auto r = targetHandle.get();
-				for (auto& n : nodeMap) {
-					GameUtil::CallGlobalPapyrusFunction("OCBP_API", "SetBoneToggle", r.get(), a_disable, n);
-				}
-			}
 		}
 
 		void OnIKChainActiveChanged(bool chainActive) {
@@ -96,7 +85,6 @@ namespace BodyAnimation
 
 		void SetGraphData(const Data::GraphInfo& d) {
 			nodeMap = d.nodeList;
-			SetDisableOCBP(true);
 			ikManager.ClearChains();
 			for (const auto& pair : d.chains) {
 				if (pair.second.nodes.size() == 3) {
@@ -123,6 +111,8 @@ namespace BodyAnimation
 					flags.set(kUnloaded3D);
 					return false;
 				}
+
+				targetHandle = ref->GetHandle();
 
 				auto _3d = ref->Get3D();
 				if (_3d == nullptr) {
@@ -209,9 +199,10 @@ namespace BodyAnimation
 			case kRecording:
 				UpdateRecorder(deltaTime);
 				break;
-			case kIdle:
+			}
+
+			if (state == kIdle) {
 				ikManager.Update();
-				break;
 			}
 		}
 

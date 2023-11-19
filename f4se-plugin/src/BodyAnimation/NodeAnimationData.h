@@ -109,7 +109,7 @@ namespace BodyAnimation
 			return result;
 		}
 
-		static void ShortestPathSlerp(RE::NiQuaternion& output, const RE::NiQuaternion& begin, const RE::NiQuaternion& end, float time) {
+		void ShortestPathSlerp(RE::NiQuaternion& output, const RE::NiQuaternion& begin, const RE::NiQuaternion& end, float time) {
 			RE::NiQuaternion adjustedEnd = end;
 			float dotProduct = begin.x * end.x + begin.y * end.y + begin.z * end.z + begin.w * end.w;
 			if (dotProduct < 0.0f) {
@@ -252,6 +252,16 @@ namespace BodyAnimation
 			bool dataLoss = false;
 		};
 
+		struct QuatSplineSegment
+		{
+			float startTime;
+			float endTime;
+			QuatSpline::quat q1;
+			QuatSpline::quat q2;
+			QuatSpline::vec3 v1;
+			QuatSpline::vec3 v2;
+		};
+
 		float sampleRate = 0.033333f;
 		size_t duration = 2;
 		std::vector<FrameBasedNodeTimeline> timelines;
@@ -287,38 +297,79 @@ namespace BodyAnimation
 			}
 		}
 
+		//Timeline must have at least 2 keys.
+		inline static std::vector<QuatSplineSegment> CalculateAngularVelocities(const std::vector<std::pair<float, RE::NiQuaternion>>& XY)
+		{
+			std::vector<QuatSplineSegment> result;
+			QuatSpline::quat lastRot = reinterpret_cast<const QuatSpline::quat&>(XY.begin()->second);
+			QuatSpline::quat nextRot;
+			QuatSpline::vec3 v1;
+			QuatSpline::vec3 v2;
+
+			bool first = true;
+			bool last = false;
+
+			for (auto iter = ++XY.begin(); iter != XY.end(); iter++) {
+				auto prevKey = std::prev(iter);
+
+				const QuatSpline::quat& end = reinterpret_cast<const QuatSpline::quat&>(iter->second);
+				const QuatSpline::quat& begin = reinterpret_cast<const QuatSpline::quat&>(prevKey->second);
+				nextRot = end;
+
+				if (auto nxt = std::next(iter); nxt != XY.end()) {
+					nextRot = reinterpret_cast<const QuatSpline::quat&>(nxt->second);
+				} else {
+					last = true;
+				}
+
+				QuatSpline::quat_catmull_rom_velocity(v1, v2, lastRot, begin, end, nextRot);
+
+				result.emplace_back(
+					prevKey->first,
+					iter->first,
+					begin,
+					end,
+					first ? QuatSpline::vec3{ 0, 0, 0 } : v1,
+					last ? QuatSpline::vec3{ 0, 0, 0 } : v2);
+
+				lastRot = begin;
+				first = false;
+			}
+			return result;
+		}
+
 		std::unique_ptr<NodeAnimation> ToRuntimeSplineSampled() {
 			std::unique_ptr<NodeAnimation> result = ToRuntime();
 
 			concurrency::parallel_for_each(result->timelines.begin(), result->timelines.end(), [&](NodeTimeline& tl) {
 				size_t s = tl.keys.size();
-				if (s < 2)
-					return;
+				
+				std::vector<double> X, Yx, Yy, Yz;
+				std::vector<std::pair<float, RE::NiQuaternion>> Yr;
+				X.reserve(s);
+				Yx.reserve(s);
+				Yy.reserve(s);
+				Yz.reserve(s);
+				Yr.reserve(s);
 
-				float minT = static_cast<float>(tl.keys.begin()->first);
-				float maxT = static_cast<float>(std::prev(tl.keys.end())->first);
-				float t = 0;
-				bool doSample = true;
-
-				if (s > 2) {
+				if (tl.keys.size() > 1) {
 					//If the timeline has at least 3 keys, and the first & last keys are
 					//on the first and last frames, do loop smoothing.
 					//The loop is smoothed by copying the first two keys after the end,
 					//and the last two keys before the beginning, effectively shaping the
 					//spline curve for a seamless loop.
 					bool doLoopSmoothing =
+						tl.keys.size() > 2 &&
 						tl.keys.begin()->first < 0.001f &&
 						std::fabs(std::prev(tl.keys.end())->first - result->duration) < 0.001f;
+					size_t curIndex = 0;
 
-					std::vector<double> X, Yx, Yy, Yz;
-					std::vector<std::pair<float, ysp::quaternion<float>>> Yr;
-					X.reserve(s);
-					Yx.reserve(s);
-					Yy.reserve(s);
-					Yz.reserve(s);
-					Yr.reserve(s);
+					RE::NiQuaternion firstRot = tl.keys.begin()->second.value.rotate;
+					RE::NiQuaternion lastRot = std::prev(tl.keys.end())->second.value.rotate;
 
 					if (doLoopSmoothing) {
+						curIndex = 2;
+
 						auto secondToLast = std::prev(std::prev(tl.keys.end()));
 						auto thirdToLast = std::prev(secondToLast);
 
@@ -328,7 +379,7 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
+						Yr.emplace_back(timeDiff, val.rotate);
 
 						timeDiff = 0 - (result->duration - secondToLast->first);
 						X.push_back(timeDiff);
@@ -336,7 +387,7 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
+						Yr.emplace_back(timeDiff, val.rotate);
 					}
 
 					for (auto& k : tl.keys) {
@@ -345,7 +396,7 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(k.first, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
+						Yr.emplace_back(k.first, val.rotate);
 					}
 
 					if (doLoopSmoothing) {
@@ -358,7 +409,7 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
+						Yr.emplace_back(timeDiff, val.rotate);
 
 						timeDiff = result->duration + thirdToFirst->first;
 						X.push_back(timeDiff);
@@ -366,7 +417,7 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
+						Yr.emplace_back(timeDiff, val.rotate);
 					}
 
 					//Set velocity to 0 at start and end of the spline.
@@ -388,9 +439,13 @@ namespace BodyAnimation
 						0.0,
 						tk::spline::first_deriv,
 						0.0);
-					ysp::quaternion_spline_curve<float> rotation(Yr.begin(), Yr.end(), false);
+					std::vector<QuatSplineSegment> vels = CalculateAngularVelocities(Yr);
 
+					float minT = static_cast<float>(tl.keys.begin()->first);
+					float maxT = static_cast<float>(std::prev(tl.keys.end())->first);
 					tl.keys.clear();
+					float t = 0;
+					bool doSample = true;
 					while(doSample) {
 						if (t >= result->duration) {
 							t = result->duration;
@@ -401,36 +456,20 @@ namespace BodyAnimation
 						val.translate.x = static_cast<float>(translateX(clampedT));
 						val.translate.y = static_cast<float>(translateY(clampedT));
 						val.translate.z = static_cast<float>(translateZ(clampedT));
-						auto r = rotation(clampedT);
-						val.rotate = reinterpret_cast<RE::NiQuaternion&>(r);
 
-						t += sampleRate;
-					}
-				} else {
-					//If the timeline only has 2 keys, fall back to normal cubic easing.
-					auto first = *tl.keys.begin();
-					auto second = *std::next(tl.keys.begin());
-					tl.keys.clear();
-					
-					while (doSample) {
-						if (t >= result->duration) {
-							t = result->duration;
-							doSample = false;
-						}
-						auto& val = tl.keys[t].value;
-
-						if (t <= minT) {
-							val = first.second.value;
-						} else if (t >= maxT) {
-							val = second.second.value;
+						if (std::fabs(clampedT - minT) < 0.001f) {
+							val.rotate = firstRot;
+						} else if (std::fabs(clampedT - maxT) < 0.001f) {
+							val.rotate = lastRot;
 						} else {
-							float cubicT = static_cast<float>(Easing::easeInOutCubic(MathUtil::NormalizeTime(minT, maxT, t)));
-							val.translate.x = std::lerp(first.second.value.translate.x, second.second.value.translate.x, cubicT);
-							val.translate.y = std::lerp(first.second.value.translate.y, second.second.value.translate.y, cubicT);
-							val.translate.z = std::lerp(first.second.value.translate.z, second.second.value.translate.z, cubicT);
-							NodeTransform::ShortestPathSlerp(val.rotate, first.second.value.rotate, second.second.value.rotate, cubicT);
-						}
+							while (clampedT > vels[curIndex].endTime && (curIndex + 1) < vels.size())
+								curIndex += 1;
 
+							auto& v = vels[curIndex];
+
+							float normalizedTime = (clampedT - v.startTime) / (v.endTime - v.startTime);
+							QuatSpline::quat_hermite(reinterpret_cast<QuatSpline::quat&>(val.rotate), normalizedTime, v.q1, v.q2, v.v1, v.v2);
+						}
 						t += sampleRate;
 					}
 				}
