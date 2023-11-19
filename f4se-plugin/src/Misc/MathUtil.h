@@ -72,10 +72,21 @@ public:
 		return result;
 	}
 
+	//Faster than 1.0f/std::sqrt(x), but only accurate to around 11 bits.
+	static float FastReverseSqrt(const float x) {
+		__m128 temp = _mm_set_ss(x);
+		temp = _mm_rsqrt_ss(temp);
+		return _mm_cvtss_f32(temp);
+	}
+
 	static RE::NiQuaternion NormalizeQuat(const RE::NiQuaternion& q) {
-		float magnitude = std::sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
-		float scalar = 1.0f / magnitude;
-		return { q.w * scalar, q.x * scalar, q.y * scalar, q.z * scalar };
+		auto rsqrt = FastReverseSqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+		return { q.w * rsqrt, q.x * rsqrt, q.y * rsqrt, q.z * rsqrt };
+	}
+
+	static RE::NiPoint3 NormalizePt3(const RE::NiPoint3& p) {
+		auto rsqrt = FastReverseSqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+		return { p.x * rsqrt, p.y * rsqrt, p.z * rsqrt };
 	}
 
 	static float NormalizeTime(float begin, float end, float time) {
@@ -159,3 +170,86 @@ public:
 		return { yaw, pitch };
 	}
 };
+/*
+struct NiQuatCubicSpline
+{
+	struct Segment
+	{
+		double t0;
+		double t1;
+		double t2;
+		double t3;
+		RE::NiQuaternion q0;
+		RE::NiQuaternion q1;
+		RE::NiQuaternion q2;
+		RE::NiQuaternion q3;
+		RE::NiQuaternion c1;
+		RE::NiQuaternion c2;
+	};
+
+	std::vector<Segment> segs;
+
+	NiQuatCubicSpline(const std::vector<RE::NiQuaternion>& Y, const std::vector<double>& X) {
+		if (Y.size() < 2 || Y.size() != X.size())
+			return;
+
+		for (size_t i = 1; i < Y.size(); i++) {
+			auto& prevX = X[i - (i > 1 ? 2 : 1)];
+			auto& prevY = Y[i - (i > 1 ? 2 : 1)];
+			auto& startX = X[i - 1];
+			auto& startY = Y[i - 1];
+			auto& endX = X[i];
+			auto& endY = Y[i];
+			auto& nextX = X[i + ((i + 1) < X.size() ? 1 : 0)];
+			auto& nextY = Y[i + ((i + 1) < Y.size() ? 1 : 0)];
+
+			RE::NiQuaternion c1 = startY * endY.InvertVector();
+			RE::NiQuaternion c2 = endY * startY.InvertVector();
+			segs.emplace_back(prevX, startX, endX, nextX, prevY, startY, endY, nextY, c1, c2);
+		}
+	}
+
+	RE::NiQuaternion operator()(double t)
+	{
+		if (segs.empty())
+			return {};
+
+		Segment curSeg;
+
+		if (t < segs.front().t1) {
+			curSeg = segs.front();
+			t = curSeg.t1;
+		} else if (t > segs.back().t2) {
+			curSeg = segs.back();
+			t = curSeg.t2;
+		} else {
+			for (auto& s : segs) {
+				if (s.t1 <= t && s.t2 >= t) {
+					curSeg = s;
+					break;
+				}
+			}
+		}
+
+		double dt1 = curSeg.t1 - curSeg.t0;
+		double dt2 = curSeg.t2 - curSeg.t1;
+		double dt3 = curSeg.t3 - curSeg.t2;
+
+		RE::NiQuaternion slerp1;
+		slerp1.Slerp(static_cast<float>((t - curSeg.t0) / dt1), curSeg.q1, curSeg.c1);
+		RE::NiQuaternion slerp2;
+		slerp2.Slerp(static_cast<float>((t - curSeg.t1) / dt2), curSeg.q2, curSeg.c2);
+		RE::NiQuaternion slerp3;
+		slerp3.Slerp(static_cast<float>((t - curSeg.t2) / dt3), curSeg.c1, curSeg.q3);
+
+		RE::NiQuaternion p1;
+		p1.Slerp(static_cast<float>(2.0 * (t - curSeg.t0) / dt1 * (1.0 - (t - curSeg.t0) / dt1)), slerp1, slerp2);
+		RE::NiQuaternion p2;
+		p2.Slerp(static_cast<float>((t - curSeg.t1) / dt2 * (1.0 + (t - curSeg.t1) / dt2)), slerp2, slerp3);
+
+		RE::NiQuaternion result;
+		result.Slerp(static_cast<float>((t - curSeg.t1) / dt2), p1, p2);
+		return MathUtil::NormalizeQuat(result);
+	}
+};
+*/

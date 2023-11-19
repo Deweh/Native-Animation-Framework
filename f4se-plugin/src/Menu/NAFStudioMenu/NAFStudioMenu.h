@@ -386,9 +386,9 @@ namespace Menu
 				RE::NiMatrix3 mat;
 				transform.rotate.ToRotation(mat);
 
-				RE::NiPoint3 xPoint = { mat.entry[0].pt[0], mat.entry[0].pt[1], mat.entry[0].pt[2] };
-				RE::NiPoint3 yPoint = { mat.entry[1].pt[0], mat.entry[1].pt[1], mat.entry[1].pt[2] };
-				RE::NiPoint3 zPoint = { mat.entry[2].pt[0], mat.entry[2].pt[1], mat.entry[2].pt[2] };
+				RE::NiPoint3 xPoint = MathUtil::NormalizePt3({ mat.entry[0].pt[0], mat.entry[0].pt[1], mat.entry[0].pt[2] });
+				RE::NiPoint3 yPoint = MathUtil::NormalizePt3({ mat.entry[1].pt[0], mat.entry[1].pt[1], mat.entry[1].pt[2] });
+				RE::NiPoint3 zPoint = MathUtil::NormalizePt3({ mat.entry[2].pt[0], mat.entry[2].pt[1], mat.entry[2].pt[2] });
 				xPoint *= 18.0f * distScale;
 				yPoint *= 18.0f * distScale;
 				zPoint *= 18.0f * distScale;

@@ -289,7 +289,6 @@ namespace BodyAnimation
 		virtual void SetPoleLocal(const RE::NiPoint3& p) = 0;
 		virtual RE::NiPoint3 GetPoleLocal() = 0;
 		virtual void SetTargetParent(RE::NiAVObject* parent, RE::NiNode* parentRoot) = 0;
-		virtual RE::NiMatrix3 GetPoleParentRotation() = 0;
 		virtual RE::NiMatrix3 GetTargetParentRotation() = 0;
 
 		virtual ~IKHolder(){};
@@ -383,15 +382,6 @@ namespace BodyAnimation
 
 		virtual RE::NiPoint3 GetPoleLocal() {
 			return IK3ToN3(chain.relativePole);
-		}
-
-		virtual RE::NiMatrix3 GetPoleParentRotation() {
-			if (poleParent != nullptr) {
-				return poleParent->world.rotate;
-			}
-			RE::NiMatrix3 res;
-			res.MakeIdentity();
-			return res;
 		}
 
 		virtual RE::NiMatrix3 GetTargetParentRotation() {
@@ -715,8 +705,6 @@ namespace BodyAnimation
 			switch (m.target) {
 			case IKMapping::kPole:
 				result = m.holder->GetPole();
-				if (parentRotation)
-					result.rotate.FromRotation(m.holder->GetPoleParentRotation());
 				break;
 			case IKMapping::kEffector:
 				result = m.holder->GetTarget();
