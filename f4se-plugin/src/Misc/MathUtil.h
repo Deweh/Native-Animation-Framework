@@ -79,6 +79,39 @@ public:
 		return _mm_cvtss_f32(temp);
 	}
 
+	static RE::NiPoint3 QuatToScaledAngleAxis(const RE::NiQuaternion& q) {
+		float angle;
+		RE::NiPoint3 axis;
+		q.ToAngleAxis(angle, axis);
+		auto mag = Pt3Magnitude(axis);
+		if (std::abs(mag) > 1e-8f) {
+			axis = NormalizePt3FromMagnitude(axis, mag);
+		}
+		axis *= angle;
+		return axis;
+	}
+
+	static RE::NiQuaternion QuatFromScaledAngleAxis(const RE::NiPoint3& p)
+	{
+		auto angle = Pt3Magnitude(p);
+		RE::NiPoint3 axis = p;
+		if (std::abs(angle) > 1e-8f) {
+			axis = NormalizePt3FromMagnitude(p, angle);
+		}
+		RE::NiQuaternion result;
+		result.FromAngleAxis(angle, axis);
+		return NormalizeQuat(result);
+	}
+
+	static float Pt3Magnitude(const RE::NiPoint3& p) {
+		return std::sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+	}
+
+	static RE::NiPoint3 NormalizePt3FromMagnitude(const RE::NiPoint3& p, float mag) {
+		auto rsqrt = 1.0f / mag;
+		return { p.x * rsqrt, p.y * rsqrt, p.z * rsqrt };
+	}
+
 	static RE::NiQuaternion NormalizeQuat(const RE::NiQuaternion& q) {
 		auto rsqrt = FastReverseSqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
 		return { q.w * rsqrt, q.x * rsqrt, q.y * rsqrt, q.z * rsqrt };

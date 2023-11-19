@@ -43,8 +43,7 @@ namespace BodyAnimation
 
 		IKManager ikManager = IKManager(
 			nodeMap,
-			std::function<void(bool)>(std::bind(&NodeAnimationGraph::OnIKChainActiveChanged, this, std::placeholders::_1))
-		);
+			std::function<void(bool)>(std::bind(&NodeAnimationGraph::OnIKChainActiveChanged, this, std::placeholders::_1)));
 
 		std::string animationFilePath = "";
 		std::string animationId = "";
@@ -58,16 +57,31 @@ namespace BodyAnimation
 		float transitionLocalTime = 0.0f;
 		float transitionDuration = 0.01f;
 
-		~NodeAnimationGraph() {
+		~NodeAnimationGraph()
+		{
+			SetDisableOCBP(false);
+
 			if (unreg3dCallback != nullptr)
 				unreg3dCallback();
 		}
 
-		NodeAnimationGraph() {
+		NodeAnimationGraph()
+		{
 			flags.set(kTemporary, kNoActiveIKChains);
 		}
 
-		void OnIKChainActiveChanged(bool chainActive) {
+		void SetDisableOCBP(bool a_disable)
+		{
+			if (F4SE::GetPluginInfo("OCBP plugin").has_value()) {
+				auto r = targetHandle.get();
+				for (auto& n : nodeMap) {
+					GameUtil::CallGlobalPapyrusFunction("OCBP_API", "SetBoneToggle", r.get(), a_disable, n);
+				}
+			}
+		}
+
+		void OnIKChainActiveChanged(bool chainActive)
+		{
 			if (chainActive) {
 				flags.reset(kNoActiveIKChains);
 			} else {
@@ -75,16 +89,19 @@ namespace BodyAnimation
 			}
 		}
 
-		bool IsAnimating() const {
-			return (state == kGenerator || 
-				(state == kTransition && 
-				(activeTransition == kGeneratorToGenerator || 
-				activeTransition == kHavokToGraph))) &&
-				generator.HasAnimation();
+		bool IsAnimating() const
+		{
+			return (state == kGenerator ||
+					   (state == kTransition &&
+						   (activeTransition == kGeneratorToGenerator ||
+							   activeTransition == kHavokToGraph))) &&
+			       generator.HasAnimation();
 		}
 
-		void SetGraphData(const Data::GraphInfo& d) {
+		void SetGraphData(const Data::GraphInfo& d)
+		{
 			nodeMap = d.nodeList;
+			SetDisableOCBP(true);
 			ikManager.ClearChains();
 			for (const auto& pair : d.chains) {
 				if (pair.second.nodes.size() == 3) {
@@ -112,8 +129,6 @@ namespace BodyAnimation
 					return false;
 				}
 
-				targetHandle = ref->GetHandle();
-
 				auto _3d = ref->Get3D();
 				if (_3d == nullptr) {
 					flags.set(kUnloaded3D);
@@ -131,11 +146,12 @@ namespace BodyAnimation
 			} else {
 				ikManager.OnOther3DChange(ref);
 			}
-			
+
 			return true;
 		}
 
-		void TransitionToAnimation(std::unique_ptr<NodeAnimation> anim, float duration = 1.3f) {
+		void TransitionToAnimation(std::unique_ptr<NodeAnimation> anim, float duration = 1.3f)
+		{
 			transitionLocalTime = 0.0f;
 			transitionDuration = duration;
 
@@ -174,7 +190,8 @@ namespace BodyAnimation
 			}
 		}
 
-		void SetRecording(bool a_record) {
+		void SetRecording(bool a_record)
+		{
 			if (a_record && state != kRecording) {
 				recorder.Reset();
 				recorder.Init(nodes.size());
@@ -184,11 +201,13 @@ namespace BodyAnimation
 			}
 		}
 
-		bool GetRecording() const {
+		bool GetRecording() const
+		{
 			return state == kRecording;
 		}
 
-		void Update(float deltaTime) {
+		void Update(float deltaTime)
+		{
 			switch (state) {
 			case kGenerator:
 				UpdateGenerator(deltaTime, true);
@@ -199,15 +218,15 @@ namespace BodyAnimation
 			case kRecording:
 				UpdateRecorder(deltaTime);
 				break;
-			}
-
-			if (state == kIdle) {
+			case kIdle:
 				ikManager.Update();
+				break;
 			}
 		}
 
 	private:
-		void PushOutput(const std::vector<NodeTransform>& a_output) {
+		void PushOutput(const std::vector<NodeTransform>& a_output)
+		{
 			size_t updateCount = nodes.size() > a_output.size() ? a_output.size() : nodes.size();
 
 			for (size_t i = 0; i < updateCount; i++) {
@@ -220,7 +239,8 @@ namespace BodyAnimation
 			}
 		}
 
-		bool UpdateGenerator(float deltaTime, bool output = false) {
+		bool UpdateGenerator(float deltaTime, bool output = false)
+		{
 			if (!generator.HasAnimation()) {
 				state = kIdle;
 				return false;
@@ -234,18 +254,21 @@ namespace BodyAnimation
 			return true;
 		}
 
-		void UpdateRecorder(float deltaTime) {
+		void UpdateRecorder(float deltaTime)
+		{
 			recorder.Update(deltaTime, nodes);
 		}
 
-		NodeTransform NodeTransformOrDefault(size_t idx) {
+		NodeTransform NodeTransformOrDefault(size_t idx)
+		{
 			if (nodes[idx] != nullptr)
 				return NodeTransform(nodes[idx]->local);
 
 			return NodeTransform::Identity();
 		}
 
-		void UpdateTransition(float deltaTime, TransitionType a_type) {
+		void UpdateTransition(float deltaTime, TransitionType a_type)
+		{
 			//Since the GraphHook executes directly after the Havok graph
 			//finishes updating, the current node transforms on the character
 			//will be those from the Havok graph. We can use this information
@@ -256,38 +279,35 @@ namespace BodyAnimation
 				UpdateTransition(deltaTime, kGenerator, [&](size_t i) {
 					return std::pair<NodeTransform, NodeTransform>(
 						NodeTransformOrDefault(i),
-						generator.output[i]
-					);
+						generator.output[i]);
 				});
 				break;
 			case kGraphToHavok:
 				UpdateTransition(deltaTime, kIdle, [&](size_t i) {
 					return std::pair<NodeTransform, NodeTransform>(
 						generator.output[i],
-						NodeTransformOrDefault(i)
-					);
+						NodeTransformOrDefault(i));
 				});
 				break;
 			case kGeneratorToGenerator:
 				UpdateTransition(deltaTime, kGenerator, [&](size_t i) {
 					return std::pair<NodeTransform, NodeTransform>(
 						transitionFromSnapshot[i],
-						generator.output[i]
-					);
+						generator.output[i]);
 				});
 				break;
 			case kGraphSnapshotToHavok:
 				UpdateTransition(deltaTime, kIdle, [&](size_t i) {
 					return std::pair<NodeTransform, NodeTransform>(
 						transitionFromSnapshot[i],
-						NodeTransformOrDefault(i)
-					);
+						NodeTransformOrDefault(i));
 				});
 				break;
 			}
 		}
 
-		void UpdateTransition(float deltaTime, GraphState endState, std::function<std::pair<NodeTransform, NodeTransform>(size_t)> lerpParams) {
+		void UpdateTransition(float deltaTime, GraphState endState, std::function<std::pair<NodeTransform, NodeTransform>(size_t)> lerpParams)
+		{
 			if (UpdateGenerator(deltaTime)) {
 				transitionLocalTime += deltaTime;
 
@@ -307,7 +327,7 @@ namespace BodyAnimation
 					auto trans = lerpParams(i);
 					if (trans.first.IsIdentity()) {
 						transitionOutput[i] = trans.second;
-					} else if(trans.second.IsIdentity()) {
+					} else if (trans.second.IsIdentity()) {
 						transitionOutput[i] = trans.first;
 					} else {
 						transitionOutput[i].Lerp(trans.first, trans.second, static_cast<float>(Easing::easeInOutCubic(MathUtil::NormalizeTime(0.0f, transitionDuration, transitionLocalTime))));
@@ -322,7 +342,8 @@ namespace BodyAnimation
 			}
 		}
 
-		void SnapshotTransformsForTransition() {
+		void SnapshotTransformsForTransition()
+		{
 			for (size_t i = 0; i < nodes.size(); i++) {
 				transitionFromSnapshot[i] = NodeTransformOrDefault(i);
 			}

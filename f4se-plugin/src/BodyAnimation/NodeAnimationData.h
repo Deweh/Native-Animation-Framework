@@ -1,6 +1,5 @@
 #pragma once
 #include "Misc/MathUtil.h"
-#include "QuatSpline.h"
 
 namespace BodyAnimation
 {
@@ -252,15 +251,6 @@ namespace BodyAnimation
 			bool dataLoss = false;
 		};
 
-		struct QuatSplineSegment
-		{
-			float startTime;
-			float endTime;
-			QuatSpline::quat q1;
-			QuatSpline::quat q2;
-			QuatSpline::vec3 v1;
-			QuatSpline::vec3 v2;
-		};
 
 		float sampleRate = 0.033333f;
 		size_t duration = 2;
@@ -297,60 +287,21 @@ namespace BodyAnimation
 			}
 		}
 
-		//Timeline must have at least 2 keys.
-		inline static std::vector<QuatSplineSegment> CalculateAngularVelocities(const std::vector<std::pair<float, RE::NiQuaternion>>& XY)
-		{
-			std::vector<QuatSplineSegment> result;
-			QuatSpline::quat lastRot = reinterpret_cast<const QuatSpline::quat&>(XY.begin()->second);
-			QuatSpline::quat nextRot;
-			QuatSpline::vec3 v1;
-			QuatSpline::vec3 v2;
-
-			bool first = true;
-			bool last = false;
-
-			for (auto iter = ++XY.begin(); iter != XY.end(); iter++) {
-				auto prevKey = std::prev(iter);
-
-				const QuatSpline::quat& end = reinterpret_cast<const QuatSpline::quat&>(iter->second);
-				const QuatSpline::quat& begin = reinterpret_cast<const QuatSpline::quat&>(prevKey->second);
-				nextRot = end;
-
-				if (auto nxt = std::next(iter); nxt != XY.end()) {
-					nextRot = reinterpret_cast<const QuatSpline::quat&>(nxt->second);
-				} else {
-					last = true;
-				}
-
-				QuatSpline::quat_catmull_rom_velocity(v1, v2, lastRot, begin, end, nextRot);
-
-				result.emplace_back(
-					prevKey->first,
-					iter->first,
-					begin,
-					end,
-					first ? QuatSpline::vec3{ 0, 0, 0 } : v1,
-					last ? QuatSpline::vec3{ 0, 0, 0 } : v2);
-
-				lastRot = begin;
-				first = false;
-			}
-			return result;
-		}
-
 		std::unique_ptr<NodeAnimation> ToRuntimeSplineSampled() {
 			std::unique_ptr<NodeAnimation> result = ToRuntime();
 
 			concurrency::parallel_for_each(result->timelines.begin(), result->timelines.end(), [&](NodeTimeline& tl) {
 				size_t s = tl.keys.size();
-				
-				std::vector<double> X, Yx, Yy, Yz;
-				std::vector<std::pair<float, RE::NiQuaternion>> Yr;
+
+				RE::NiPoint3 axis;
+				std::vector<double> X, Yx, Yy, Yz, YrX, YrY, YrZ;
 				X.reserve(s);
 				Yx.reserve(s);
 				Yy.reserve(s);
 				Yz.reserve(s);
-				Yr.reserve(s);
+				YrX.reserve(s);
+				YrY.reserve(s);
+				YrZ.reserve(s);
 
 				if (tl.keys.size() > 1) {
 					//If the timeline has at least 3 keys, and the first & last keys are
@@ -379,7 +330,10 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, val.rotate);
+						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
+						YrX.push_back(axis.x);
+						YrY.push_back(axis.y);
+						YrZ.push_back(axis.z);
 
 						timeDiff = 0 - (result->duration - secondToLast->first);
 						X.push_back(timeDiff);
@@ -387,7 +341,10 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, val.rotate);
+						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
+						YrX.push_back(axis.x);
+						YrY.push_back(axis.y);
+						YrZ.push_back(axis.z);
 					}
 
 					for (auto& k : tl.keys) {
@@ -396,7 +353,10 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(k.first, val.rotate);
+						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
+						YrX.push_back(axis.x);
+						YrY.push_back(axis.y);
+						YrZ.push_back(axis.z);
 					}
 
 					if (doLoopSmoothing) {
@@ -409,7 +369,10 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, val.rotate);
+						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
+						YrX.push_back(axis.x);
+						YrY.push_back(axis.y);
+						YrZ.push_back(axis.z);
 
 						timeDiff = result->duration + thirdToFirst->first;
 						X.push_back(timeDiff);
@@ -417,7 +380,10 @@ namespace BodyAnimation
 						Yx.push_back(val.translate.x);
 						Yy.push_back(val.translate.y);
 						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, val.rotate);
+						axis = MathUtil::QuatToScaledAngleAxis(val.rotate);
+						YrX.push_back(axis.x);
+						YrY.push_back(axis.y);
+						YrZ.push_back(axis.z);
 					}
 
 					//Set velocity to 0 at start and end of the spline.
@@ -439,7 +405,24 @@ namespace BodyAnimation
 						0.0,
 						tk::spline::first_deriv,
 						0.0);
-					std::vector<QuatSplineSegment> vels = CalculateAngularVelocities(Yr);
+					tk::spline rotationX(X, YrX, tk::spline::cspline_hermite,
+						false,
+						tk::spline::first_deriv,
+						0.0,
+						tk::spline::first_deriv,
+						0.0);
+					tk::spline rotationY(X, YrY, tk::spline::cspline_hermite,
+						false,
+						tk::spline::first_deriv,
+						0.0,
+						tk::spline::first_deriv,
+						0.0);
+					tk::spline rotationZ(X, YrZ, tk::spline::cspline_hermite,
+						false,
+						tk::spline::first_deriv,
+						0.0,
+						tk::spline::first_deriv,
+						0.0);
 
 					float minT = static_cast<float>(tl.keys.begin()->first);
 					float maxT = static_cast<float>(std::prev(tl.keys.end())->first);
@@ -456,20 +439,11 @@ namespace BodyAnimation
 						val.translate.x = static_cast<float>(translateX(clampedT));
 						val.translate.y = static_cast<float>(translateY(clampedT));
 						val.translate.z = static_cast<float>(translateZ(clampedT));
-
-						if (std::fabs(clampedT - minT) < 0.001f) {
-							val.rotate = firstRot;
-						} else if (std::fabs(clampedT - maxT) < 0.001f) {
-							val.rotate = lastRot;
-						} else {
-							while (clampedT > vels[curIndex].endTime && (curIndex + 1) < vels.size())
-								curIndex += 1;
-
-							auto& v = vels[curIndex];
-
-							float normalizedTime = (clampedT - v.startTime) / (v.endTime - v.startTime);
-							QuatSpline::quat_hermite(reinterpret_cast<QuatSpline::quat&>(val.rotate), normalizedTime, v.q1, v.q2, v.v1, v.v2);
-						}
+						val.rotate = MathUtil::QuatFromScaledAngleAxis({
+							static_cast<float>(rotationX(clampedT)),
+							static_cast<float>(rotationY(clampedT)),
+							static_cast<float>(rotationZ(clampedT))
+						});
 						t += sampleRate;
 					}
 				}
