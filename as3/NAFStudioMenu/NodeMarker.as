@@ -121,7 +121,7 @@
 				if(bDraggingGizmo && iGizmoID == 1){
 					graphics.lineStyle(fGizmoThickness, 0xFFFFFF);
 				} else {
-					graphics.lineStyle(fGizmoThickness, 0x858585, fGizmoAlpha);
+					graphics.lineStyle(fGizmoThickness, 0x969696, fGizmoAlpha);
 				}
 				graphics.moveTo(0, 0);
 				graphics.lineTo(pYx, pYy);
@@ -129,7 +129,7 @@
 				if(bDraggingGizmo && iGizmoID == 2){
 					graphics.lineStyle(fGizmoThickness, 0xFFFFFF);
 				} else {
-					graphics.lineStyle(fGizmoThickness, 0x858585, fGizmoAlpha);
+					graphics.lineStyle(fGizmoThickness, 0xADADAD, fGizmoAlpha);
 				}
 				graphics.moveTo(0, 0);
 				graphics.lineTo(pZx, pZy);

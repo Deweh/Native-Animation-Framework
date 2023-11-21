@@ -318,34 +318,37 @@ namespace BodyAnimation
 					Yz.reserve(s);
 					Yr.reserve(s);
 
+					size_t lastIdx = 0;
+					auto addKeyData = [&](const NodeTransform& val, float t){
+						X.push_back(t);
+						Yx.push_back(val.translate.x);
+						Yy.push_back(val.translate.y);
+						Yz.push_back(val.translate.z);
+						RE::NiQuaternion q = val.rotate;
+						if (lastIdx > 0) {
+							const auto& q1 = Yr[lastIdx - 1].second;
+							const auto& q2 = q;
+							float dot = q1.R_component_1() * q2.w + q1.R_component_2() * q2.x + q1.R_component_3() * q2.y + q1.R_component_4() * q2.z;
+							if (dot < 0.0f) {
+								q = -q;
+							}
+						}
+						Yr.emplace_back(t, reinterpret_cast<const ysp::quaternion<float>&>(q));
+						lastIdx++;
+					};
+
 					if (doLoopSmoothing) {
 						auto secondToLast = std::prev(std::prev(tl.keys.end()));
 						auto thirdToLast = std::prev(secondToLast);
 
 						float timeDiff = 0 - (result->duration - thirdToLast->first);
-						X.push_back(timeDiff);
-						auto val = thirdToLast->second.value;
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
-
+						addKeyData(thirdToLast->second.value, timeDiff);
 						timeDiff = 0 - (result->duration - secondToLast->first);
-						X.push_back(timeDiff);
-						val = secondToLast->second.value;
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
+						addKeyData(secondToLast->second.value, timeDiff);
 					}
 
 					for (auto& k : tl.keys) {
-						auto& val = k.second.value;
-						X.push_back(k.first);
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						Yr.emplace_back(k.first, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
+						addKeyData(k.second.value, k.first);
 					}
 
 					if (doLoopSmoothing) {
@@ -353,20 +356,9 @@ namespace BodyAnimation
 						auto thirdToFirst = std::next(secondToFirst);
 
 						float timeDiff = result->duration + secondToFirst->first;
-						X.push_back(timeDiff);
-						auto val = secondToFirst->second.value;
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
-
+						addKeyData(secondToFirst->second.value, timeDiff);
 						timeDiff = result->duration + thirdToFirst->first;
-						X.push_back(timeDiff);
-						val = thirdToFirst->second.value;
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
-						Yr.emplace_back(timeDiff, reinterpret_cast<const ysp::quaternion<float>&>(val.rotate));
+						addKeyData(thirdToFirst->second.value, timeDiff);
 					}
 
 					//Set velocity to 0 at start and end of the spline.
