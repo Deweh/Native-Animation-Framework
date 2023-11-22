@@ -436,6 +436,19 @@ namespace Tasks
 			return result;
 		}
 
+		template <typename T>
+		double GetRemainingTime()
+		{
+			double result = 0.0;
+			auto tskIter = tasks.find(typeid(T).name());
+			if (tskIter != tasks.end()) {
+				TimerThread::GetSingleton()->VisitTask(tskIter->second, [&](TimedTask* tsk) {
+					result = tsk->duration;
+				});
+			}
+			return result;
+		}
+
 		void StopAll()
 		{
 			auto tThread = TimerThread::GetSingleton();

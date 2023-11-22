@@ -30,6 +30,7 @@ namespace Papyrus
 		PAPYRUS_BIND(GetSceneSpeed);
 		PAPYRUS_BIND(GetSceneFromActor);
 		PAPYRUS_BIND(IsSceneRunning);
+		PAPYRUS_BIND(GetSceneProperty);
 
 		PAPYRUS_BIND(PlayNANIM);
 		PAPYRUS_BIND(StopNANIM);

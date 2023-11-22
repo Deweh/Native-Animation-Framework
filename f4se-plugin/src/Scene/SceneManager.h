@@ -290,6 +290,12 @@ namespace Scene
 
 			for (auto& scn : localScenes) {
 				std::unique_lock l{ scn->lock };
+				//If scene is queued for detach and its only references are the scene map and this function's
+				//local copy of the scene map, process the detach.
+				if (scn->detachQueued && scn.use_count() <= 2) {
+					DetachScene(scn->uid);
+					continue;
+				}
 				if (scn->status != SceneState::PendingDeletion && !scn->noUpdate && scn->actors.size() > 0) {
 					auto firstActor = scn->actors.begin()->first.get().get();
 					if (firstActor != nullptr && firstActor->parentCell != nullptr && firstActor->parentCell->loadedData != nullptr) {

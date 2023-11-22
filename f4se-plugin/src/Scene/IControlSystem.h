@@ -37,6 +37,8 @@ namespace Scene
 		virtual void Notify(const std::any&) {}
 		virtual void OnTimer(uint16_t) {}
 
+		virtual ~IControlSystem(){};
+
 		template <class Archive>
 		void serialize(Archive&)
 		{

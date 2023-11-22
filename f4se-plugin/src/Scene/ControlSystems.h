@@ -68,6 +68,8 @@ namespace Scene
 			scn->PushQueuedControlSystem();
 		}
 
+		virtual ~BaseControlSystem() {}
+
 		template <class Archive>
 		void serialize(Archive& ar, const uint32_t)
 		{
@@ -137,6 +139,8 @@ namespace Scene
 			}
 		}
 
+		virtual ~AnimationGroupControlSystem() {}
+
 		template <class Archive>
 		void serialize(Archive& ar, const uint32_t)
 		{
@@ -151,6 +155,8 @@ namespace Scene
 		{
 			F4SE::GetTaskInterface()->AddTask([uid = scn->QUID()] { SceneManager::StopScene(uid); });
 		}
+
+		virtual ~EndingControlSystem() {}
 
 		template <class Archive>
 		void serialize(Archive& ar, const uint32_t)
@@ -527,6 +533,8 @@ namespace Scene
 				}
 			}
 		}
+
+		virtual ~PositionTreeControlSystem() {}
 
 		template <class Archive>
 		void serialize(Archive& ar, const uint32_t ver)

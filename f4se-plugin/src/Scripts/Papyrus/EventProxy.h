@@ -8,6 +8,20 @@ namespace Papyrus
 	class EventProxy : public Singleton<EventProxy>, public Data::EventListener<EventProxy>
 	{
 	public:
+		class SceneEventHolder : public RE::BSScript::IStackCallbackFunctor
+		{
+		public:
+			std::shared_ptr<Scene::IScene> scn = nullptr;
+
+			virtual ~SceneEventHolder() {}
+
+			virtual void CallQueued() {}
+			virtual void CallCanceled() {}
+			virtual void StartMultiDispatch() {}
+			virtual void EndMultiDispatch() {}
+			virtual void operator()(RE::BSScript::Variable) {}
+		};
+
 		using Events = Data::Events;
 
 		void OnSceneStart(Events::event_type, Events::EventData& data) {
@@ -19,7 +33,12 @@ namespace Papyrus
 		void OnSceneEnd(Events::event_type, Events::EventData& data)
 		{
 			if (auto d = std::any_cast<Events::SceneData>(&data); d) {
-				GameUtil::SendPapyrusEvent(PEVENT_SCENE_END, PackSceneId(d->id));
+				RE::BSTSmartPointer<SceneEventHolder> callback(new SceneEventHolder());
+				if (!Scene::SceneManager::GetScene(d->id, callback->scn)) {
+					callback.reset();
+				}
+
+				GameUtil::SendPapyrusEventWithCallback(PEVENT_SCENE_END, callback, PackSceneId(d->id));
 
 				std::vector<RE::Actor*> actors;
 				actors.reserve(d->actors.size());
@@ -27,7 +46,7 @@ namespace Papyrus
 					actors.push_back(a.get());
 				}
 
-				GameUtil::SendPapyrusEvent(PEVENT_SCENE_END_DATA, PackSceneId(d->id), actors);
+				GameUtil::SendPapyrusEventWithCallback(PEVENT_SCENE_END_DATA, callback, PackSceneId(d->id), actors);
 			}
 		}
 

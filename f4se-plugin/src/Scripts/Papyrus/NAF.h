@@ -244,7 +244,7 @@ namespace Papyrus::NAF
 		std::vector<RE::NiPointer<RE::Actor>> actors;
 		Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
 			actors = Scene::GetActorsInOrder(scn->actors);
-		});
+		}, true);
 
 		std::vector<RE::Actor*> result;
 		result.reserve(actors.size());
@@ -259,7 +259,7 @@ namespace Papyrus::NAF
 		std::vector<std::string> result;
 		Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
 			result = scn->QCachedHKXStrings();
-		});
+		}, true);
 		return result;
 	}
 
@@ -267,7 +267,7 @@ namespace Papyrus::NAF
 		std::string id = "";
 		Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
 			id = scn->controlSystem->QSystemID();
-		});
+		}, true);
 		std::shared_ptr<const Data::Position> pos = Data::GetPosition(id);
 		std::vector<std::string> result;
 		if (pos != nullptr) {
@@ -291,7 +291,7 @@ namespace Papyrus::NAF
 		float speed = 0.0f;
 		Scene::SceneManager::VisitScene(sceneId, [&](Scene::IScene* scn) {
 			speed = scn->animMult;
-		});
+		}, true);
 		return speed;
 	}
 
@@ -309,7 +309,7 @@ namespace Papyrus::NAF
 					}
 				});
 			}
-		});
+		}, true);
 
 		return PackSceneId(targetSceneId);
 	}
@@ -321,6 +321,60 @@ namespace Papyrus::NAF
 			running = true;
 		});
 		return running;
+	}
+
+	static const std::unordered_map<std::string, std::function<void(Scene::IScene*, Variable*)>> ScenePropGetters =
+	{
+		{ "locationref", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->settings.locationRefr.get().get());
+		} },
+		{ "totalduration", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->settings.duration);
+		} },
+		{ "remainingduration", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->GetRemainingDuration());
+		} },
+		{ "status", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, static_cast<int32_t>(scn->status));
+		} },
+		{ "syncstatus", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, static_cast<int32_t>(scn->syncStatus));
+		} },
+		{ "animationtime", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->animTime);
+		} },
+		{ "startequipset", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->startEquipSet);
+		} },
+		{ "stopequipset", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->stopEquipSet);
+		} },
+		{ "autoadvance", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->QAutoAdvance());
+		} },
+		{ "ignorecombat", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->settings.ignoreCombat);
+		} },
+		{ "positiontype", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, std::string(typeid(*scn->controlSystem).name()));
+		} },
+		{ "animationid", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->controlSystem->QAnimationID());
+		} },
+		{ "positionid", [](Scene::IScene* scn, Variable* res) {
+			 PackVariable(*res, scn->controlSystem->QSystemID());
+		} }
+	};
+
+	const RE::BSScript::Variable* GetSceneProperty(std::monostate, SceneId a_id, std::string a_prop) {
+		Variable* result = new Variable();
+		auto prop = ScenePropGetters.find(Utility::StringToLower(a_prop));
+		if (prop != ScenePropGetters.end()) {
+			Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
+				prop->second(scn, result);
+			}, true);
+		}
+		return result;
 	}
 
 	/*

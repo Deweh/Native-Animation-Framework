@@ -112,9 +112,9 @@ namespace Scene
 					CamHook::SetActive(false);
 					GameUtil::SetFlyCam(false);
 				}
+				scn->detachQueued = true;
 			},
 			true);
-		SceneManager::DetachScene(sceneId);
 	}
 }
 
@@ -180,6 +180,7 @@ namespace Scene
 
 		virtual ~Scene()
 		{
+			logger::trace("Scene ID#{} deleted.", uid);
 		}
 
 		virtual void StartTimer(uint16_t id, double durationMs) override {
@@ -404,6 +405,10 @@ namespace Scene
 
 				tasks.Start<DelegateFunctor<StopDelegate>>(settings.duration * 1000, uid);
 			}
+		}
+
+		virtual float GetRemainingDuration() override {
+			return static_cast<float>(tasks.GetRemainingTime<DelegateFunctor<StopDelegate>>());
 		}
 
 		virtual void StopSmoothSync() override

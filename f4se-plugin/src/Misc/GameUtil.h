@@ -254,11 +254,18 @@ public:
 
 	// Sends an event to all Papyrus scripts registered with RegisterForExternalEvent(eventName).
 	template <class... Args>
-	static void SendPapyrusEvent(std::string eventName, Args... _args) {
+	static void SendPapyrusEvent(const std::string& eventName, Args... _args) {
+		SendPapyrusEventWithCallback(eventName, nullptr, _args...);
+	}
+
+	template <class... Args>
+	static void SendPapyrusEventWithCallback(const std::string& eventName, RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor> callback, Args... _args)
+	{
 		struct PapyrusEventData
 		{
 			RE::BSScript::IVirtualMachine* vm;
 			RE::BSTThreadScrapFunction<bool(RE::BSScrapArray<RE::BSScript::Variable>&)> scrapFunc;
+			RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor> callback;
 		};
 
 		PapyrusEventData evntData;
@@ -267,10 +274,11 @@ public:
 
 		evntData.scrapFunc = (Papyrus::FunctionArgs{ vm, _args... }).get();
 		evntData.vm = vm;
-		
+		evntData.callback = callback;
+
 		papyrus->GetExternalEventRegistrations(eventName, &evntData, [](uint64_t handle, const char* scriptName, const char* callbackName, void* dataPtr) {
 			PapyrusEventData* d = static_cast<PapyrusEventData*>(dataPtr);
-			d->vm->DispatchMethodCall(handle, scriptName, callbackName, d->scrapFunc, nullptr);
+			d->vm->DispatchMethodCall(handle, scriptName, callbackName, d->scrapFunc, d->callback);
 		});
 	}
 

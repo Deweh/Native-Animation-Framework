@@ -91,10 +91,10 @@ namespace Scene
 
 	enum SyncState : uint8_t
 	{
-		Synced,
-		SettingUp,
-		WaitingForLoad,
-		SyncingTimes
+		Synced = 0,
+		SettingUp = 1,
+		WaitingForLoad = 2,
+		SyncingTimes = 3
 	};
 
 	enum ErrorCode : int32_t
@@ -225,6 +225,7 @@ namespace Scene
 		float animTime = 0.0f;
 		bool trackAnimTime = false;
 		bool noUpdate = false;
+		bool detachQueued = false;
 		std::string startEquipSet;
 		std::string stopEquipSet;
 		SceneSettings settings;
@@ -243,11 +244,7 @@ namespace Scene
 
 		virtual std::vector<std::string> QCachedHKXStrings() { return {}; }
 
-		virtual bool Init(std::shared_ptr<const Data::Position>)
-		{
-			uid = Data::Uid::Get();
-			return true;
-		}
+		virtual bool Init(std::shared_ptr<const Data::Position>) { return true; }
 
 		virtual bool Begin()
 		{
@@ -267,6 +264,8 @@ namespace Scene
 		virtual void Update(){}
 
 		virtual void SetDuration(float){}
+
+		virtual float GetRemainingDuration() { return 0.0f; }
 
 		virtual void ApplyMorphSet(const std::string&){}
 
@@ -298,14 +297,21 @@ namespace Scene
 		}
 
 		template <class Archive>
-		void serialize(Archive& ar, const uint32_t)
+		void serialize(Archive& ar, const uint32_t ver)
 		{
-			ar(cereal::base_class<IControllable>(this), uid, actors, status, syncStatus, location,
-				angle, animMult, cachedIdlesMap, tasks, controlSystem, queuedSystem, lastAnimTime,
-				animTime, trackAnimTime, startEquipSet, stopEquipSet, settings);
+			ar(cereal::base_class<IControllable>(this));
+			switch (ver) {
+			case 2:
+				ar(detachQueued);
+			default:
+				ar(uid, actors, status, syncStatus, location,
+					angle, animMult, cachedIdlesMap, tasks, controlSystem, queuedSystem, lastAnimTime,
+					animTime, trackAnimTime, startEquipSet, stopEquipSet, settings);
+			}
 		}
 	};
 }
 
 CEREAL_REGISTER_TYPE(Scene::SceneFunctor);
 CEREAL_CLASS_VERSION(Scene::IdleInfo, 2);
+CEREAL_CLASS_VERSION(Scene::IScene, 2);

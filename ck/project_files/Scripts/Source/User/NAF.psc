@@ -135,6 +135,60 @@ EndFunction
 ;Returns true if akScene points to a currently running scene, otherwise false.
 Bool Function IsSceneRunning(SceneId akScene) Native Global
 
+;Returns the value of the specified property from the specified scene. If the scene does not exist, None will be returned.
+;List of valid sProperty values:
+;"LocationRef":
+;   Return Type: ObjectReference
+;   Details: The object reference chosen as this scene's location. If no location was chosen, this will be None.
+;"TotalDuration":
+;   Return Type: Float
+;   Details: The starting duration of the scene, in seconds.
+;"RemainingDuration":
+;   Return Type: Float
+;   Details: The currently remaining duration of the scene, in seconds. When this reaches 0, the scene will end.
+;"Status":
+;   Return Type: Int
+;   Details: The internal status of the scene.
+;   Values:
+;       0 = Initializing (not yet fully started),
+;       1 = Active,
+;       2 = PendingDeletion (will be deleted within the next second unless something goes wrong),
+;       3 = Ending (waiting for the current position to end, then scene will be marked for deletion)
+;"SyncStatus":
+;   Return Type: Int
+;   Details: The animation synchronization status for the scene.
+;   Values:
+;       0 = Synced (all animations are synchronized),
+;       1 = SettingUp (waiting for actor graphs to finish any in-progress transitions)
+;       2 = WaitingForLoad (waiting for all the animations to load into memory)
+;       3 = SyncingTimes (the animations are currently synchronizing)
+;"AnimationTime":
+;   Return Type: Float
+;   Details: The current time of the scene's synchronized animation, in seconds.
+;            This value may be incorrect if SyncStatus is not 0.
+;"StartEquipSet":
+;   Return Type: String
+;   Details: The ID of the start equipment set that the scene was started with.
+;"StopEquipSet":
+;   Return Type: String
+;   Details: The ID of the stop equipment set that the scene was started with. Will be applied when the scene ends.
+;"AutoAdvance":
+;   Return Type: Bool
+;   Details: Value of the forceNPCControlled setting.
+;"IgnoreCombat":
+;   Return Type: Bool
+;   Details: Value of the ignoreCombat setting.
+;"PositionType":
+;   Return Type: String
+;   Details: A descriptor of the scene's current position type.
+;"AnimationID":
+;   Return Type: String
+;   Details: The ID of the scene's current animation.
+;"PositionID":
+;   Return Type: String
+;   Details: The ID of the scene's current position.
+Var Function GetSceneProperty(SceneId akScene, String sProperty) Native Global
+
 ;|--------------------------|
 ;| Body Animation Functions |
 ;|--------------------------|
