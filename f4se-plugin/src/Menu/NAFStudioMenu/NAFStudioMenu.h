@@ -383,34 +383,27 @@ namespace Menu
 
 			if (isGizmo) {
 				float distScale = (10.5f * nodeSizeModifier) * (1.0f / s);
-				RE::NiMatrix3 mat;
-				transform.rotate.ToRotation(mat);
-
-				RE::NiPoint3 xPoint = MathUtil::NormalizePt3({ mat.entry[0].pt[0], mat.entry[0].pt[1], mat.entry[0].pt[2] });
-				RE::NiPoint3 yPoint = MathUtil::NormalizePt3({ mat.entry[1].pt[0], mat.entry[1].pt[1], mat.entry[1].pt[2] });
-				RE::NiPoint3 zPoint = MathUtil::NormalizePt3({ mat.entry[2].pt[0], mat.entry[2].pt[1], mat.entry[2].pt[2] });
-				xPoint *= distScale;
-				yPoint *= distScale;
-				zPoint *= distScale;
-				xPoint += transform.translate;
-				yPoint += transform.translate;
-				zPoint += transform.translate;
-
-				RE::NiPoint2 baseRel{ screenPos.x, screenPos.y };
-				WorldPtToScreenPt3(xPoint, screenPos);
-				RE::NiPoint2 xRel{ (screenPos.x * stageWidth) - baseRel.x, ((1.0f - screenPos.y) * stageHeight) - baseRel.y };
-				WorldPtToScreenPt3(yPoint, screenPos);
-				RE::NiPoint2 yRel{ (screenPos.x * stageWidth) - baseRel.x, ((1.0f - screenPos.y) * stageHeight) - baseRel.y };
-				WorldPtToScreenPt3(zPoint, screenPos);
-				RE::NiPoint2 zRel{ (screenPos.x * stageWidth) - baseRel.x, ((1.0f - screenPos.y) * stageHeight) - baseRel.y };
+				auto v = MathUtil::QuatToDirVectors(transform.rotate);
+				v.transform([&](RE::NiPoint3& p){
+					p *= distScale;
+					p += transform.translate;
+				});
 
 				RE::Scaleform::GFx::Value args[6];
-				args[0] = xRel.x;
-				args[1] = xRel.y;
-				args[2] = yRel.x;
-				args[3] = yRel.y;
-				args[4] = zRel.x;
-				args[5] = zRel.y;
+				RE::NiPoint2 baseRel{ screenPos.x, screenPos.y };
+
+				WorldPtToScreenPt3(v.x, screenPos);
+				args[0] = (screenPos.x * stageWidth) - baseRel.x;
+				args[1] = ((1.0f - screenPos.y) * stageHeight) - baseRel.y;
+
+				WorldPtToScreenPt3(v.y, screenPos);
+				args[2] = (screenPos.x * stageWidth) - baseRel.x;
+				args[3] = ((1.0f - screenPos.y) * stageHeight) - baseRel.y;
+
+				WorldPtToScreenPt3(v.z, screenPos);
+				args[4] = (screenPos.x * stageWidth) - baseRel.x;
+				args[5] = ((1.0f - screenPos.y) * stageHeight) - baseRel.y;
+
 				obj.Invoke("SetGizmoPoints", nullptr, args, 6);
 			}
 		}

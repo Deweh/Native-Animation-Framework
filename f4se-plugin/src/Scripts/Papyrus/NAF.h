@@ -593,4 +593,37 @@ namespace Papyrus::NAF
 	{
 		Menu::HUDManager::AttachElementTo(a_handle, a_detach ? 0 : a_targetHandle);
 	}
+
+	/*
+	|-------------------|
+	| Utility Functions |
+	|-------------------|
+	*/
+
+	std::vector<float> GetLocalTransform(std::monostate, RE::TESObjectREFR* a_object, RE::TESObjectREFR* a_parent)
+	{
+		std::vector<float> result(6ui64, 0.0f);
+		if (!a_object || !a_parent)
+			return result;
+
+		auto object3d = a_object->Get3D();
+		auto parent3d = a_parent->Get3D();
+
+		if (!object3d || !parent3d)
+			return result;
+
+		RE::NiTransform transform = object3d->world.WorldToLocal(parent3d->world);
+
+		if (a_object->Is<RE::Actor>()) {
+			transform.rotate.ToEulerAnglesZXY(result[2], result[0], result[1]);
+		} else {
+			transform.rotate.ToEulerAnglesXYZ(result[0], result[1], result[2]);
+		}
+		
+		result[3] = transform.translate.x;
+		result[4] = transform.translate.y;
+		result[5] = transform.translate.z;
+
+		return result;
+	}
 }

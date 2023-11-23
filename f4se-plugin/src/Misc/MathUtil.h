@@ -8,6 +8,19 @@ public:
 	inline static constexpr float MAX_RADIAN{ 2.0f * SHORT_PI };
 	inline static constexpr float MAX_DEGREE{ 360.0f };
 
+	struct DirectionVectors
+	{
+		RE::NiPoint3 x;
+		RE::NiPoint3 y;
+		RE::NiPoint3 z;
+
+		void transform(const std::function<void(RE::NiPoint3&)> f) {
+			f(x);
+			f(y);
+			f(z);
+		}
+	};
+
 	static RE::NiTransform CalculateWorldAscending(RE::NiNode* rootNode, const RE::NiAVObject* target, const RE::NiTransform* rootTransformOverride = nullptr)
 	{
 		if (rootNode == nullptr) {
@@ -72,11 +85,35 @@ public:
 		return result;
 	}
 
+	static DirectionVectors QuatToDirVectors(const RE::NiQuaternion& q) {
+		DirectionVectors result;
+		RE::NiMatrix3 mat;
+		q.ToRotation(mat);
+
+		result.x = NormalizePt3({ mat.entry[0].pt[0], mat.entry[0].pt[1], mat.entry[0].pt[2] });
+		result.y = NormalizePt3({ mat.entry[1].pt[0], mat.entry[1].pt[1], mat.entry[1].pt[2] });
+		result.z = NormalizePt3({ mat.entry[2].pt[0], mat.entry[2].pt[1], mat.entry[2].pt[2] });
+
+		return result;
+	}
+
 	//Faster than 1.0f/std::sqrt(x), but only accurate to around 11 bits.
 	static float FastReverseSqrt(const float x) {
 		__m128 temp = _mm_set_ss(x);
 		temp = _mm_rsqrt_ss(temp);
 		return _mm_cvtss_f32(temp);
+	}
+
+	static RE::NiQuaternion QuatSquad(const RE::NiQuaternion& q0, const RE::NiQuaternion& q1, const RE::NiQuaternion& q2, const RE::NiQuaternion& q3, float t)
+	{
+		RE::NiQuaternion s1;
+		RE::NiQuaternion s2;
+		RE::NiQuaternion result;
+
+		s1.Slerp(t, q0, q3);
+		s2.Slerp(t, q1, q2);
+		result.Slerp(2.0f * t * (1.0f - t), s1, s2);
+		return result;
 	}
 
 	static RE::NiQuaternion NormalizeQuat(const RE::NiQuaternion& q) {
@@ -170,42 +207,53 @@ public:
 		return { yaw, pitch };
 	}
 };
+
 /*
-struct NiQuatCubicSpline
+class NiQuatSquadSpline
 {
+private:
+	RE::NiQuaternion CalculateTangent(const RE::NiQuaternion& q0, const RE::NiQuaternion& q1, const RE::NiQuaternion& q2)
+	{
+		RE::NiQuaternion result;
+		result.Intermediate(q0, q1, q2);
+		return result;
+	}
+
+public:
 	struct Segment
 	{
-		double t0;
-		double t1;
-		double t2;
-		double t3;
+		double startTime;
+		double endTime;
 		RE::NiQuaternion q0;
 		RE::NiQuaternion q1;
-		RE::NiQuaternion q2;
-		RE::NiQuaternion q3;
-		RE::NiQuaternion c1;
-		RE::NiQuaternion c2;
+		RE::NiQuaternion t0;
+		RE::NiQuaternion t1;
 	};
 
 	std::vector<Segment> segs;
 
-	NiQuatCubicSpline(const std::vector<RE::NiQuaternion>& Y, const std::vector<double>& X) {
+	NiQuatSquadSpline(const std::vector<RE::NiQuaternion>& Y, const std::vector<double>& X) {
 		if (Y.size() < 2 || Y.size() != X.size())
 			return;
 
 		for (size_t i = 1; i < Y.size(); i++) {
-			auto& prevX = X[i - (i > 1 ? 2 : 1)];
+			auto prevX = static_cast<float>(X[i - (i > 1 ? 2 : 1)]);
 			auto& prevY = Y[i - (i > 1 ? 2 : 1)];
-			auto& startX = X[i - 1];
+			auto startX = static_cast<float>(X[i - 1]);
 			auto& startY = Y[i - 1];
-			auto& endX = X[i];
+			auto endX = static_cast<float>(X[i]);
 			auto& endY = Y[i];
-			auto& nextX = X[i + ((i + 1) < X.size() ? 1 : 0)];
+			auto nextX = static_cast<float>(X[i + ((i + 1) < X.size() ? 1 : 0)]);
 			auto& nextY = Y[i + ((i + 1) < Y.size() ? 1 : 0)];
 
-			RE::NiQuaternion c1 = startY * endY.InvertVector();
-			RE::NiQuaternion c2 = endY * startY.InvertVector();
-			segs.emplace_back(prevX, startX, endX, nextX, prevY, startY, endY, nextY, c1, c2);
+			segs.emplace_back(
+				startX,
+				endX,
+				startY,
+				endY,
+				CalculateTangent(prevY, startY, endY, startX - prevX, endX - startX),
+				CalculateTangent(startY, endY, nextY, endX - startX, nextX - endX)
+			);
 		}
 	}
 
@@ -216,40 +264,24 @@ struct NiQuatCubicSpline
 
 		Segment curSeg;
 
-		if (t < segs.front().t1) {
+		if (t < segs.front().startTime) {
 			curSeg = segs.front();
-			t = curSeg.t1;
-		} else if (t > segs.back().t2) {
+			t = curSeg.startTime;
+		} else if (t > segs.back().endTime) {
 			curSeg = segs.back();
-			t = curSeg.t2;
+			t = curSeg.endTime;
 		} else {
 			for (auto& s : segs) {
-				if (s.t1 <= t && s.t2 >= t) {
+				if (s.startTime <= t && s.endTime >= t) {
 					curSeg = s;
 					break;
 				}
 			}
 		}
 
-		double dt1 = curSeg.t1 - curSeg.t0;
-		double dt2 = curSeg.t2 - curSeg.t1;
-		double dt3 = curSeg.t3 - curSeg.t2;
-
-		RE::NiQuaternion slerp1;
-		slerp1.Slerp(static_cast<float>((t - curSeg.t0) / dt1), curSeg.q1, curSeg.c1);
-		RE::NiQuaternion slerp2;
-		slerp2.Slerp(static_cast<float>((t - curSeg.t1) / dt2), curSeg.q2, curSeg.c2);
-		RE::NiQuaternion slerp3;
-		slerp3.Slerp(static_cast<float>((t - curSeg.t2) / dt3), curSeg.c1, curSeg.q3);
-
-		RE::NiQuaternion p1;
-		p1.Slerp(static_cast<float>(2.0 * (t - curSeg.t0) / dt1 * (1.0 - (t - curSeg.t0) / dt1)), slerp1, slerp2);
-		RE::NiQuaternion p2;
-		p2.Slerp(static_cast<float>((t - curSeg.t1) / dt2 * (1.0 + (t - curSeg.t1) / dt2)), slerp2, slerp3);
-
-		RE::NiQuaternion result;
-		result.Slerp(static_cast<float>((t - curSeg.t1) / dt2), p1, p2);
-		return MathUtil::NormalizeQuat(result);
+		float fT = static_cast<float>(t);
+		float normalizedT = MathUtil::NormalizeTime(static_cast<float>(curSeg.startTime), static_cast<float>(curSeg.endTime), fT);
+		return MathUtil::QuatSquad(curSeg.q0, curSeg.t0, curSeg.t1, curSeg.q1, normalizedT);
 	}
 };
 */

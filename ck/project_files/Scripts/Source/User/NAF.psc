@@ -32,7 +32,7 @@ Function ToggleMenu() Native Global
 ; Get bDisableRescaler setting
 Bool Function GetDisableRescaler() Native Global
 
-; Set bDisableRescaler setting (will not persist unless saved in NAF)
+; Set bDisableRescaler setting (will not persist unless saved via the NAF menu)
 Function SetDisableRescaler(Bool bDisable) Native Global
 
 ;Returns false if the actor has either the NAF_InScene keyword or NAF_DoNotUse keyword, otherwise true
@@ -323,6 +323,15 @@ Function SetElementMask(Int iHandle, Int iMaskHandle, Bool bRemove = False) Nati
 ;If iTargetHandle is an invalid handle OR bDetach is set to true, iTargetHandle will be ignored
 ;and iHandle element will be detached from whatever element it's currently attached to.
 Function AttachElementTo(Int iHandle, Int iTargetHandle, Bool bDetach = False) Native Global
+
+;|-------------------|
+;| Utility Functions |
+;|-------------------|
+
+;Returns the local rotation and position of akObject, relative to akParent.
+;First 3 floats in the array are rotation, and last 3 floats are position.
+;If either object reference is None, or either object reference's 3d is not loaded, all zeros will be returned.
+Float[] Function GetLocalTransform(ObjectReference akObject, ObjectReference akParent) Native Global
 
 ;|--------------|
 ;| Scene Events |

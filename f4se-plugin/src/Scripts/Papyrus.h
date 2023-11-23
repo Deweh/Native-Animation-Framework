@@ -56,6 +56,8 @@ namespace Papyrus
 		PAPYRUS_BIND(SetElementMask);
 		PAPYRUS_BIND(AttachElementTo);
 
+		PAPYRUS_BIND(GetLocalTransform);
+
 		return true;
 	}
 }
