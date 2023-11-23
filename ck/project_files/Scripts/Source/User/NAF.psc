@@ -137,6 +137,10 @@ Bool Function IsSceneRunning(SceneId akScene) Native Global
 
 ;Returns the value of the specified property from the specified scene. If the scene does not exist, None will be returned.
 ;List of valid sProperty values:
+;"HasStarted":
+;   Return Type: Bool
+;   Details: If this returns true, then the scene has started and all other properties can be retrieved.
+;            If this returns false, then the actors are walking to the scene, and no other properties can be retrieved yet.
 ;"LocationRef":
 ;   Return Type: ObjectReference
 ;   Details: The object reference chosen as this scene's location. If no location was chosen, this will be None.
@@ -152,7 +156,7 @@ Bool Function IsSceneRunning(SceneId akScene) Native Global
 ;   Values:
 ;       0 = Initializing (not yet fully started),
 ;       1 = Active,
-;       2 = PendingDeletion (will be deleted within the next second unless something goes wrong),
+;       2 = PendingDeletion (will be deleted once the scene finishes shutting down & all SceneEnd handlers return),
 ;       3 = Ending (waiting for the current position to end, then scene will be marked for deletion)
 ;"SyncStatus":
 ;   Return Type: Int
@@ -187,6 +191,12 @@ Bool Function IsSceneRunning(SceneId akScene) Native Global
 ;"PositionID":
 ;   Return Type: String
 ;   Details: The ID of the scene's current position.
+;"Location":
+;   Return Type: Var[] (use Utility.VarToVarArray) with 3 Floats
+;   Details: The XYZ location of the scene. The array is mapped to X = index 0, Y = index 1, Z = index 2
+;"Angle":
+;   Return Type: Var[] (use Utility.VarToVarArray) with 3 Floats
+;   Details: The XYZ rotation of the scene. The array is mapped to X = index 0, Y = index 1, Z = index 2
 Var Function GetSceneProperty(SceneId akScene, String sProperty) Native Global
 
 ;|--------------------------|

@@ -20,6 +20,8 @@ namespace Scene
 		std::string startMorphSet;
 		std::string stopMorphSet;
 
+		virtual std::string_view QTypeName() { return "Animation"; }
+
 		virtual std::string QSystemID() override {
 			return id;
 		}
@@ -84,6 +86,8 @@ namespace Scene
 		size_t currentStage = 0;
 		uint32_t loopsRemaining = 1;
 		std::vector<std::pair<uint32_t, size_t>> weights;
+
+		virtual std::string_view QTypeName() { return "AnimationGroup"; }
 
 		virtual void SetInfo(Data::Position::ControlSystemInfo* info) override
 		{
@@ -151,6 +155,8 @@ namespace Scene
 	class EndingControlSystem : public IControlSystem
 	{
 	public:
+		virtual std::string_view QTypeName() { return "EndTransition"; }
+
 		void OnBegin(IControllable* scn, std::string_view) override
 		{
 			F4SE::GetTaskInterface()->AddTask([uid = scn->QUID()] { SceneManager::StopScene(uid); });
@@ -168,6 +174,8 @@ namespace Scene
 	class PositionTreeControlSystem : public IControlSystem, public IControllable, public Data::EventListener<PositionTreeControlSystem>
 	{
 	public:
+		virtual std::string_view QTypeName() { return "PositionTree"; }
+
 		enum TreeNodeState : uint8_t
 		{
 			SubSystemCompleted = 1u << 0,

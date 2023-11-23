@@ -17,6 +17,15 @@ namespace Papyrus::NAF
 	|--------------------|
 	*/
 
+	std::vector<Variable*> MakeVarArray(size_t s)
+	{
+		std::vector<Variable*> arr(s, nullptr);
+		for (size_t i = 0; i < s; i++) {
+			arr[i] = new Variable();
+		}
+		return arr;
+	}
+
 	struct SceneData
 	{
 		Scene::StartResult result;
@@ -356,23 +365,55 @@ namespace Papyrus::NAF
 			 PackVariable(*res, scn->settings.ignoreCombat);
 		} },
 		{ "positiontype", [](Scene::IScene* scn, Variable* res) {
-			 PackVariable(*res, std::string(typeid(*scn->controlSystem).name()));
+			 PackVariable(*res, scn->controlSystem->QTypeName());
 		} },
 		{ "animationid", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->controlSystem->QAnimationID());
 		} },
 		{ "positionid", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->controlSystem->QSystemID());
+		} },
+		{ "location", [](Scene::IScene* scn, Variable* res) {
+			 auto arr = MakeVarArray(3);
+			 *arr[0] = scn->location.x;
+			 *arr[1] = scn->location.y;
+			 *arr[2] = scn->location.z;
+			 PackVariable(*res, std::move(arr));
+		} },
+		{ "angle", [](Scene::IScene* scn, Variable* res) {
+			 auto arr = MakeVarArray(3);
+			 *arr[0] = scn->angle.x;
+			 *arr[1] = scn->angle.y;
+			 *arr[2] = scn->angle.z;
+			 PackVariable(*res, std::move(arr));
 		} }
 	};
 
 	const RE::BSScript::Variable* GetSceneProperty(std::monostate, SceneId a_id, std::string a_prop) {
 		Variable* result = new Variable();
-		auto prop = ScenePropGetters.find(Utility::StringToLower(a_prop));
-		if (prop != ScenePropGetters.end()) {
-			Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
-				prop->second(scn, result);
-			}, true);
+		uint64_t id = UnpackSceneId(a_id);
+		Utility::TransformStringToLower(a_prop);
+
+		if (a_prop == "hasstarted") {
+			uint8_t walkInstResult = 0;
+			Scene::SceneManager::VisitWalkInstance(id, [&](Scene::SceneManager::WalkInfo&) {
+				walkInstResult = 1;
+			});
+			if (walkInstResult == 0) {
+				Scene::SceneManager::VisitScene(id, [&](Scene::IScene*) {
+					walkInstResult = 2;
+				}, true);
+			}
+			if (walkInstResult != 0) {
+				PackVariable(*result, walkInstResult == 1);
+			}
+		} else {
+			auto prop = ScenePropGetters.find(a_prop);
+			if (prop != ScenePropGetters.end()) {
+				Scene::SceneManager::VisitScene(id, [&](Scene::IScene* scn) {
+					prop->second(scn, result);
+				}, true);
+			}
 		}
 		return result;
 	}

@@ -36,6 +36,7 @@ namespace Scene
 		virtual std::string QSystemID() { return ""; }
 		virtual void Notify(const std::any&) {}
 		virtual void OnTimer(uint16_t) {}
+		virtual std::string_view QTypeName() { return "None"; }
 
 		virtual ~IControlSystem(){};
 

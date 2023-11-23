@@ -382,16 +382,16 @@ namespace Menu
 			obj.SetMember("scaleY", s);
 
 			if (isGizmo) {
-				float distScale = (3.5f * screenPos.z) * nodeSizeModifier;
+				float distScale = (10.5f * nodeSizeModifier) * (1.0f / s);
 				RE::NiMatrix3 mat;
 				transform.rotate.ToRotation(mat);
 
 				RE::NiPoint3 xPoint = MathUtil::NormalizePt3({ mat.entry[0].pt[0], mat.entry[0].pt[1], mat.entry[0].pt[2] });
 				RE::NiPoint3 yPoint = MathUtil::NormalizePt3({ mat.entry[1].pt[0], mat.entry[1].pt[1], mat.entry[1].pt[2] });
 				RE::NiPoint3 zPoint = MathUtil::NormalizePt3({ mat.entry[2].pt[0], mat.entry[2].pt[1], mat.entry[2].pt[2] });
-				xPoint *= 18.0f * distScale;
-				yPoint *= 18.0f * distScale;
-				zPoint *= 18.0f * distScale;
+				xPoint *= distScale;
+				yPoint *= distScale;
+				zPoint *= distScale;
 				xPoint += transform.translate;
 				yPoint += transform.translate;
 				zPoint += transform.translate;
