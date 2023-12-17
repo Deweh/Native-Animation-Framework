@@ -1,6 +1,5 @@
 #pragma once
 #include "Misc/MathUtil.h"
-#include "QuatSpline.h"
 
 namespace BodyAnimation
 {
@@ -287,7 +286,10 @@ namespace BodyAnimation
 			}
 		}
 
-		std::unique_ptr<NodeAnimation> ToRuntimeSplineSampled() {
+		std::unique_ptr<NodeAnimation> ToRuntimeSampled(
+			const std::function<std::unique_ptr<MathUtil::InterpolationSystem<RE::NiQuaternion>>()>& rotInterpCreator,
+			const std::function<std::unique_ptr<MathUtil::InterpolationSystem<RE::NiPoint3>>()>& posInterpCreator)
+		{
 			std::unique_ptr<NodeAnimation> result = ToRuntime();
 
 			concurrency::parallel_for_each(result->timelines.begin(), result->timelines.end(), [&](NodeTimeline& tl) {
@@ -301,6 +303,9 @@ namespace BodyAnimation
 				bool doSample = true;
 
 				if (s > 2) {
+					auto rotInterp = rotInterpCreator();
+					auto posInterp = posInterpCreator();
+
 					//If the timeline has at least 3 keys, and the first & last keys are
 					//on the first and last frames, do loop smoothing.
 					//The loop is smoothed by copying the first two keys after the end,
@@ -310,30 +315,27 @@ namespace BodyAnimation
 						tl.keys.begin()->first < 0.001f &&
 						std::fabs(std::prev(tl.keys.end())->first - result->duration) < 0.001f;
 
-					std::vector<double> X, Yx, Yy, Yz;
-					std::vector<std::pair<float, ysp::quaternion<float>>> Yr;
+					std::vector<float> X;
+					std::vector<RE::NiPoint3> Yp;
+					std::vector<RE::NiQuaternion> Yr;
 					X.reserve(s);
-					Yx.reserve(s);
-					Yy.reserve(s);
-					Yz.reserve(s);
+					Yp.reserve(s);
 					Yr.reserve(s);
 
 					size_t lastIdx = 0;
 					auto addKeyData = [&](const NodeTransform& val, float t){
 						X.push_back(t);
-						Yx.push_back(val.translate.x);
-						Yy.push_back(val.translate.y);
-						Yz.push_back(val.translate.z);
+						Yp.push_back(val.translate);
 						RE::NiQuaternion q = val.rotate;
 						if (lastIdx > 0) {
-							const auto& q1 = Yr[lastIdx - 1].second;
+							const auto& q1 = Yr[lastIdx - 1];
 							const auto& q2 = q;
-							float dot = q1.R_component_1() * q2.w + q1.R_component_2() * q2.x + q1.R_component_3() * q2.y + q1.R_component_4() * q2.z;
+							float dot = q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z;
 							if (dot < 0.0f) {
 								q = -q;
 							}
 						}
-						Yr.emplace_back(t, reinterpret_cast<const ysp::quaternion<float>&>(q));
+						Yr.push_back(q);
 						lastIdx++;
 					};
 
@@ -361,26 +363,8 @@ namespace BodyAnimation
 						addKeyData(thirdToFirst->second.value, timeDiff);
 					}
 
-					//Set velocity to 0 at start and end of the spline.
-					tk::spline translateX(X, Yx, tk::spline::cspline_hermite,
-						false,
-						tk::spline::first_deriv,
-						0.0,
-						tk::spline::first_deriv,
-						0.0);
-					tk::spline translateY(X, Yy, tk::spline::cspline_hermite,
-						false,
-						tk::spline::first_deriv,
-						0.0,
-						tk::spline::first_deriv,
-						0.0);
-					tk::spline translateZ(X, Yz, tk::spline::cspline_hermite,
-						false,
-						tk::spline::first_deriv,
-						0.0,
-						tk::spline::first_deriv,
-						0.0);
-					ysp::quaternion_spline_curve<float> rotation(Yr.begin(), Yr.end(), false);
+					posInterp->SetData(X, Yp);
+					rotInterp->SetData(X, Yr);
 
 					tl.keys.clear();
 					while(doSample) {
@@ -390,11 +374,8 @@ namespace BodyAnimation
 						}
 						auto& val = tl.keys[t].value;
 						float clampedT = std::clamp(t, minT, maxT);
-						val.translate.x = static_cast<float>(translateX(clampedT));
-						val.translate.y = static_cast<float>(translateY(clampedT));
-						val.translate.z = static_cast<float>(translateZ(clampedT));
-						auto r = rotation(clampedT);
-						val.rotate = reinterpret_cast<RE::NiQuaternion&>(r);
+						val.translate = (*posInterp)(clampedT);
+						val.rotate = (*rotInterp)(clampedT);
 
 						t += sampleRate;
 					}

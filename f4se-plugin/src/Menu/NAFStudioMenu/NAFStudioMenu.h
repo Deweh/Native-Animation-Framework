@@ -382,6 +382,7 @@ namespace Menu
 			obj.SetMember("scaleY", s);
 
 			if (isGizmo) {
+				gizmoMovementScale = screenPos.z;
 				float distScale = (10.5f * nodeSizeModifier) * (1.0f / s);
 				auto v = MathUtil::QuatToDirVectors(transform.rotate);
 				v.transform([&](RE::NiPoint3& p){
@@ -390,19 +391,31 @@ namespace Menu
 				});
 
 				RE::Scaleform::GFx::Value args[6];
-				RE::NiPoint2 baseRel{ screenPos.x, screenPos.y };
+				RE::NiPoint2 gizmoBasePos = { screenPos.x, screenPos.y };
 
 				WorldPtToScreenPt3(v.x, screenPos);
-				args[0] = (screenPos.x * stageWidth) - baseRel.x;
-				args[1] = ((1.0f - screenPos.y) * stageHeight) - baseRel.y;
+				gizmoXPos = {
+					(screenPos.x * stageWidth) - gizmoBasePos.x,
+					((1.0f - screenPos.y) * stageHeight) - gizmoBasePos.y
+				};
+				args[0] = gizmoXPos.x;
+				args[1] = gizmoXPos.y;
 
 				WorldPtToScreenPt3(v.y, screenPos);
-				args[2] = (screenPos.x * stageWidth) - baseRel.x;
-				args[3] = ((1.0f - screenPos.y) * stageHeight) - baseRel.y;
+				gizmoYPos = {
+					(screenPos.x * stageWidth) - gizmoBasePos.x,
+					((1.0f - screenPos.y) * stageHeight) - gizmoBasePos.y
+				};
+				args[2] = gizmoYPos.x;
+				args[3] = gizmoYPos.y;
 
 				WorldPtToScreenPt3(v.z, screenPos);
-				args[4] = (screenPos.x * stageWidth) - baseRel.x;
-				args[5] = ((1.0f - screenPos.y) * stageHeight) - baseRel.y;
+				gizmoZPos = {
+					(screenPos.x * stageWidth) - gizmoBasePos.x,
+					((1.0f - screenPos.y) * stageHeight) - gizmoBasePos.y
+				};
+				args[4] = gizmoZPos.x;
+				args[5] = gizmoZPos.y;
 
 				obj.Invoke("SetGizmoPoints", nullptr, args, 6);
 			}
@@ -677,18 +690,41 @@ namespace Menu
 			}
 		}
 
-		void OnGizmoMovement(uint32_t a_type, float movementX, float) {
+		void OnGizmoMovement(uint32_t a_type, float mouseX, float mouseY) {
 			RE::NiPoint3 changePt3{ 0, 0, 0 };
+
+			const auto calcMovementAmount = [&](const RE::NiPoint2& gizmoPoint) {
+				float dirX = gizmoPoint.x;
+				float dirY = gizmoPoint.y;
+
+				if (adjustMode == Creator::kRotation) {
+					float tempX = dirX;
+					dirX = -dirY;
+					dirY = tempX;
+				}
+
+				float dirMagnitude = sqrt(dirX * dirX + dirY * dirY);
+				float normalizedDirX = dirX / dirMagnitude;
+				float normalizedDirY = dirY / dirMagnitude;
+
+				float mouseMagnitude = sqrt(mouseX * mouseX + mouseY * mouseY);
+				float normalizedMouseX = mouseX / mouseMagnitude;
+				float normalizedMouseY = mouseY / mouseMagnitude;
+
+				float dotProduct = normalizedDirX * normalizedMouseX + normalizedDirY * normalizedMouseY;
+
+				return (dotProduct * mouseMagnitude) * gizmoMovementScale;
+			};
 
 			switch (a_type) {
 			case 0:
-				changePt3.x = movementX;
+				changePt3.x = calcMovementAmount(gizmoXPos);
 				break;
 			case 1:
-				changePt3.y = movementX;
+				changePt3.y = calcMovementAmount(gizmoYPos);
 				break;
 			case 2:
-				changePt3.z = movementX;
+				changePt3.z = calcMovementAmount(gizmoZPos);
 				break;
 			}
 
@@ -1061,6 +1097,10 @@ namespace Menu
 		bool showTargetNodes = true;
 		std::vector<RE::Scaleform::GFx::Value> nodeMarkers;
 		std::optional<SerializableActorHandle> targetHandle = std::nullopt;
+		float gizmoMovementScale = 1.0f;
+		RE::NiPoint2 gizmoXPos;
+		RE::NiPoint2 gizmoYPos;
+		RE::NiPoint2 gizmoZPos;
 
 		std::vector<SerializableActorHandle> managedActors;
 		RE::NiPoint3 location;

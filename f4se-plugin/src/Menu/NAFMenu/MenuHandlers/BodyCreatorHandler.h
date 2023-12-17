@@ -16,7 +16,8 @@ namespace Menu::NAF
 			kSelectTarget,
 			kManageIKChain,
 			kSelectAttachNode,
-			kPackage
+			kPackage,
+			kSettings
 		};
 
 		Stage currentStage = kManageNodes;
@@ -37,7 +38,8 @@ namespace Menu::NAF
 				{ "Bake Animation(s)", Button, Bind(&BodyCreatorHandler::BakeAnim) },
 				{ "Package Animation(s)", Button, Bind(&BodyCreatorHandler::GotoPackageAnim) },
 				{ "Manage IK Chains", Button, Bind(&BodyCreatorHandler::ManageIKChains) },
-				{ "Select Target", Button, Bind(&BodyCreatorHandler::GotoSelectTarget) }
+				{ "Select Target", Button, Bind(&BodyCreatorHandler::GotoSelectTarget) },
+				{ "Settings", Button, Bind(&BodyCreatorHandler::GotoSettings) }
 			});
 
 			switch (currentStage) {
@@ -101,6 +103,36 @@ namespace Menu::NAF
 					result.push_back({ std::format("Restrict Genders: {}", restrictGenders ? "ON" : "OFF"), Bind(&BodyCreatorHandler::ToggleRestrictGenders) });
 					result.push_back({ "Package", Bind(&BodyCreatorHandler::PackageAnim) });
 					break;
+				}
+				case kSettings:
+				{
+					const auto getInterpTypeString = [](BodyAnimation::NodeAnimationCreator::InterpType t) -> std::string {
+						switch (t) {
+							using enum BodyAnimation::NodeAnimationCreator::InterpType;
+						default:
+							return "None";
+						case kCatmullRom:
+							return "Catmull-Rom";
+						case kNaturalCubic:
+							return "Natural Cubic";
+						case kSquad:
+							return "Squad";
+						}
+					};
+
+					BodyAnimation::NodeAnimationCreator::InterpType posInterpType = BodyAnimation::NodeAnimationCreator::kLinear;
+					BodyAnimation::NodeAnimationCreator::InterpType rotInterpType = BodyAnimation::NodeAnimationCreator::kLinear;
+
+					if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
+						inst->VisitTargetGraph([&](BodyAnimation::NodeAnimationGraph* g) {
+							posInterpType = g->creator->posInterpType;
+							rotInterpType = g->creator->rotInterpType;
+						});
+					}
+
+					result.push_back({ "--- Motion Smoothing ---" });
+					result.push_back({ "Rotation: " + getInterpTypeString(rotInterpType), Bind(&BodyCreatorHandler::ChangeRotInterp) });
+					result.push_back({ "Position: " + getInterpTypeString(posInterpType), Bind(&BodyCreatorHandler::ChangePosInterp) });
 				}
 			}
 			
@@ -232,6 +264,53 @@ namespace Menu::NAF
 			manager->RefreshList(false);
 		}
 
+		void GotoSettings(int) {
+			currentStage = kSettings;
+			manager->RefreshList(true);
+		}
+
+		void ChangeRotInterp(int) {
+			if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
+				inst->VisitTargetGraph([&](BodyAnimation::NodeAnimationGraph* g) {
+					switch (g->creator->rotInterpType) {
+					using enum BodyAnimation::NodeAnimationCreator::InterpType;
+					default:
+						g->creator->rotInterpType = kSquad;
+						break;
+					case kSquad:
+						g->creator->rotInterpType = kCatmullRom;
+						break;
+					case kCatmullRom:
+						g->creator->rotInterpType = kNaturalCubic;
+						break;
+					case kNaturalCubic:
+						g->creator->rotInterpType = kLinear;
+						break;
+					}
+					g->creator->PushDataToGenerator(true);
+				});
+			}
+			manager->RefreshList(false);
+		}
+
+		void ChangePosInterp(int) {
+			if (auto inst = NAFStudioMenu::GetInstance(); inst != nullptr) {
+				inst->VisitTargetGraph([&](BodyAnimation::NodeAnimationGraph* g) {
+					switch (g->creator->posInterpType) {
+					using enum BodyAnimation::NodeAnimationCreator::InterpType;
+					default:
+						g->creator->posInterpType = kNaturalCubic;
+						break;
+					case kNaturalCubic:
+						g->creator->posInterpType = kLinear;
+						break;
+					}
+					g->creator->PushDataToGenerator(true);
+				});
+			}
+			manager->RefreshList(false);
+		}
+
 		virtual void BackImpl() override
 		{
 			bool exit = false;
@@ -241,6 +320,7 @@ namespace Menu::NAF
 				break;
 			case kManageIK:
 			case kPackage:
+			case kSettings:
 				currentStage = kManageNodes;
 				break;
 			case kSelectAttachNode:

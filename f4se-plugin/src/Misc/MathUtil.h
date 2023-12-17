@@ -1,4 +1,5 @@
 #pragma once
+#include "BodyAnimation/QuatSpline.h"
 
 class MathUtil
 {
@@ -206,82 +207,381 @@ public:
 
 		return { yaw, pitch };
 	}
-};
 
-/*
-class NiQuatSquadSpline
-{
-private:
-	RE::NiQuaternion CalculateTangent(const RE::NiQuaternion& q0, const RE::NiQuaternion& q1, const RE::NiQuaternion& q2)
+	template <typename T>
+	class InterpolationSystem
 	{
-		RE::NiQuaternion result;
-		result.Intermediate(q0, q1, q2);
-		return result;
-	}
+	public:
+		virtual void SetData(const std::vector<float>&, const std::vector<T>&)
+		{
+		}
 
-public:
-	struct Segment
-	{
-		double startTime;
-		double endTime;
-		RE::NiQuaternion q0;
-		RE::NiQuaternion q1;
-		RE::NiQuaternion t0;
-		RE::NiQuaternion t1;
+		virtual T operator()(float)
+		{
+			return {};
+		}
+
+		virtual ~InterpolationSystem() {}
 	};
 
-	std::vector<Segment> segs;
-
-	NiQuatSquadSpline(const std::vector<RE::NiQuaternion>& Y, const std::vector<double>& X) {
-		if (Y.size() < 2 || Y.size() != X.size())
-			return;
-
-		for (size_t i = 1; i < Y.size(); i++) {
-			auto prevX = static_cast<float>(X[i - (i > 1 ? 2 : 1)]);
-			auto& prevY = Y[i - (i > 1 ? 2 : 1)];
-			auto startX = static_cast<float>(X[i - 1]);
-			auto& startY = Y[i - 1];
-			auto endX = static_cast<float>(X[i]);
-			auto& endY = Y[i];
-			auto nextX = static_cast<float>(X[i + ((i + 1) < X.size() ? 1 : 0)]);
-			auto& nextY = Y[i + ((i + 1) < Y.size() ? 1 : 0)];
-
-			segs.emplace_back(
-				startX,
-				endX,
-				startY,
-				endY,
-				CalculateTangent(prevY, startY, endY, startX - prevX, endX - startX),
-				CalculateTangent(startY, endY, nextY, endX - startX, nextX - endX)
-			);
-		}
-	}
-
-	RE::NiQuaternion operator()(double t)
+	class Pt3Linear : public InterpolationSystem<RE::NiPoint3>
 	{
-		if (segs.empty())
-			return {};
+	public:
+		virtual ~Pt3Linear() {}
 
-		Segment curSeg;
+		const std::vector<float>* _X = nullptr;
+		const std::vector<RE::NiPoint3>* _Y = nullptr;
 
-		if (t < segs.front().startTime) {
-			curSeg = segs.front();
-			t = curSeg.startTime;
-		} else if (t > segs.back().endTime) {
-			curSeg = segs.back();
-			t = curSeg.endTime;
-		} else {
-			for (auto& s : segs) {
-				if (s.startTime <= t && s.endTime >= t) {
-					curSeg = s;
+		virtual void SetData(const std::vector<float>& X, const std::vector<RE::NiPoint3>& Y)
+		{
+			if (Y.size() < 2 || Y.size() != X.size())
+				return;
+
+			_X = &X;
+			_Y = &Y;
+		}
+
+		virtual RE::NiPoint3 operator()(float t)
+		{
+			if (!_X || !_Y)
+				return {};
+
+			auto& X = *_X;
+			auto& Y = *_Y;
+
+			size_t idx = UINT64_MAX;
+
+			for (size_t i = 0; i < X.size(); i++) {
+				if (X[i] >= t) {
+					idx = i;
 					break;
 				}
 			}
+
+			if (idx == UINT64_MAX) {
+				return Y.back();
+			} else if (idx == 0) {
+				return Y.front();
+			} else {
+				float normalizedT = NormalizeTime(X[idx - 1], X[idx], t);
+				const auto& first = Y[idx - 1];
+				const auto& second = Y[idx];
+				return {
+					std::lerp(first.x, second.x, normalizedT),
+					std::lerp(first.y, second.y, normalizedT),
+					std::lerp(first.z, second.z, normalizedT),
+				};
+			}
+		}
+	};
+
+	class Pt3NaturalCubicSpline : public InterpolationSystem<RE::NiPoint3>
+	{
+	public:
+		virtual ~Pt3NaturalCubicSpline() {}
+
+		std::unique_ptr<tk::spline> implX = nullptr;
+		std::unique_ptr<tk::spline> implY = nullptr;
+		std::unique_ptr<tk::spline> implZ = nullptr;
+
+		virtual void SetData(const std::vector<float>& X, const std::vector<RE::NiPoint3>& Y)
+		{
+			if (Y.size() < 2 || Y.size() != X.size())
+				return;
+
+			std::vector<double> Yx, Yy, Yz, Xd;
+			Yx.reserve(Y.size());
+			Yy.reserve(Y.size());
+			Yz.reserve(Y.size());
+			Xd.reserve(Y.size());
+
+			for (auto& p : Y) {
+				Yx.push_back(p.x);
+				Yy.push_back(p.y);
+				Yz.push_back(p.z);
+			}
+
+			for (auto& i : X) {
+				Xd.push_back(i);
+			}
+
+			implX = std::make_unique<tk::spline>(Xd, Yx, tk::spline::cspline_hermite,
+				false,
+				tk::spline::first_deriv,
+				0.0,
+				tk::spline::first_deriv,
+				0.0);
+			implY = std::make_unique<tk::spline>(Xd, Yy, tk::spline::cspline_hermite,
+				false,
+				tk::spline::first_deriv,
+				0.0,
+				tk::spline::first_deriv,
+				0.0);
+			implZ = std::make_unique<tk::spline>(Xd, Yz, tk::spline::cspline_hermite,
+				false,
+				tk::spline::first_deriv,
+				0.0,
+				tk::spline::first_deriv,
+				0.0);
 		}
 
-		float fT = static_cast<float>(t);
-		float normalizedT = MathUtil::NormalizeTime(static_cast<float>(curSeg.startTime), static_cast<float>(curSeg.endTime), fT);
-		return MathUtil::QuatSquad(curSeg.q0, curSeg.t0, curSeg.t1, curSeg.q1, normalizedT);
-	}
+		virtual RE::NiPoint3 operator()(float t)
+		{
+			if (!implX || !implY || !implZ)
+				return {};
+
+			auto& X = *implX;
+			auto& Y = *implY;
+			auto& Z = *implZ;
+
+			return {
+				static_cast<float>(X(t)),
+				static_cast<float>(Y(t)),
+				static_cast<float>(Z(t))
+			};
+		}
+	};
+
+	class QuatLinear : public InterpolationSystem<RE::NiQuaternion>
+	{
+	public:
+		virtual ~QuatLinear() {}
+
+		const std::vector<float>* _X = nullptr;
+		const std::vector<RE::NiQuaternion>* _Y = nullptr;
+
+		virtual void SetData(const std::vector<float>& X, const std::vector<RE::NiQuaternion>& Y)
+		{
+			if (Y.size() < 2 || Y.size() != X.size())
+				return;
+
+			_X = &X;
+			_Y = &Y;
+		}
+
+		virtual RE::NiQuaternion operator()(float t)
+		{
+			if (!_X || !_Y)
+				return {};
+
+			auto& X = *_X;
+			auto& Y = *_Y;
+
+			size_t idx = UINT64_MAX;
+			
+			for (size_t i = 0; i < X.size(); i++) {
+				if (X[i] >= t) {
+					idx = i;
+					break;
+				}
+			}
+			
+			if (idx == UINT64_MAX) {
+				return Y.back();
+			} else if (idx == 0) {
+				return Y.front();
+			} else {
+				float normalizedT = NormalizeTime(X[idx - 1], X[idx], t);
+				RE::NiQuaternion result;
+				result.Slerp(normalizedT, Y[idx - 1], Y[idx]);
+				return result;
+			}
+		}
+	};
+
+	class QuatSquadSpline : public InterpolationSystem<RE::NiQuaternion>
+	{
+	private:
+		RE::NiQuaternion CalculateTangent(const RE::NiQuaternion& q0, const RE::NiQuaternion& q1, const RE::NiQuaternion& q2)
+		{
+			RE::NiQuaternion result;
+			result.Intermediate(q0, q1, q2);
+			return result;
+		}
+
+	public:
+		virtual ~QuatSquadSpline() {}
+
+		struct Segment
+		{
+			float startTime;
+			float endTime;
+			RE::NiQuaternion q0;
+			RE::NiQuaternion q1;
+			RE::NiQuaternion t0;
+			RE::NiQuaternion t1;
+		};
+
+		std::vector<Segment> segs;
+
+		virtual void SetData(const std::vector<float>& X, const std::vector<RE::NiQuaternion>& Y)
+		{
+			segs.clear();
+
+			if (Y.size() < 2 || Y.size() != X.size())
+				return;
+
+			for (size_t i = 1; i < Y.size(); i++) {
+				auto& prevY = Y[i - (i > 1 ? 2 : 1)];
+				auto startX = X[i - 1];
+				auto& startY = Y[i - 1];
+				auto endX = X[i];
+				auto& endY = Y[i];
+				auto& nextY = Y[i + ((i + 1) < Y.size() ? 1 : 0)];
+
+				segs.push_back({
+					startX,
+					endX,
+					startY,
+					endY,
+					CalculateTangent(prevY, startY, endY),
+					CalculateTangent(startY, endY, nextY)});
+			}
+		}
+
+		virtual RE::NiQuaternion operator()(float t)
+		{
+			if (segs.empty())
+				return {};
+
+			Segment curSeg;
+
+			if (t < segs.front().startTime) {
+				curSeg = segs.front();
+				t = curSeg.startTime;
+			} else if (t >= segs.back().endTime) {
+				curSeg = segs.back();
+				t = curSeg.endTime;
+			} else {
+				for (auto& s : segs) {
+					if (s.startTime <= t && s.endTime > t) {
+						curSeg = s;
+						break;
+					}
+				}
+			}
+			
+			float normalizedT = NormalizeTime(curSeg.startTime, curSeg.endTime, t);
+			return QuatSquad(curSeg.q0, curSeg.t0, curSeg.t1, curSeg.q1, normalizedT);
+		}
+	};
+
+	class QuatCatmullRomSpline : public InterpolationSystem<RE::NiQuaternion>
+	{
+	public:
+		virtual ~QuatCatmullRomSpline() {}
+
+		struct Segment
+		{
+			float startTime;
+			float endTime;
+			dh::quat q1;
+			dh::quat q2;
+			dh::vec3 v1;
+			dh::vec3 v2;
+		};
+
+		std::vector<Segment> segs;
+
+		virtual void SetData(const std::vector<float>& X, const std::vector<RE::NiQuaternion>& Y)
+		{
+			segs.clear();
+
+			if (Y.size() < 2 || Y.size() != X.size())
+				return;
+
+			dh::quat lastRot = reinterpret_cast<const dh::quat&>(*Y.begin());
+			dh::quat nextRot;
+			dh::vec3 v1;
+			dh::vec3 v2;
+
+			bool first = true;
+			bool last = false;
+
+			for (size_t i = 1; i < X.size(); i++) {
+				const dh::quat& begin = reinterpret_cast<const dh::quat&>(Y[i - 1]);
+				const dh::quat& end = reinterpret_cast<const dh::quat&>(Y[i]);
+				nextRot = end;
+
+				if ((i + 1) < X.size()) {
+					nextRot = reinterpret_cast<const dh::quat&>(Y[i + 1]);
+				} else {
+					last = true;
+				}
+
+				dh::quat_catmull_rom_velocity(v1, v2, lastRot, begin, end, nextRot);
+
+				segs.emplace_back(
+					X[i - 1],
+					X[i],
+					begin,
+					end,
+					first ? dh::vec3{ 0, 0, 0 } : v1,
+					last ? dh::vec3{ 0, 0, 0 } : v2);
+
+				lastRot = begin;
+				first = false;
+			}
+		}
+
+		virtual RE::NiQuaternion operator()(float t)
+		{
+			if (segs.empty())
+				return {};
+
+			Segment curSeg;
+
+			if (t < segs.front().startTime) {
+				curSeg = segs.front();
+				t = curSeg.startTime;
+			} else if (t >= segs.back().endTime) {
+				curSeg = segs.back();
+				t = curSeg.endTime;
+			} else {
+				for (auto& s : segs) {
+					if (s.startTime <= t && s.endTime > t) {
+						curSeg = s;
+						break;
+					}
+				}
+			}
+
+			float normalizedT = NormalizeTime(curSeg.startTime, curSeg.endTime, t);
+			RE::NiQuaternion result;
+			dh::quat_hermite(reinterpret_cast<dh::quat&>(result), normalizedT, curSeg.q1, curSeg.q2, curSeg.v1, curSeg.v2);
+			return result;
+		}
+	};
+
+	class QuatNaturalCubicSpline : public InterpolationSystem<RE::NiQuaternion>
+	{
+	public:
+		virtual ~QuatNaturalCubicSpline() {}
+
+		std::unique_ptr<ysp::quaternion_spline_curve<float>> impl = nullptr;
+
+		virtual void SetData(const std::vector<float>& X, const std::vector<RE::NiQuaternion>& Y)
+		{
+			if (Y.size() < 2 || Y.size() != X.size())
+				return;
+
+			std::vector<std::pair<float, ysp::quaternion<float>>> combined;
+			combined.reserve(X.size());
+
+			for (size_t i = 0; i < X.size(); i++) {
+				combined.emplace_back(X[i], reinterpret_cast<const ysp::quaternion<float>&>(Y[i]));
+			}
+
+			impl = std::make_unique<ysp::quaternion_spline_curve<float>>(combined.begin(), combined.end(), 1e-8f);
+		}
+
+		virtual RE::NiQuaternion operator()(float t)
+		{
+			if (!impl)
+				return {};
+
+			auto res = (*impl)(t);
+			return reinterpret_cast<RE::NiQuaternion&>(res);
+		}
+	};
 };
-*/

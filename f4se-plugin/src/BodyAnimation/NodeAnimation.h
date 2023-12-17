@@ -148,6 +148,14 @@ namespace BodyAnimation
 			kFailed
 		};
 
+		enum InterpType
+		{
+			kLinear,
+			kSquad,
+			kCatmullRom,
+			kNaturalCubic
+		};
+
 		std::optional<HistoryEntry> currentEntry = std::nullopt;
 		std::optional<ChangeDelta> currentDelta = std::nullopt;
 		std::deque<HistoryEntry> undoHistory;
@@ -160,6 +168,8 @@ namespace BodyAnimation
 		IKManager* ikManager;
 
 		AdjustmentMode adjustMode = kPosition;
+		InterpType posInterpType = kNaturalCubic;
+		InterpType rotInterpType = kSquad;
 
 		NodeAnimationCreator(NodeAnimationGenerator* gen, std::vector<RE::NiPointer<RE::NiAVObject>>* nodes, std::vector<std::string>* nMap, IKManager* ikMan)
 		{
@@ -302,7 +312,34 @@ namespace BodyAnimation
 					generator->SetAnimation(animData->ToRuntime());
 				}
 			} else {
-				generator->SetAnimation(animData->ToRuntimeSplineSampled());
+				std::function<std::unique_ptr<MathUtil::InterpolationSystem<RE::NiQuaternion>>()> rotInterp;
+				std::function<std::unique_ptr<MathUtil::InterpolationSystem<RE::NiPoint3>>()> posInterp;
+
+				switch (rotInterpType) {
+				case kSquad:
+					rotInterp = []() { return std::make_unique<MathUtil::QuatSquadSpline>(); };
+					break;
+				case kCatmullRom:
+					rotInterp = []() { return std::make_unique<MathUtil::QuatCatmullRomSpline>(); };
+					break;
+				case kNaturalCubic:
+					rotInterp = []() { return std::make_unique<MathUtil::QuatNaturalCubicSpline>(); };
+					break;
+				default:
+					rotInterp = []() { return std::make_unique<MathUtil::QuatLinear>(); };
+					break;
+				}
+
+				switch (posInterpType) {
+				case kNaturalCubic:
+					posInterp = []() { return std::make_unique<MathUtil::Pt3NaturalCubicSpline>(); };
+					break;
+				default:
+					posInterp = []() { return std::make_unique<MathUtil::Pt3Linear>(); };
+					break;
+				}
+
+				generator->SetAnimation(animData->ToRuntimeSampled(rotInterp, posInterp));
 			}
 		}
 
