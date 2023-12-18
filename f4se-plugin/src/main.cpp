@@ -24,6 +24,7 @@ bool g_gameDataReady = false;
 #include "Tasks/GameLoopHook.h"
 #include "Scripts/Papyrus.h"
 #include "Serialization/Serialization.h"
+#include "API/API.h"
 namespace
 {
 	void MessageHandler(F4SE::MessagingInterface::Message* a_msg)

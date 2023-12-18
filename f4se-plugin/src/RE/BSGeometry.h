@@ -42,4 +42,27 @@ namespace RE
 			textCoordOffset[1].y = v;
 		}
 	};
+
+	class BSLightingShaderProperty : public BSShaderProperty
+	{
+	public:
+		NiColorA projectedUVColor;                 // 70
+		NiColorA projectedUVParams;                // 80
+		BSRenderPass* depthMapRenderPassListA[3];  // 90
+		BSRenderPass* depthRenderPass;             // A8
+		BSRenderPass* forwardPassList;             // B0
+		NiColor* emissiveColor;                    // B8
+		BSFixedString rootName;                     // C0
+		float emitColorScale;                      // C8
+		float forcedDarkness;                      // CC
+		float specularLODFade;                     // D0
+		float envmapLODFade;                       // D4
+		uint32_t uiBaseTechniqueID;                   // D8
+		uint32_t clearCommandBufferCount;          // DC
+		uint16_t usDebugTintIndex;                    // E0
+		uint16_t uiStencilRef;                     // E2
+		uint32_t unkE4;                             // E4
+
+	};
+	static_assert(sizeof(BSLightingShaderProperty) == 0xE8);
 }

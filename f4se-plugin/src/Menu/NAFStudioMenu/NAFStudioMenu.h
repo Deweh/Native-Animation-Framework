@@ -607,13 +607,12 @@ namespace Menu
 			stageHeight = static_cast<float>(result.GetNumber());
 		}
 
-		void SetPlayState(bool playing) {
-			bool updateRequired = false;
+		void SetPlayState(bool playing, bool forceUiUpdate = false) {
 			VisitManagedGraphs([&](Graph* g) {
-				updateRequired = updateRequired || (g->creator->IsPlaying() != playing);
+				forceUiUpdate = forceUiUpdate || (g->creator->IsPlaying() != playing);
 				g->creator->SetPlaying(playing);
 			});
-			if (updateRequired) {
+			if (forceUiUpdate) {
 				RE::Scaleform::GFx::Value args[1];
 				args[0] = !playing;
 				menuObj.Invoke("SetPlayState", nullptr, args, 1);
@@ -697,6 +696,8 @@ namespace Menu
 				float dirX = gizmoPoint.x;
 				float dirY = gizmoPoint.y;
 
+				//If gizmo is in rotation mode, use the 2D direction perpendicular
+				//to the gizmo line, as that is the direction the rotation is actually in.
 				if (adjustMode == Creator::kRotation) {
 					float tempX = dirX;
 					dirX = -dirY;
@@ -736,6 +737,7 @@ namespace Menu
 		void OnGizmoCursor(bool active) {
 			VisitTargetGraph([&](Graph* g) {
 				if (active) {
+					SetPlayState(false);
 					g->creator->SnapToNearestFrame();
 					SetScrubberPosition(g->creator->GetUINormalizedTime());
 					g->creator->BeginIncrementalAdjust(gizmoIndex, g->creator->GetCurrentFrame(), adjustMode);

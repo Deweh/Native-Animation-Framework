@@ -1,5 +1,6 @@
 #pragma once
-#include "BodyAnimation/QuatSpline.h"
+#include "Misc/dh.h"
+#include "Misc/ysp.h"
 
 class MathUtil
 {
@@ -392,7 +393,10 @@ public:
 	class QuatSquadSpline : public InterpolationSystem<RE::NiQuaternion>
 	{
 	private:
-		RE::NiQuaternion CalculateTangent(const RE::NiQuaternion& q0, const RE::NiQuaternion& q1, const RE::NiQuaternion& q2)
+		RE::NiQuaternion CalculateTangent(
+			const RE::NiQuaternion& q0,
+			const RE::NiQuaternion& q1,
+			const RE::NiQuaternion& q2)
 		{
 			RE::NiQuaternion result;
 			result.Intermediate(q0, q1, q2);
@@ -418,15 +422,14 @@ public:
 		{
 			segs.clear();
 
-			if (Y.size() < 2 || Y.size() != X.size())
-				return;
-
 			for (size_t i = 1; i < Y.size(); i++) {
+				//auto prevX = X[i - (i > 1 ? 2 : 1)];
 				auto& prevY = Y[i - (i > 1 ? 2 : 1)];
 				auto startX = X[i - 1];
 				auto& startY = Y[i - 1];
 				auto endX = X[i];
 				auto& endY = Y[i];
+				//auto nextX = X[i + ((i + 1) < Y.size() ? 1 : 0)];
 				auto& nextY = Y[i + ((i + 1) < Y.size() ? 1 : 0)];
 
 				segs.push_back({
@@ -460,7 +463,7 @@ public:
 					}
 				}
 			}
-			
+
 			float normalizedT = NormalizeTime(curSeg.startTime, curSeg.endTime, t);
 			return QuatSquad(curSeg.q0, curSeg.t0, curSeg.t1, curSeg.q1, normalizedT);
 		}
@@ -490,37 +493,26 @@ public:
 			if (Y.size() < 2 || Y.size() != X.size())
 				return;
 
-			dh::quat lastRot = reinterpret_cast<const dh::quat&>(*Y.begin());
-			dh::quat nextRot;
 			dh::vec3 v1;
 			dh::vec3 v2;
 
-			bool first = true;
-			bool last = false;
-
 			for (size_t i = 1; i < X.size(); i++) {
-				const dh::quat& begin = reinterpret_cast<const dh::quat&>(Y[i - 1]);
-				const dh::quat& end = reinterpret_cast<const dh::quat&>(Y[i]);
-				nextRot = end;
+				auto& prevY = reinterpret_cast<const dh::quat&>(Y[i - (i > 1 ? 2 : 1)]);
+				auto startX = X[i - 1];
+				auto& startY = reinterpret_cast<const dh::quat&>(Y[i - 1]);
+				auto endX = X[i];
+				auto& endY = reinterpret_cast<const dh::quat&>(Y[i]);
+				auto& nextY = reinterpret_cast<const dh::quat&>(Y[i + ((i + 1) < Y.size() ? 1 : 0)]);
 
-				if ((i + 1) < X.size()) {
-					nextRot = reinterpret_cast<const dh::quat&>(Y[i + 1]);
-				} else {
-					last = true;
-				}
-
-				dh::quat_catmull_rom_velocity(v1, v2, lastRot, begin, end, nextRot);
+				dh::quat_catmull_rom_velocity(v1, v2, prevY, startY, endY, nextY);
 
 				segs.emplace_back(
-					X[i - 1],
-					X[i],
-					begin,
-					end,
-					first ? dh::vec3{ 0, 0, 0 } : v1,
-					last ? dh::vec3{ 0, 0, 0 } : v2);
-
-				lastRot = begin;
-				first = false;
+					startX,
+					endX,
+					startY,
+					endY,
+					v1,
+					v2);
 			}
 		}
 
@@ -569,7 +561,7 @@ public:
 			combined.reserve(X.size());
 
 			for (size_t i = 0; i < X.size(); i++) {
-				combined.emplace_back(X[i], reinterpret_cast<const ysp::quaternion<float>&>(Y[i]));
+				combined.emplace_back(X[i], ysp::quaternion<float>(Y[i].w, Y[i].x, Y[i].y, Y[i].z));
 			}
 
 			impl = std::make_unique<ysp::quaternion_spline_curve<float>>(combined.begin(), combined.end(), 1e-8f);
@@ -581,7 +573,14 @@ public:
 				return {};
 
 			auto res = (*impl)(t);
-			return reinterpret_cast<RE::NiQuaternion&>(res);
+			RE::NiQuaternion resQ{
+				res.R_component_1(),
+				res.R_component_2(),
+				res.R_component_3(),
+				res.R_component_4()
+			};
+
+			return NormalizeQuat(resQ);
 		}
 	};
 };

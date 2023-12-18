@@ -233,6 +233,7 @@ namespace Menu::NAF
 				return {
 					{ "X:", MENU_BINDING_WARG(FaceAnimCreatorHandler::SetEyes, true), true, -100, 100, GetEyes(true), MENU_BINDING(FaceAnimCreatorHandler::RemoveEyesKey), EyesHasKeyframe(), &tickerMap[254] },
 					{ "Y:", MENU_BINDING_WARG(FaceAnimCreatorHandler::SetEyes, false), true, -100, 100, GetEyes(false), MENU_BINDING(FaceAnimCreatorHandler::RemoveEyesKey), EyesHasKeyframe(), &tickerMap[255] },
+					{ "Emissive Mult:", MENU_BINDING_WARG(FaceAnimCreatorHandler::SetMorph, 100ui8), true, 0, 1000, GetMorph(100ui8), MENU_BINDING_WARG(FaceAnimCreatorHandler::RemoveMorphKey, 100ui8), MorphHasKeyframe(100ui8), &tickerMap[100ui8] },
 					{ "Left Upper Lid Down:", MORPH_BIND(18) },
 					{ "Right Upper Lid Down:", MORPH_BIND(41) },
 					{ "Left Upper Lid Up:", MORPH_BIND(19) },
@@ -510,7 +511,7 @@ namespace Menu::NAF
 							for (auto& tl : anim->data.timelines) {
 								if (!tl.isEyes && tl.morph == morph) {
 									auto resF = tl.GetValueAtTime(GetTimeOfCurrentFrame() / anim->data.duration);
-									res = std::clamp(static_cast<int>((resF * 100) + 0.1f), 0, 100);
+									res = static_cast<int>((resF * 100) + 0.1f);
 									break;
 								}
 							}

@@ -50,9 +50,9 @@ namespace Data
 					auto n = m.GetCurrentName();
 					if (n == "morph") {
 						uint8_t mId = 0;
-						m.GetMinMax(&mId, (uint8_t)0, false, true, "FaceAnim morph 'id' attribute must be between 0 and 54.", (uint8_t)0, (uint8_t)54, "id");
+						m(&mId, (uint8_t)0, false, true, "FaceAnim morph has no 'id' attribute!", "id");
 						int32_t mVal = 0;
-						m.GetMinMax(&mVal, 0, false, true, "FaceAnim morph 'value' attribute must be between 0 and 100.", 0, 100, "value");
+						m(&mVal, 0, false, true, "FaceAnim morph has no 'value' attribute!", "value");
 						data.GetTimeline(mId)->keys[frame].value = static_cast<float>(mVal) * 0.01f;
 					} else if (n == "eyes") {
 						FaceAnimation::EyeVector v;

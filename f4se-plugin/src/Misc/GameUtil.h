@@ -431,6 +431,43 @@ public:
 		}
 	}
 
+	static bool SetEmissiveMult(RE::BSGeometry* geo, float mult) {
+		if (!geo) {
+			return false;
+		}
+
+		RE::BSShaderProperty* shader = geo->QShaderProperty();
+		if (!shader) {
+			return false;
+		}
+
+		if (shader->material && shader->material->GetFeature() == 2) {
+			RE::BSLightingShaderProperty* lightingShader = static_cast<RE::BSLightingShaderProperty*>(shader);
+			lightingShader->emitColorScale = mult;
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	static float GetEmissiveMult(RE::BSGeometry* geo) {
+		if (!geo) {
+			return 0.0f;
+		}
+
+		RE::BSShaderProperty* shader = geo->QShaderProperty();
+		if (!shader) {
+			return 0.0f;
+		}
+
+		if (shader->material && shader->material->GetFeature() == 2) {
+			RE::BSLightingShaderProperty* lightingShader = static_cast<RE::BSLightingShaderProperty*>(shader);
+			return lightingShader->emitColorScale;
+		} else {
+			return 0.0f;
+		}
+	}
+
 	static float GetAnimMult(RE::Actor* targetActor)
 	{
 		if (targetActor != nullptr && Data::Forms::AnimMultAV != nullptr) {

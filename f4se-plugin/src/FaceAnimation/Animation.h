@@ -73,7 +73,11 @@ namespace FaceAnimation
 			double timeDeltaNormalized = timeElapsed / data.duration;
 			for (auto& tl : data.timelines) {
 				if (!tl.isEyes) {
-					animData->finalExp.exp[tl.morph] = std::clamp(tl.GetValueAtTime(timeDeltaNormalized), 0.001f, 0.999f);
+					if (tl.morph < 54) {
+						animData->finalExp.exp[tl.morph] = std::clamp(tl.GetValueAtTime(timeDeltaNormalized), 0.001f, 0.999f);
+					} else if (tl.morph == 100) {
+						GameUtil::SetEmissiveMult(eyeGeo, tl.GetValueAtTime(timeDeltaNormalized));
+					}
 				} else {
 					auto val = tl.GetEyesValueAtTime(timeDeltaNormalized);
 					GameUtil::SetEyeCoords(eyeGeo, static_cast<float>(val.u), static_cast<float>(val.v));
