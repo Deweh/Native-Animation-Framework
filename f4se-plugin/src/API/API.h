@@ -53,7 +53,7 @@ namespace NAFAPI
 		const char* a_animationId,
 		const char* a_raceEditorId)
 	{
-		return detail::invokeWithReturn<decltype(LoadNANIM)>("NAFAPI_LoadNANIM", 0, a_filePath, a_animationId, a_raceEditorId);
+		return detail::invokeWithReturn<decltype(LoadNANIM)*>("NAFAPI_LoadNANIM", 0ui64, a_filePath, a_animationId, a_raceEditorId);
 	}
 
 	/*
@@ -72,7 +72,44 @@ namespace NAFAPI
 		float a_transitionTime,
 		bool a_moveAnim)
 	{
-		return detail::invokeWithReturn<decltype(PlayNANIM)>("NAFAPI_PlayNANIM", false, a_actor, a_animationHndl, a_transitionTime, a_moveAnim);
+		return detail::invokeWithReturn<decltype(PlayNANIM)*>("NAFAPI_PlayNANIM", false, a_actor, a_animationHndl, a_transitionTime, a_moveAnim);
+	}
+
+	/*
+	* Loads an NANIM animation on a separate thread then immediately plays it on the specified actor.
+	* This operation can be cancelled by calling any other NANIM function on the specified actor before the load is finished.
+	* 
+	* a_actor: The actor the animation will be played on.
+	* a_filePath: The file path to the .nanim file, starting from the Fallout4 folder.
+	* a_animationId: The ID of the animation within the .nanim file to load. For baked animations, this is "default".
+	* a_transitionTime: The amount of time to take to blend from the current animation to the new animation, in seconds.
+	* 
+	* Returns true if no errors occured. Note: The animation might not play even if this function returns true,
+	* as animation loading & parsing occurs on a different thread, and it is unknown if an error will occur on file read or whilst parsing.
+	* To be absolutely sure the animation will play, use LoadNANIM + PlayNANIM instead.
+	*/
+	bool QueueNANIM(
+		RE::Actor* a_actor,
+		const char* a_filePath,
+		const char* a_animationId,
+		float a_transitionTime)
+	{
+		return detail::invokeWithReturn<decltype(QueueNANIM)*>("NAFAPI_QueueNANIM", false, a_actor, a_filePath, a_animationId, a_transitionTime);
+	}
+
+	/*
+	* Stops any NANIM animation currently playing on the specified actor.
+	* 
+	* a_actor: The actor to stop any NANIM animations on.
+	* a_transitionTime: The amount of time to take to blend from the current animation to the new animation, in seconds.
+	* 
+	* Returns true if there was an NANIM animation playing on the specified actor, otherwise false.
+	*/
+	bool StopNANIM(
+		RE::Actor* a_actor,
+		float a_transitionTime)
+	{
+		return detail::invokeWithReturn<decltype(StopNANIM)*>("NAFAPI_StopNANIM", false, a_actor, a_transitionTime);
 	}
 
 	/*
@@ -85,7 +122,7 @@ namespace NAFAPI
 	bool FreeHandle(
 		uint64_t a_handle)
 	{
-		return detail::invokeWithReturn<decltype(FreeHandle)>("NAFAPI_FreeHandle", false, a_handle);
+		return detail::invokeWithReturn<decltype(FreeHandle)*>("NAFAPI_FreeHandle", false, a_handle);
 	}
 }
 
@@ -211,6 +248,28 @@ extern "C" __declspec(dllexport) bool NAFAPI_PlayNANIM(
 		return false;
 
 	return BodyAnimation::GraphHook::StartAnimation(a_actor, std::move(anim), a_transitionTime, filePath, id);
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_QueueNANIM(
+	RE::Actor* a_actor,
+	const char* a_filePath,
+	const char* a_animationId,
+	float a_transitionTime)
+{
+	if (!a_actor)
+		return false;
+	 
+	return BodyAnimation::GraphHook::LoadAndPlayAnimation(a_actor, a_filePath, a_transitionTime, a_animationId);
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_StopNANIM(
+	RE::Actor* a_actor,
+	float a_transitionTime)
+{
+	if (!a_actor)
+		return false;
+
+	return BodyAnimation::GraphHook::StopAnimation(a_actor, a_transitionTime);
 }
 
 extern "C" __declspec(dllexport) bool NAFAPI_FreeHandle(
