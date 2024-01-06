@@ -735,9 +735,12 @@ namespace Menu
 		}
 
 		void OnGizmoCursor(bool active) {
+			if (active) {
+				SetPlayState(false);
+			}
+
 			VisitTargetGraph([&](Graph* g) {
 				if (active) {
-					SetPlayState(false);
 					g->creator->SnapToNearestFrame();
 					SetScrubberPosition(g->creator->GetUINormalizedTime());
 					g->creator->BeginIncrementalAdjust(gizmoIndex, g->creator->GetCurrentFrame(), adjustMode);
