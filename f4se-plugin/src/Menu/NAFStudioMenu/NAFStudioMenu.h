@@ -267,6 +267,8 @@ namespace Menu
 				g->state = Graph::kGenerator;
 
 				if (auto meta = animContainer.GetMetaData(animId); meta.has_value()) {
+					//TODO: Fix this.
+					/*
 					if (auto iter = meta->data.find("actor_scale"); iter != meta->data.end() && iter->second.size() > 0) {
 						std::optional<float> s = std::nullopt;
 						try {
@@ -279,6 +281,7 @@ namespace Menu
 							a_target->SetScale(s.value() / a_target->GetScale());
 						}
 					}
+					*/
 					if (auto iter = meta->data.find("enabled_ik_chains"); iter != meta->data.end()) {
 						for (auto& c : iter->second) {
 							g->ikManager.SetChainEnabled(c, true);
@@ -1009,7 +1012,8 @@ namespace Menu
 					g->creator->SaveToNANIM(a.animId, data->bodyAnims);
 
 					BodyAnimation::NANIM::AnimationData::MetaData meta;
-					meta.data["actor_scale"].push_back(std::format("{}", a.actor->GetScale()));
+					//TODO: Fix this.
+					//meta.data["actor_scale"].push_back(std::format("{}", a.actor->GetScale()));
 					auto& enabledChains = meta.data["enabled_ik_chains"];
 					for (auto& c : g->ikManager.GetChainList()) {
 						if (g->ikManager.GetChainEnabled(c)) {
