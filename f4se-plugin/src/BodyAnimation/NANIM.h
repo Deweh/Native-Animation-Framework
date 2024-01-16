@@ -10,7 +10,7 @@ namespace BodyAnimation
 
 		struct Version
 		{
-			inline static uint32_t currentValue = 2;
+			inline static uint32_t currentValue = 3;
 			uint32_t value = currentValue;
 
 			bool from_json(const nlohmann::json& j)
@@ -255,6 +255,7 @@ namespace BodyAnimation
 				ActorGender gender = ActorGender::Any;
 				std::string behaviorGraphProject;
 				std::string animId;
+				std::optional<float> scale = std::nullopt;
 			};
 
 			std::vector<Character> data;
@@ -301,6 +302,13 @@ namespace BodyAnimation
 					}
 					d.animId = i["id"];
 					d.behaviorGraphProject = i["graph"];
+
+					if (JUtil::ContainsType(i, "scale", jt::number_float)) {
+						float s = i["scale"];
+						d.scale = s;
+					} else {
+						d.scale = std::nullopt;
+					}
 				}
 				return true;
 			}
@@ -317,6 +325,9 @@ namespace BodyAnimation
 						cur["gender"] = GetGenderString(i.gender);
 						cur["id"] = i.animId;
 						cur["graph"] = i.behaviorGraphProject;
+						if (i.scale.has_value()) {
+							cur["scale"] = i.scale.value();
+						}
 					}
 				}
 			}

@@ -27,6 +27,7 @@ namespace Menu::NAF
 
 		std::string pkgId = "";
 		bool restrictGenders = true;
+		bool useScales = true;
 
 		virtual BindingsVector GetBindings() override
 		{
@@ -100,7 +101,8 @@ namespace Menu::NAF
 				case kPackage:
 				{
 					result.push_back({ std::format("Position ID: {}", pkgId.empty() ? "[None]" : pkgId), Bind(&BodyCreatorHandler::SetPackageID) });
-					result.push_back({ std::format("Restrict Genders: {}", restrictGenders ? "ON" : "OFF"), Bind(&BodyCreatorHandler::ToggleRestrictGenders) });
+					result.push_back({ std::format("Restrict Genders: {}", restrictGenders ? "ON" : "OFF"), Bind(&BodyCreatorHandler::ToggleBool, &restrictGenders) });
+					result.push_back({ std::format("Use Current Scale(s): {}", useScales ? "ON" : "OFF"), Bind(&BodyCreatorHandler::ToggleBool, &useScales) });
 					result.push_back({ "Package", Bind(&BodyCreatorHandler::PackageAnim) });
 					break;
 				}
@@ -148,8 +150,8 @@ namespace Menu::NAF
 			});
 		}
 
-		void ToggleRestrictGenders(int) {
-			restrictGenders = !restrictGenders;
+		void ToggleBool(bool* b, int) {
+			(*b) = !(*b);
 			manager->RefreshList(false);
 		}
 
@@ -235,7 +237,7 @@ namespace Menu::NAF
 		}
 
 		void PackageAnim(int) {
-			if (auto res = NAFStudioMenu::BakeAnimation(true, pkgId, restrictGenders); res.has_value()) {
+			if (auto res = NAFStudioMenu::BakeAnimation(true, pkgId, restrictGenders, useScales); res.has_value()) {
 				manager->ShowNotification(std::format("Saved packaged animation(s) to {}", res.value()));
 			} else {
 				manager->ShowNotification("Failed to save packaged animation(s).");

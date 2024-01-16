@@ -55,9 +55,10 @@ namespace Scene
 					if (auto customScale = GetProperty<float>(props, kScale); customScale.has_value()) {
 						targetScale = customScale.value();
 					} else if (auto npc = currentActor->GetNPC(); currentActor != player && npc != nullptr) {
-						targetScale = player->GetScale() / npc->GetHeight(currentActor, currentActor->race);
+						targetScale = player->GetScale();
 					}
 
+					targetScale = GameUtil::CalcActorScale(currentActor, targetScale);
 					currentActor->SetScale(targetScale * 0.999f);
 					currentActor->SetScale(targetScale);
 				});

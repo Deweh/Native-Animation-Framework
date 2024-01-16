@@ -114,6 +114,19 @@ public:
 		return false;
 	}
 
+	//Calculates the refScale value for an actor given a target scale.
+	static float CalcActorScale(RE::Actor* a_target, float a_scale)
+	{
+		return a_scale / a_target->GetNPC()->GetHeight(a_target, a_target->GetVisualsRace());
+	}
+
+	//Sets actor scale via an absolute value.
+	//i.e. if GetScale() returns 1.3 and 1.3 is passed to this function, the actor's scale will not change.
+	static void SetActorScale(RE::Actor* a_target, float a_scale)
+	{
+		a_target->SetScale(CalcActorScale(a_target, a_scale));
+	}
+
 	// Gets the full name of the corresponding actor.
 	// Returns an empty string if unable to get the full name.
 	static std::string GetActorName(RE::Actor* targetActor) {

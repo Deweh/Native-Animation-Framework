@@ -230,6 +230,10 @@ namespace BodyAnimation
 
 		void SolveAndApply(RE::NiAVObject* b1, RE::NiAVObject* b2, RE::NiAVObject* b3, RE::NiNode* rootNode, RE::NiAVObject* poleParent)
 		{
+			if (!b1->parent || !b2->parent || !b3->parent) {
+				return;
+			}
+
 			CalculateParentWorld(b1, rootNode);
 
 			if (nodes[1]->hasPole > 0) {

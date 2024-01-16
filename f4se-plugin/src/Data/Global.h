@@ -432,6 +432,10 @@ namespace Data
 				slot.idle[0] = std::filesystem::path(fName).lexically_relative(USERDATA_DIR).generic_string();
 				slot.idle[1] = c.animId;
 				slot.rootBehavior = c.behaviorGraphProject;
+				if (c.scale.has_value()) {
+					slot.customScale.set_has_value(true);
+					slot.customScale.value() = c.scale.value();
+				}
 			}
 			Animations.priority_insert(anim);
 

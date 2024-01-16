@@ -28,7 +28,11 @@ namespace Menu
 			return studioInstance.load() != nullptr;
 		}
 
-		static std::optional<std::string> BakeAnimation(bool doPackage = false, const std::string_view& pkgId = "", bool restrictGenders = true)
+		static std::optional<std::string> BakeAnimation(
+			bool doPackage = false,
+			const std::string_view& pkgId = "",
+			bool restrictGenders = true,
+			bool useScales = false)
 		{
 			std::optional<std::string> result = std::nullopt;
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
@@ -82,6 +86,9 @@ namespace Menu
 						RE::BSFixedString behGraph;
 						a.actor->GetAnimationGraphProjectName(behGraph);
 						c.behaviorGraphProject = behGraph;
+						if (useScales) {
+							c.scale = a.actor->GetScale();
+						}
 					}
 					animContainer.SaveToFile(path);
 					result = path;
@@ -267,9 +274,7 @@ namespace Menu
 				g->state = Graph::kGenerator;
 
 				if (auto meta = animContainer.GetMetaData(animId); meta.has_value()) {
-					//TODO: Fix this.
-					/*
-					if (auto iter = meta->data.find("actor_scale"); iter != meta->data.end() && iter->second.size() > 0) {
+					if (auto iter = meta->data.find("actor_scale"); animContainer.version.value >= 3 && iter != meta->data.end() && iter->second.size() > 0) {
 						std::optional<float> s = std::nullopt;
 						try {
 							s = std::stof(iter->second[0]);
@@ -278,10 +283,9 @@ namespace Menu
 						}
 
 						if (s) {
-							a_target->SetScale(s.value() / a_target->GetScale());
+							GameUtil::SetActorScale(a_target, s.value());
 						}
 					}
-					*/
 					if (auto iter = meta->data.find("enabled_ik_chains"); iter != meta->data.end()) {
 						for (auto& c : iter->second) {
 							g->ikManager.SetChainEnabled(c, true);
@@ -318,7 +322,7 @@ namespace Menu
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
 			for (auto& a : data->studioActors) {
 				PackageOverride::Clear(a.actor->GetActorHandle(), true);
-				a.actor->SetScale(a.originalScale / a.actor->GetScale());
+				GameUtil::SetActorScale(a.actor.get(), a.originalScale);
 				BodyAnimation::GraphHook::VisitGraph(a.actor.get(), [&](Graph* g) {
 					for (auto& c : g->ikManager.GetChainList()) {
 						g->ikManager.SetChainEnabled(c, false);
@@ -1012,8 +1016,7 @@ namespace Menu
 					g->creator->SaveToNANIM(a.animId, data->bodyAnims);
 
 					BodyAnimation::NANIM::AnimationData::MetaData meta;
-					//TODO: Fix this.
-					//meta.data["actor_scale"].push_back(std::format("{}", a.actor->GetScale()));
+					meta.data["actor_scale"].push_back(std::format("{}", a.actor->GetScale()));
 					auto& enabledChains = meta.data["enabled_ik_chains"];
 					for (auto& c : g->ikManager.GetChainList()) {
 						if (g->ikManager.GetChainEnabled(c)) {
