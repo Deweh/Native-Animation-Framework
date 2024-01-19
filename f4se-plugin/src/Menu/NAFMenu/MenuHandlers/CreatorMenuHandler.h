@@ -780,12 +780,16 @@ namespace Menu::NAF
 
 			RE::BSFixedString behGraphName;
 			a_target->GetAnimationGraphProjectName(behGraphName);
-			if (auto info = Data::GetGraphInfo(behGraphName.c_str()); info != nullptr) {
+			if (auto info = Data::GetGraphInfo(behGraphName.c_str(), a_target->As<RE::Actor>()); info != nullptr) {
 				result.second = info->nodeList;
 				if (info->basePoseFile.has_value()) {
 					BodyAnimation::NANIM poseContainer;
 					if (poseContainer.LoadFromFile(std::format("Data\\NAF\\{}", info->basePoseFile.value()))) {
 						poseContainer.GetAnimationAsPose("pose", info->nodeList, result.first);
+					}
+				} else if (!info->skeletonPose.empty()) {
+					for (auto& t : info->skeletonPose) {
+						result.first.push_back(t);
 					}
 				}
 			}

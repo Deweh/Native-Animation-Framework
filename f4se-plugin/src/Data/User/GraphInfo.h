@@ -17,6 +17,7 @@ namespace Data
 		std::vector<std::string> nodeList;
 		std::map<std::string, IKChain> chains;
 		std::optional<std::string> basePoseFile = std::nullopt;
+		std::vector<RE::NiTransform> skeletonPose;
 
 		static bool Parse(XMLUtil::Mapper& m, GraphInfo& out)
 		{

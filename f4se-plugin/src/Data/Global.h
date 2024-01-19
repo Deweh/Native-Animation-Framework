@@ -27,7 +27,7 @@ namespace Data
 	std::shared_ptr<const Race> GetRace(const std::string&);
 	std::shared_ptr<const Race> GetRaceFromGraph(const std::string&);
 	std::shared_ptr<const Race> GetRace(RE::Actor*);
-	std::shared_ptr<const GraphInfo> GetGraphInfo(const std::string&);
+	std::shared_ptr<const GraphInfo> GetGraphInfo(const std::string&, RE::Actor* actorBase = nullptr);
 }
 
 #include <Windows.h>
@@ -648,7 +648,53 @@ namespace Data
 	std::shared_ptr<const AnimationGroup> GetAnimationGroup(const std::string& id) { return GetObjectFromIDMap(Global::AnimationGroups, id); }
 	std::shared_ptr<const PositionTree> GetPositionTree(const std::string& id) { return GetObjectFromIDMap(Global::PositionTrees, id); }
 	std::shared_ptr<const Race> GetRace(const std::string& id) { return GetObjectFromIDMap(Global::Races, id); }
-	std::shared_ptr<const GraphInfo> GetGraphInfo(const std::string& id) { return GetObjectFromIDMap(Global::GraphInfos, id); }
+
+	std::shared_ptr<const GraphInfo> GetGraphInfo(const std::string& id, RE::Actor* actorBase) {
+		auto result = GetObjectFromIDMap(Global::GraphInfos, id);
+		if (result || !actorBase) {
+			return result;
+		}
+
+		std::string_view skeletonPath = actorBase->race->skeletonModel->model;
+		RE::NiPointer<RE::NiNode> skeleton;
+		RE::BSModelDB::Demand(skeletonPath.data(), skeleton);
+
+		if (skeleton.get() == nullptr) {
+			return nullptr;
+		}
+
+		result = std::make_shared<GraphInfo>();
+		result->id = id;
+		bool foundRoot = false;
+		std::queue<RE::NiNode*> nodeQueue;
+		nodeQueue.push(skeleton.get());
+
+		while (!nodeQueue.empty()) {
+			RE::NiNode* currentNode = nodeQueue.front();
+			nodeQueue.pop();
+
+			if (!foundRoot) {
+				if (Utility::StringStartsWith(currentNode->name.c_str(), "Root")) {
+					foundRoot = true;
+					nodeQueue = {};
+				}
+			} else {
+				result->nodeList.push_back(currentNode->name.c_str());
+				result->skeletonPose.push_back(currentNode->local);
+			}
+
+			for (auto& c : currentNode->children) {
+				if (auto n = c->IsNode(); n) {
+					nodeQueue.push(n);
+				}
+			}
+		}
+
+		std::unique_lock _l{ Global::reloadLock };
+		Global::GraphInfos.priority_insert(result);
+
+		return result;
+	}
 
 	std::shared_ptr<const Race> GetRaceFromGraph(const std::string& s) {
 		std::string skeleton = "";

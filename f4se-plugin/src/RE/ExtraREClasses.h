@@ -10,3 +10,4 @@
 #include "TESEffectShader.h"
 #include "BSAnimationGraphManager.h"
 #include "ContainerMenu.h"
+#include "BSModelDB.h"

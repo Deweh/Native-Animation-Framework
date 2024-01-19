@@ -351,7 +351,7 @@ namespace BodyAnimation
 		static std::shared_ptr<const Data::GraphInfo> GetGraphInfo(RE::TESObjectREFR* ref) {
 			RE::BSFixedString graphName;
 			ref->GetAnimationGraphProjectName(graphName);
-			if (auto info = Data::GetGraphInfo(graphName.c_str()); info != nullptr) {
+			if (auto info = Data::GetGraphInfo(graphName.c_str(), ref->As<RE::Actor>()); info != nullptr) {
 				return info;
 			}
 			return nullptr;
