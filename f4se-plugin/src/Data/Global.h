@@ -655,40 +655,56 @@ namespace Data
 			return result;
 		}
 
-		std::string_view skeletonPath = actorBase->race->skeletonModel->model;
-		RE::NiPointer<RE::NiNode> skeleton;
-		RE::BSModelDB::Demand(skeletonPath.data(), skeleton);
-
-		if (skeleton.get() == nullptr) {
-			return nullptr;
-		}
+		RE::NiPointer<RE::NiNode> skeleton1;
+		RE::NiPointer<RE::NiNode> skeleton2;
+		RE::BSModelDB::Demand(actorBase->race->skeletonModel[0].model.data(), skeleton1);
+		RE::BSModelDB::Demand(actorBase->race->skeletonModel[1].model.data(), skeleton2);
 
 		result = std::make_shared<GraphInfo>();
 		result->id = id;
-		bool foundRoot = false;
-		std::queue<RE::NiNode*> nodeQueue;
-		nodeQueue.push(skeleton.get());
+		std::unordered_set<std::string> nodeSet;
 
-		while (!nodeQueue.empty()) {
-			RE::NiNode* currentNode = nodeQueue.front();
-			nodeQueue.pop();
+		const auto GetApplicableNodes = [&nodeSet](RE::NiNode* skeleton, GraphInfo* infoOut) {
+			if (!skeleton)
+				return;
 
-			if (!foundRoot) {
-				if (Utility::StringStartsWith(currentNode->name.c_str(), "Root")) {
-					foundRoot = true;
-					nodeQueue = {};
+			bool foundRoot = false;
+			std::queue<RE::NiNode*> nodeQueue;
+			nodeQueue.push(skeleton);
+
+			while (!nodeQueue.empty()) {
+				RE::NiNode* currentNode = nodeQueue.front();
+				nodeQueue.pop();
+
+				if (!foundRoot) {
+					if (Utility::StringStartsWith(currentNode->name.c_str(), "Root")) {
+						foundRoot = true;
+						nodeQueue = {};
+					}
+				} else {
+					std::string nodeName = currentNode->name.c_str();
+					if (!nodeSet.contains(nodeName)) {
+						infoOut->nodeList.push_back(nodeName);
+						infoOut->skeletonPose.push_back(currentNode->local);
+						nodeSet.insert(nodeName);
+					}
 				}
-			} else {
-				result->nodeList.push_back(currentNode->name.c_str());
-				result->skeletonPose.push_back(currentNode->local);
-			}
 
-			for (auto& c : currentNode->children) {
-				if (auto n = c->IsNode(); n) {
-					nodeQueue.push(n);
+				for (uint16_t i = 0; i < currentNode->children.size(); i++) {
+					auto c = currentNode->children[i];
+					if (!c) {
+						continue;
+					}
+					if (auto n = c->IsNode(); n) {
+						nodeQueue.push(n);
+					}
 				}
 			}
-		}
+		};
+
+		GetApplicableNodes(skeleton1.get(), result.get());
+		GetApplicableNodes(skeleton2.get(), result.get());
+		GetApplicableNodes(actorBase->Get3D()->IsNode(), result.get());
 
 		std::unique_lock _l{ Global::reloadLock };
 		Global::GraphInfos.priority_insert(result);

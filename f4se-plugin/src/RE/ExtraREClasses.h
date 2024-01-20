@@ -11,3 +11,4 @@
 #include "BSAnimationGraphManager.h"
 #include "ContainerMenu.h"
 #include "BSModelDB.h"
+#include "GeometryReader.h"

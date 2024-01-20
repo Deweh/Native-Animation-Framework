@@ -214,7 +214,15 @@ namespace Menu
 
 		void InitActors() {
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
+			std::optional<RE::NiPoint3> location = std::nullopt;
+			std::optional<RE::NiPoint3> angle = std::nullopt;
 			for (auto& a : data->studioActors) {
+				if (!location || !angle) {
+					location = a.actor->data.location;
+					angle = RE::NiPoint3{ 0, 0, a.actor->data.angle.z };
+				}
+
+				Tasks::GameLoopHook::ForceAlignActor(a.actor.get(), location.value(), angle.value());
 				AddManagedRef(a.actor.get(), data->bodyAnims, a.animId, a.sampleRate);
 			}
 		}
@@ -227,9 +235,6 @@ namespace Menu
 
 			if (a_target == nullptr)
 				return false;
-
-			location = a_target->data.location;
-			angle.z = a_target->data.angle.z;
 
 			ClearTarget();
 			targetHandle = a_target->GetActorHandle();
@@ -319,6 +324,10 @@ namespace Menu
 		}
 
 		void ClearManagedRefs() {
+			for (auto& a : managedActors) {
+				Tasks::GameLoopHook::StopAligningActor(a.get().get());
+			}
+
 			auto data = PersistentMenuState::CreatorData::GetSingleton();
 			for (auto& a : data->studioActors) {
 				PackageOverride::Clear(a.actor->GetActorHandle(), true);
@@ -374,11 +383,21 @@ namespace Menu
 		{
 		}
 
+		float GetSWFXPos(float screenXPos)
+		{
+			return (screenXPos * stageWidth) + widthAdjust;
+		}
+
+		float GetSWFYPos(float screenYPos)
+		{
+			return (1.0f - screenYPos) * stageHeight;
+		}
+
 		void SetObjectPositionInWorld(RE::Scaleform::GFx::Value& obj, const BodyAnimation::NodeTransform& transform, bool isGizmo) {
 			RE::NiPoint3 screenPos{ -100.0f, -100.0f, 0.99999f };
 			WorldPtToScreenPt3(transform.translate, screenPos);
-			screenPos.y = stageHeight * (1.0f - screenPos.y);
-			screenPos.x = stageWidth * screenPos.x;
+			screenPos.y = GetSWFYPos(screenPos.y);
+			screenPos.x = GetSWFXPos(screenPos.x);
 			obj.SetMember("x", screenPos.x);
 			obj.SetMember("y", screenPos.y);
 			float s = 0.000001f;
@@ -389,6 +408,7 @@ namespace Menu
 			obj.SetMember("scaleY", s);
 
 			if (isGizmo) {
+
 				gizmoMovementScale = screenPos.z;
 				float distScale = (10.5f * nodeSizeModifier) * (1.0f / s);
 				auto v = MathUtil::QuatToDirVectors(transform.rotate);
@@ -400,27 +420,23 @@ namespace Menu
 				RE::Scaleform::GFx::Value args[6];
 				RE::NiPoint2 gizmoBasePos = { screenPos.x, screenPos.y };
 
-				WorldPtToScreenPt3(v.x, screenPos);
-				gizmoXPos = {
-					(screenPos.x * stageWidth) - gizmoBasePos.x,
-					((1.0f - screenPos.y) * stageHeight) - gizmoBasePos.y
+				const auto CalculateGizmoPoint = [&](const RE::NiPoint3& worldPt) {
+					WorldPtToScreenPt3(worldPt, screenPos);
+					return RE::NiPoint2{
+						GetSWFXPos(screenPos.x) - gizmoBasePos.x,
+						GetSWFYPos(screenPos.y) - gizmoBasePos.y
+					};
 				};
+
+				gizmoXPos = CalculateGizmoPoint(v.x);
 				args[0] = gizmoXPos.x;
 				args[1] = gizmoXPos.y;
 
-				WorldPtToScreenPt3(v.y, screenPos);
-				gizmoYPos = {
-					(screenPos.x * stageWidth) - gizmoBasePos.x,
-					((1.0f - screenPos.y) * stageHeight) - gizmoBasePos.y
-				};
+				gizmoYPos = CalculateGizmoPoint(v.y);
 				args[2] = gizmoYPos.x;
 				args[3] = gizmoYPos.y;
 
-				WorldPtToScreenPt3(v.z, screenPos);
-				gizmoZPos = {
-					(screenPos.x * stageWidth) - gizmoBasePos.x,
-					((1.0f - screenPos.y) * stageHeight) - gizmoBasePos.y
-				};
+				gizmoZPos = CalculateGizmoPoint(v.z);
 				args[4] = gizmoZPos.x;
 				args[5] = gizmoZPos.y;
 
@@ -456,14 +472,6 @@ namespace Menu
 			});
 			for (auto& hndl : managedActors) {
 				if (auto a = hndl.get(); a != nullptr) {
-					if (!MathUtil::CoordsWithinError(a->data.angle, angle)) {
-						a->SetAngleOnReference(angle);
-					}
-					if (!MathUtil::CoordsWithinError(a->data.location, location)) {
-						a->SetPosition(location, true);
-						a->DisableCollision();
-						a->SetNoCollision(true);
-					}
 					if (targetHandle.has_value() && targetHandle.value() != hndl) {
 						BodyAnimation::GraphHook::VisitGraph(a.get(), [&](Graph* g) {
 							g->generator.localTime = localTime;
@@ -605,13 +613,7 @@ namespace Menu
 
 		void OnMenuObjLoaded()
 		{
-			RE::Scaleform::GFx::Value result;
-
-			menuObj.Invoke("GetStageWidth", &result);
-			stageWidth = static_cast<float>(result.GetNumber());
-
-			menuObj.Invoke("GetStageHeight", &result);
-			stageHeight = static_cast<float>(result.GetNumber());
+			GetStageSize();
 		}
 
 		void SetPlayState(bool playing, bool forceUiUpdate = false) {
@@ -1088,8 +1090,41 @@ namespace Menu
 			}
 		}
 
-		float stageHeight = 0.0f;
+		static RE::Setting& GetScreenHeight()
+		{
+			REL::Relocation<RE::Setting*> singleton{ REL::ID(1302430) };
+			return *singleton;
+		}
+
+		static RE::Setting& GetScreenWidth()
+		{
+			REL::Relocation<RE::Setting*> singleton{ REL::ID(644641) };
+			return *singleton;
+		}
+
+		void GetStageSize()
+		{
+			RE::Scaleform::GFx::Value result;
+
+			menuObj.Invoke("GetStageWidth", &result);
+			float swfWidth = static_cast<float>(result.GetNumber());
+
+			menuObj.Invoke("GetStageHeight", &result);
+			float swfHeight = static_cast<float>(result.GetNumber());
+
+			float width = static_cast<float>(GetScreenWidth().GetInt());
+			float height = static_cast<float>(GetScreenHeight().GetInt());
+
+			float scaleYInverse = 1.0f / (height / swfHeight);
+			float scaledWidth = width * scaleYInverse;
+			widthAdjust = ((scaledWidth - swfWidth) / 2) * -1.0f;
+			stageWidth = scaledWidth;
+			stageHeight = swfHeight;
+		}
+
+		float widthAdjust = 0.0f;
 		float stageWidth = 0.0f;
+		float stageHeight = 0.0f;
 		float nodeSizeModifier = 1.0f;
 
 	private:
@@ -1115,8 +1150,6 @@ namespace Menu
 		RE::NiPoint2 gizmoZPos;
 
 		std::vector<SerializableActorHandle> managedActors;
-		RE::NiPoint3 location;
-		RE::NiPoint3 angle;
 
 		inline static std::atomic<NAFStudioMenu*> studioInstance = nullptr;
 	};

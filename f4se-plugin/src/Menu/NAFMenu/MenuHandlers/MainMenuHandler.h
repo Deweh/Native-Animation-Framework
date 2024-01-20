@@ -24,6 +24,7 @@ namespace Menu::NAF
 				{ "New Scene", BindGoto(kNewScene) },
 				{ "Active Scenes", BindGoto(kManageScenes) },
 				{ "Creator", BindGoto(kCreator) },
+				{ "Item Explorer", BindGoto(kItemExplorer) },
 				{ "Settings", BindGoto(kSettings) },
 				//{ GetRecordingAnim() ? "Stop Recording" : "Start Recording", Bind(&MainMenuHandler::ToggleRecording) },
 				//{ "Play Data/NAF/animOutput.nanim", Bind(&MainMenuHandler::Start) },

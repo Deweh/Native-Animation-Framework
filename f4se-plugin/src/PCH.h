@@ -37,3 +37,4 @@ using namespace std::literals;
 #include "ik/ik.h"
 #include "BodyAnimation/Spline.h"
 #include "libzippp/libzippp.h"
+#include "fp16.h"

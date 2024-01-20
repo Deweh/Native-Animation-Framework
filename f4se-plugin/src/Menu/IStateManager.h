@@ -15,6 +15,7 @@ namespace Menu
 		kSettings,
 		kInventories,
 		kBodyAnimCreator,
+		kItemExplorer,
 		kNone
 	};
 

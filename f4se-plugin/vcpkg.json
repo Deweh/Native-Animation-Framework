@@ -12,6 +12,7 @@
     "zstr",
     "nlohmann-json",
     "cereal",
-    "libzippp"
+    "libzippp",
+    "fp16"
   ]
 }

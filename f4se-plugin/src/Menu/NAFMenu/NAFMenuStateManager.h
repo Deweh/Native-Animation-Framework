@@ -6,6 +6,7 @@
 #include "MenuHandlers/SettingsMenuHandler.h"
 #include "MenuHandlers/InventoryMenuHandler.h"
 #include "MenuHandlers/BodyCreatorHandler.h"
+#include "MenuHandlers/ItemExplorerHandler.h"
 #pragma once
 
 namespace Menu
