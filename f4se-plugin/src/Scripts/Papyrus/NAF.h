@@ -405,7 +405,7 @@ namespace Papyrus::NAF
 				}, true);
 			}
 			if (walkInstResult != 0) {
-				PackVariable(*result, walkInstResult == 1);
+				PackVariable(*result, walkInstResult != 1);
 			}
 		} else {
 			auto prop = ScenePropGetters.find(a_prop);

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 # ---- Options ----
 
-option(COPY_BUILD "Copy the build output to the Fallout 4 directory." OFF)
+option(COPY_BUILD "Copy the build output to the Fallout 4 directory." ON)
 
 # ---- Cache build vars ----
 
@@ -171,20 +171,19 @@ endif ()
 
 # ---- File copying ----
 
-if (COPY_BUILD)
-	if (DEFINED Fallout4Path)
-		add_custom_command(
-			TARGET ${PROJECT_NAME}
-			POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${Fallout4Path}/Data/F4SE/Plugins/
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${Fallout4Path}/Data/F4SE/Plugins/
-		)
-	else ()
-		message(
-			WARNING
-			"Variable Fallout4Path is not defined. Skipping post-build copy command."
-		)
-	endif ()
+if (DEFINED Fallout4Path)
+	add_custom_command(
+		TARGET ${PROJECT_NAME}
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${Fallout4Path}/Data/F4SE/Plugins/
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${Fallout4Path}/Data/F4SE/Plugins/
+		COMMENT "Copying plugin to Fallout4 directory..."
+	)
+else ()
+	message(
+		WARNING
+		"Variable Fallout4Path is not defined. Skipping post-build copy command."
+	)
 endif ()
 
 # ---- Build artifacts ----

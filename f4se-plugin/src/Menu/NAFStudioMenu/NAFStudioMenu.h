@@ -17,11 +17,23 @@ namespace Menu
 
 		//Util Functions
 
-		static bool WorldPtToScreenPt3(const RE::NiPoint3& a_worldPoint, RE::NiPoint3& a_screenPoint)
+		static bool WorldPtToScreenPt3(const RE::NiPoint3& worldPt, RE::NiPoint3& screenPt)
 		{
-			using func_t = decltype(&WorldPtToScreenPt3);
-			REL::Relocation<func_t> func{ REL::ID(1132313) };
-			return func(a_worldPoint, a_screenPoint);
+			static const RE::NiCamera* worldCam = RE::Main::WorldRootCamera();
+			const auto& worldToCam = worldCam->worldToCam;
+
+			float trace = (worldPt.x * worldToCam[3][0]) + (worldPt.y * worldToCam[3][1]) + ((worldPt.z * worldToCam[3][2]) + worldToCam[3][3]);
+			if (trace <= 0.00001f) {
+				return false;
+			}
+
+			float traceInv = 1.0f / trace;
+			screenPt.x = (((worldPt.y * worldToCam[0][1]) + (worldPt.x * worldToCam[0][0])) + ((worldPt.z * worldToCam[0][2]) + worldToCam[0][3])) * traceInv;
+			screenPt.y = (((worldPt.y * worldToCam[1][1]) + (worldPt.x * worldToCam[1][0])) + ((worldPt.z * worldToCam[1][2]) + worldToCam[1][3])) * traceInv;
+			screenPt.z = (((worldPt.y * worldToCam[2][1]) + (worldPt.x * worldToCam[2][0])) + ((worldPt.z * worldToCam[2][2]) + worldToCam[2][3])) * traceInv;
+			screenPt.x = (screenPt.x + 1.0f) * 0.5f;
+			screenPt.y = (screenPt.y + 1.0f) * 0.5f;
+			return true;
 		}
 
 		static bool IsActive() {
