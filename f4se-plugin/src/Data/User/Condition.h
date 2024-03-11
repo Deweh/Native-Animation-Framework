@@ -70,7 +70,8 @@ namespace Data
 			return true;
 		}
 
-		void SkeletonToRootBehavior(const std::unordered_map<std::string_view, RE::BSFixedString>& map) {
+		void SkeletonToRootBehavior(const SkeletonMapType& map)
+		{
 			if (rootBehavior.has_value()) {
 				if (auto iter = map.find(rootBehavior.value()); iter != map.end()) {
 					rootBehavior = iter->second;
@@ -136,7 +137,8 @@ namespace Data
 			}
 		}
 
-		void SkeletonToRootBehavior(const std::unordered_map<std::string_view, RE::BSFixedString>& map) {
+		void SkeletonToRootBehavior(const SkeletonMapType& map)
+		{
 			for (auto iter = std::vector<std::pair<Condition, T>>::begin(); iter != std::vector<std::pair<Condition, T>>::end(); iter++) {
 				iter->first.SkeletonToRootBehavior(map);
 			}

@@ -5,6 +5,8 @@
 
 namespace Data
 {
+	using SkeletonMapType = std::map<RE::BSFixedString, RE::BSFixedString>;
+
 	class Animation;
 	class Position;
 	class FaceAnim;
@@ -67,11 +69,36 @@ namespace Data
 	class Global
 	{
 	public:
+		struct CaseInsensitiveStringHash
+		{
+			std::size_t operator()(const std::string& str) const
+			{
+				std::size_t hash = std::_FNV_offset_basis;
+				for (char c : str) {
+					hash ^= static_cast<std::size_t>(std::tolower(c));
+					hash *= std::_FNV_prime;
+				}
+
+				return hash;
+			}
+		};
+
+		struct CaseInsensitiveStringEqual
+		{
+			bool operator()(const std::string& lhs, const std::string& rhs) const
+			{
+				return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
+					[](char a, char b) {
+						return std::tolower(a) == std::tolower(b);
+					});
+			}
+		};
+
 		template <typename T>
-		class IDMap : public concurrency::concurrent_unordered_map<std::string, std::pair<RE::BSSpinLock, std::shared_ptr<T>>>
+		class IDMap : public concurrency::concurrent_unordered_map<std::string, std::pair<RE::BSSpinLock, std::shared_ptr<T>>, CaseInsensitiveStringHash, CaseInsensitiveStringEqual>
 		{
 		public:
-			using super = concurrency::concurrent_unordered_map<std::string, std::pair<RE::BSSpinLock, std::shared_ptr<T>>>;
+			using super = concurrency::concurrent_unordered_map<std::string, std::pair<RE::BSSpinLock, std::shared_ptr<T>>, CaseInsensitiveStringHash, CaseInsensitiveStringEqual>;
 
 			void priority_insert(std::shared_ptr<T> ele) {
 				auto& target = super::operator[](ele->id);
@@ -91,7 +118,7 @@ namespace Data
 			}
 		};
 
-		inline static ThreadSafeAccessor<std::unordered_map<std::string, std::string>> RaceLinkMap;
+		inline static ThreadSafeAccessor<std::map<RE::BSFixedString, RE::BSFixedString>> RaceLinkMap;
 
 		inline static IDMap<Race> Races;
 		inline static IDMap<Animation> Animations;
@@ -528,7 +555,7 @@ namespace Data
 			if (Settings::Values.bHeadPartMorphPatch)
 				PatchHeadParts();
 
-			std::unordered_map<std::string_view, RE::BSFixedString> skeletonProjectMap;
+			SkeletonMapType skeletonProjectMap;
 			skeletonProjectMap["Human"] = "RaiderProject";
 
 			//Link Race skeletons to root behaviors.
@@ -538,8 +565,8 @@ namespace Data
 				const auto rForm = iter->second.second->baseForm.get(verbose);
 
 				if (rForm != nullptr) {
-					linkMap->insert({ rForm->behaviorGraphProjectName[0].c_str(), iter->first });
-					skeletonProjectMap.insert({ iter->first, rForm->behaviorGraphProjectName[0] });
+					linkMap->emplace(rForm->behaviorGraphProjectName[0], iter->first);
+					skeletonProjectMap.emplace(iter->first, rForm->behaviorGraphProjectName[0]);
 					iter++;
 				} else {
 					iter = Races.unsafe_erase(iter);
@@ -566,6 +593,8 @@ namespace Data
 
 			//Link Animation information.
 
+			std::vector<std::string> pendingDeletes;
+
 			concurrency::parallel_for_each(Animations.begin(), Animations.end(), [&](const auto& pair) {
 				auto& a = *pair.second.second;
 
@@ -586,8 +615,8 @@ namespace Data
 					if (s.behaviorRequiresConvert) {
 						if (!skeletonProjectMap.contains(s.rootBehavior)) {
 							if (verbose)
-								logger::warn("Animation '{}' contains actor with invalid skeleton '{}', defaulting to Human.", a.id, s.rootBehavior);
-							s.rootBehavior = skeletonProjectMap["Human"];
+								logger::warn("Animation '{}' contains actor with invalid skeleton '{}', discarding.", a.id, s.rootBehavior);
+							pendingDeletes.push_back(pair.first);
 						} else {
 							s.rootBehavior = skeletonProjectMap[s.rootBehavior];
 						}
@@ -596,9 +625,14 @@ namespace Data
 				}
 			});
 
+			for (auto& s : pendingDeletes) {
+				Animations.unsafe_erase(s);
+			}
+
+			pendingDeletes.clear();
+
 			//Check that all Positions refer to a valid base Animation.
 
-			std::vector<std::string> pendingDeletes;
 			for (auto& pBase : Positions) {
 				auto& p = pBase.second;
 				auto baseAnim = p.second->GetBaseAnimation();
