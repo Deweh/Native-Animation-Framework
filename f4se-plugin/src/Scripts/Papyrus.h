@@ -31,6 +31,7 @@ namespace Papyrus
 		PAPYRUS_BIND(GetSceneFromActor);
 		PAPYRUS_BIND(IsSceneRunning);
 		PAPYRUS_BIND(GetSceneProperty);
+		PAPYRUS_BIND(ValidateSceneParams);
 
 		PAPYRUS_BIND(PlayNANIM);
 		PAPYRUS_BIND(StopNANIM);
@@ -57,6 +58,7 @@ namespace Papyrus
 		PAPYRUS_BIND(AttachElementTo);
 
 		PAPYRUS_BIND(GetLocalTransform);
+		PAPYRUS_BIND(SynchronizeAnimations);
 
 		return true;
 	}

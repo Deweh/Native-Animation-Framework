@@ -199,6 +199,11 @@ Bool Function IsSceneRunning(SceneId akScene) Native Global
 ;   Details: The XYZ rotation of the scene. The array is mapped to X = index 0, Y = index 1, Z = index 2
 Var Function GetSceneProperty(SceneId akScene, String sProperty) Native Global
 
+;Checks if the provided scene parameters have any potential issues that would cause a scene to not start.
+;If any problems were found, returns a string with a message describing the problem.
+;Otherwise, returns an empty string.
+String Function ValidateSceneParams(Actor[] akActors, SceneSettings akSettings = None) Native Global
+
 ;|--------------------------|
 ;| Body Animation Functions |
 ;|--------------------------|
@@ -333,6 +338,14 @@ Function AttachElementTo(Int iHandle, Int iTargetHandle, Bool bDetach = False) N
 ;If either object reference is None, or either object reference's 3d is not loaded, all zeros will be returned.
 Float[] Function GetLocalTransform(ObjectReference akObject, ObjectReference akParent) Native Global
 
+;Synchronizes the animation times of all provided actors.
+;For example, if the first actor is 2 seconds into playing their animation,
+;and the second actor is 3 seconds into playing their animation, this function will instantly set them both to 2 seconds.
+;Works for both normal game animations & NANIM animations.
+;
+;Returns true if successful, or false if there was an error with one or more of the actors.
+Bool Function SynchronizeAnimations(Actor[] akActors) Native Global
+
 ;|--------------|
 ;| Scene Events |
 ;|--------------|
@@ -342,6 +355,13 @@ Float[] Function GetLocalTransform(ObjectReference akObject, ObjectReference akP
 ;Register for this event using RegisterForExternalEvent(NAF.SceneStartEvent(), YourFunctionName)
 String Function SceneStartEvent() Global
     Return "NAF::SceneStarted"
+EndFunction
+
+;Event for when a scene fails to start. (Useful for checking if the scene actually started when using WalkToAndStartScene)
+;Parameters: (NAF:SceneId akScene)
+;Register for this event using RegisterForExternalEvent(NAF.SceneStartEvent(), YourFunctionName)
+String Function SceneFailEvent() Global
+    Return "NAF::SceneFailed"
 EndFunction
 
 ;Event for when a scene is ended.

@@ -4,6 +4,7 @@
 #define USERDATA_DIR "Data\\NAF\\"s
 
 #define PEVENT_SCENE_START "NAF::SceneStarted"
+#define PEVENT_SCENE_FAIL "NAF::SceneFailed"
 #define PEVENT_SCENE_END "NAF::SceneEnded"
 #define PEVENT_SCENE_END_DATA "NAF::SceneEndedData"
 #define PEVENT_SCENE_POS_CHANGE "NAF::ScenePositionChanged"

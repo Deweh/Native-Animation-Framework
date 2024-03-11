@@ -715,8 +715,11 @@ namespace Scene
 		auto actors = settings.QActors();
 		auto position = settings.startPosition;
 
-		if (auto res = ValidateStartSceneArgs(settings, ignoreInScene); !res)
+		if (auto res = ValidateStartSceneArgs(settings, ignoreInScene); !res) {
+			Data::Events::Send(Data::Events::SCENE_FAILED, overrideId ? sceneIdInOut : 0ui64);
 			return res;
+		}
+			
 
 		std::shared_ptr<IScene> newScene = std::make_shared<Scene>();
 		newScene->location = locationRef->data.location;

@@ -11,6 +11,7 @@ namespace Data
 		enum : event_type
 		{
 			SCENE_START,
+			SCENE_FAILED,
 			SCENE_END,
 			SCENE_POS_CHANGE,
 			TREE_POS_CHANGE,

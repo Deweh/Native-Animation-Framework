@@ -418,6 +418,20 @@ namespace Papyrus::NAF
 		return result;
 	}
 
+	std::string_view ValidateSceneParams(std::monostate, std::vector<RE::Actor*> a_actors, std::optional<SceneSettings> a_settings)
+	{
+		auto data = GetSceneData(a_actors, a_settings);
+		if (!data.result) {
+			return data.result.GetErrorMessage();
+		}
+
+		if (auto res = Scene::SceneManager::ValidateStartSceneArgs(data.settings, false); !res) {
+			return res.GetErrorMessage();
+		}
+
+		return "";
+	}
+
 	/*
 	|----------------|
 	| Data Functions |
@@ -625,5 +639,36 @@ namespace Papyrus::NAF
 		result[5] = transform.translate.z;
 
 		return result;
+	}
+
+	bool SynchronizeAnimations(std::monostate, std::vector<RE::Actor*> a_actors)
+	{
+		if (a_actors.size() < 2)
+			return false;
+
+		for (auto a : a_actors) {
+			if (!a)
+				return false;
+		}
+
+		GameUtil::GraphTime baseTime;
+		if (!BodyAnimation::SmartIdle::GetGraphTime(a_actors[0], baseTime)) {
+			return false;
+		}
+
+		GameUtil::GraphTime time;
+		bool allSuccessful = true;
+		for (size_t i = 1; i < a_actors.size(); i++) {
+			auto a = a_actors[i];
+			if (!BodyAnimation::SmartIdle::GetGraphTime(a, time) || time.total < baseTime.current) {
+				allSuccessful = false;
+				continue;
+			}
+			if (!BodyAnimation::SmartIdle::SetGraphTime(a, baseTime.current)) {
+				allSuccessful = false;
+			}
+		}
+
+		return allSuccessful;
 	}
 }

@@ -30,6 +30,12 @@ namespace Papyrus
 			}
 		}
 
+		void OnSceneFail(Events::event_type, Events::EventData& data) {
+			if (auto u64 = std::any_cast<uint64_t>(&data); u64) {
+				GameUtil::SendPapyrusEvent(PEVENT_SCENE_FAIL, PackSceneId(*u64));
+			}
+		}
+
 		void OnSceneEnd(Events::event_type, Events::EventData& data)
 		{
 			if (auto d = std::any_cast<Events::SceneData>(&data); d) {
@@ -67,6 +73,7 @@ namespace Papyrus
 		friend class Singleton;
 		EventProxy() {
 			RegisterListener(Events::SCENE_START, &EventProxy::OnSceneStart);
+			RegisterListener(Events::SCENE_FAILED, &EventProxy::OnSceneFail);
 			RegisterListener(Events::SCENE_END, &EventProxy::OnSceneEnd);
 			RegisterListener(Events::SCENE_POS_CHANGE, &EventProxy::OnScenePosChange);
 			RegisterListener(Events::TREE_POS_CHANGE, &EventProxy::OnTreePosChange);

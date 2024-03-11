@@ -415,6 +415,8 @@ namespace Scene
 			SetActorInScene(ref, false);
 		}
 
+	public:
+
 		static StartResult ValidateStartSceneArgs(const SceneSettings& settings, bool ignoreInScene = false)
 		{
 			if (!settings.startPosition) {
