@@ -352,7 +352,9 @@ namespace Scene
 					currentActor->EvaluatePackage(false, true);
 				}
 
-				currentActor->SetScale(1.0f);
+				if (!Data::Settings::Values.bDisableRescaler) {
+					currentActor->SetScale(1.0f);
+				}
 			}, false);
 
 			status = SceneState::PendingDeletion;
