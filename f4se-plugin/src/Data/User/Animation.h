@@ -237,7 +237,7 @@ namespace Data
 			out.ParseID(m);
 			out.ParseTags(m);
 			std::string offset;
-			m(&offset, ""s, true, false, "", "offset");
+			m(&offset, XMLUtil::Mapper::emptyStr, true, false, "", "offset");
 			std::vector<std::pair<RE::NiPoint3, float>> offsetPairs = ParseOffsets(offset);
 			
 			size_t i = 0;
@@ -251,25 +251,25 @@ namespace Data
 				}
 
 				std::string tmp;
-				m(&tmp, ""s, false, false, "", "file");
+				m(&tmp, XMLUtil::Mapper::emptyStr, false, false, "", "file");
 				if (tmp.size() > 0) {
 					s.idleRequiresConvert = false;
 					s.dynamicIdle = true;
 					s.idle[0] = tmp;
 					s.idle[1] = "default";
 				} else {
-					m.GetOptNode(&tmp, ""s, "idle", true, true, "Animation actor node has no idle source!", "idleSource", "source");
+					m.GetOptNode(&tmp, XMLUtil::Mapper::emptyStr, "idle", true, true, "Animation actor node has no idle source!", "idleSource", "source");
 					s.idle[0] = tmp;
-					m.GetOptNode(&tmp, ""s, "idle", true, true, "Animation actor node has no idle form!", "idleForm", "idle", "form");
+					m.GetOptNode(&tmp, XMLUtil::Mapper::emptyStr, "idle", true, true, "Animation actor node has no idle form!", "idleForm", "idle", "form");
 					s.idle[1] = tmp;
 				}
 				
 				m(&s.rootBehavior, "Human"s, true, false, "", "skeleton");
 				m(&s.gender, Any, true, false, "", "gender");
-				s.faceAnim.set_has_value(m(&s.faceAnim.value(), ""s, true, false, "", "faceAnim"));
+				s.faceAnim.set_has_value(m(&s.faceAnim.value(), XMLUtil::Mapper::emptyStr, true, false, "", "faceAnim"));
 				m(&s.loopFaceAnim, false, true, false, "", "loopFaceAnim");
-				s.startEquipSet.set_has_value(m(&s.startEquipSet.value(), ""s, true, false, "", "startEquipmentSet"));
-				s.stopEquipSet.set_has_value(m(&s.stopEquipSet.value(), ""s, true, false, "", "stopEquipmentSet"));
+				s.startEquipSet.set_has_value(m(&s.startEquipSet.value(), XMLUtil::Mapper::emptyStr, true, false, "", "startEquipmentSet"));
+				s.stopEquipSet.set_has_value(m(&s.stopEquipSet.value(), XMLUtil::Mapper::emptyStr, true, false, "", "stopEquipmentSet"));
 				s.customScale.set_has_value(m(&s.customScale.value(), 1.0f, true, false, "", "scale"));
 				
 				s.actions.set_has_value(s.actions.value().Parse(m));
@@ -278,7 +278,7 @@ namespace Data
 				auto& actorMorphs = s.morphs.value();
 				m.GetArray([&](XMLUtil::Mapper& m) {
 					auto& p = actorMorphs.emplace_back();
-					m(&p.name, ""s, true, true, "morph node has no 'id' attribute!", "id");
+					m(&p.name, XMLUtil::Mapper::emptyStr, true, true, "morph node has no 'id' attribute!", "id");
 					m(&p.value, 0.0f, false, true, "morph node has no 'to' attribute!", "to");
 
 					if (m)

@@ -211,7 +211,7 @@ namespace Scene
 		static StartResult StartScene(const SceneSettings& settings, uint64_t& sceneIdOut, bool overrideId = false, bool ignoreInScene = false);
 
 		static bool IsActorInScene(RE::Actor* actor, bool ignoreInSceneKW = false) {
-			if (!Data::Forms::NAFInSceneKW || !Data::Forms::NAFDoNotUseKW) {
+			if (!Data::Forms::NAFInSceneKW || !Data::Forms::NAFDoNotUseKW || !actor) {
 				return false;
 			}
 			
@@ -220,7 +220,7 @@ namespace Scene
 
 		static void SetActorInScene(RE::Actor* actor, bool inScene)
 		{
-			if (!Data::Forms::NAFInSceneKW) {
+			if (!Data::Forms::NAFInSceneKW || !actor) {
 				return;
 			}
 

@@ -7,7 +7,7 @@ namespace Data
 	public:
 		void ParseTags(XMLUtil::Mapper& m) {
 			std::string combinedTags;
-			m(&combinedTags, ""s, false, false, "", "tags");
+			m(&combinedTags, XMLUtil::Mapper::emptyStr, false, false, "", "tags");
 			if (combinedTags.size() > 0) {
 				Utility::TransformStringToLower(combinedTags);
 				Utility::ForEachSubstring(combinedTags, ",", [&](const std::string_view& strv) {
@@ -39,7 +39,7 @@ namespace Data
 			std::string position;
 			bool replace = false;
 			m(&replace, false, true, false, "", "replace");
-			m(&position, ""s, false, true, "tag node has no 'position' attribute!", "position");
+			m(&position, XMLUtil::Mapper::emptyStr, false, true, "tag node has no 'position' attribute!", "position");
 			if (position.size() < 1)
 				return;
 

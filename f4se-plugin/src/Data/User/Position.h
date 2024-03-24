@@ -98,13 +98,13 @@ namespace Data
 			out.ParseID(m);
 			out.ParseTags(m);
 			m(&out.hidden, false, true, false, "", "isHidden");
-			m(&out.startMorphSet, ""s, true, false, "", "startMorphSet");
-			m(&out.stopMorphSet, ""s, true, false, "", "stopMorphSet");
-			m(&out.startEquipSet, ""s, true, false, "", "startEquipmentSet");
-			m(&out.stopEquipSet, ""s, true, false, "", "stopEquipmentSet");
+			m(&out.startMorphSet, XMLUtil::Mapper::emptyStr, true, false, "", "startMorphSet");
+			m(&out.stopMorphSet, XMLUtil::Mapper::emptyStr, true, false, "", "stopMorphSet");
+			m(&out.startEquipSet, XMLUtil::Mapper::emptyStr, true, false, "", "startEquipmentSet");
+			m(&out.stopEquipSet, XMLUtil::Mapper::emptyStr, true, false, "", "stopEquipmentSet");
 			
 			std::string locs;
-			m(&locs, ""s, true, false, "", "location");
+			m(&locs, XMLUtil::Mapper::emptyStr, true, false, "", "location");
 			if (!locs.empty()) {
 				Utility::ForEachSubstring(locs, ",", [&](const std::string_view& s) {
 					out.locations.emplace_back(s);
@@ -113,12 +113,12 @@ namespace Data
 
 			out.posType = kAnimation;
 			std::string foundId = "";
-			if (m(&foundId, ""s, true, false, "", "animation"); foundId.size() > 0) {
+			if (m(&foundId, XMLUtil::Mapper::emptyStr, true, false, "", "animation"); foundId.size() > 0) {
 				out.idForType = foundId;
-			} else if (m(&foundId, ""s, true, false, "", "animationGroup"); foundId.size() > 0) {
+			} else if (m(&foundId, XMLUtil::Mapper::emptyStr, true, false, "", "animationGroup"); foundId.size() > 0) {
 				out.posType = kAnimationGroup;
 				out.idForType = foundId;
-			} else if (m(&foundId, ""s, true, false, "", "positionTree"); foundId.size() > 0) {
+			} else if (m(&foundId, XMLUtil::Mapper::emptyStr, true, false, "", "positionTree"); foundId.size() > 0) {
 				out.posType = kPositionTree;
 				out.idForType = foundId;
 			} else {

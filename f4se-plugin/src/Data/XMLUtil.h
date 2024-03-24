@@ -12,6 +12,7 @@ namespace Data {
 			bool successful = true;
 
 		public:
+			inline static std::string emptyStr = "";
 			bool verbose = true;
 
 			Mapper(const pugi::xml_node& defaults, const pugi::xml_node& node, const std::string_view fName) {
