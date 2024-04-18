@@ -64,26 +64,29 @@ namespace BodyAnimation
 		};
 	}
 
-	class IKTwoBoneChain
+	class FABRIKChain
 	{
 	public:
-		IKTwoBoneChain()
+		FABRIKChain(uint16_t numNodes)
 		{
 			solver = ik.solver.create(IK_FABRIK);
-			nodes[0] = solver->node->create(0);
-			nodes[1] = solver->node->create_child(nodes[0], 1);
-			nodes[2] = solver->node->create_child(nodes[1], 2);
+			nodes.reserve(numNodes);
+			nodes.push_back(solver->node->create(0));
+			for (uint16_t i = 1; i < numNodes; i++) {
+				nodes.push_back(solver->node->create_child(nodes.back(), i));
+			}
 			effector = solver->effector->create();
-			solver->effector->attach(effector, nodes[2]);
+			solver->effector->attach(effector, nodes.back());
 			solver->flags |= IK_ENABLE_JOINT_ROTATIONS;
 			solver->max_iterations = 50;
 			solver->tolerance = 1e-7f;
-			effector->chain_length = 2;
+			effector->chain_length = numNodes - 1;
 			ik.solver.set_tree(solver, nodes[0]);
 			ik.solver.rebuild(solver);
+			dirsCache.resize(numNodes);
 		}
 
-		~IKTwoBoneChain()
+		~FABRIKChain()
 		{
 			ik.solver.destroy(solver);
 		}
@@ -115,16 +118,28 @@ namespace BodyAnimation
 			} else {
 				parentWorld = MathUtil::CalculateWorldAscending(chainParent, dest->parent, &chainParentWorld);
 			}
-			RE::NiTransform destWorld = MathUtil::ApplyCoordinateSpace(parentWorld, dest->local);
+
+			RE::NiTransform destWorld;
+
+			if (usePositions) {
+				destWorld.translate = IK3ToN3(src->position);
+			} else {
+				destWorld = MathUtil::ApplyCoordinateSpace(parentWorld, dest->local);
+			}
+			
 			IKQToNQ(src->rotation).ToRotation(destWorld.rotate);
 
 			RE::NiTransform result = destWorld.WorldToLocal(parentWorld);
 			dest->local.rotate = result.rotate;
+			if (usePositions) {
+				dest->local.translate = result.translate;
+			}
 
 			return destWorld;
 		}
 
-		void SetTargetLocal(const NodeTransform& target, const RE::NiTransform& parentTransform) {
+		void SetTargetLocal(const NodeTransform& target, const RE::NiTransform& parentTransform)
+		{
 			RE::NiTransform targetWorld;
 			target.ToComplex(targetWorld);
 			targetWorld = MathUtil::ApplyCoordinateSpace(parentTransform, targetWorld);
@@ -135,7 +150,8 @@ namespace BodyAnimation
 			effector->target_position = N3ToIK3(targetWorld.translate);
 		}
 
-		NodeTransform GetTargetLocal(const RE::NiTransform& parentTransform) {
+		NodeTransform GetTargetLocal(const RE::NiTransform& parentTransform)
+		{
 			RE::NiTransform targetWorld;
 			IKQToNQ(targetRotation).ToRotation(targetWorld.rotate);
 			targetWorld.translate = IK3ToN3(effector->target_position);
@@ -149,11 +165,13 @@ namespace BodyAnimation
 			effector->target_position = N3ToIK3(t.translate);
 		}
 
-		void SetHasPole(bool hasPole) {
+		void SetHasPole(bool hasPole)
+		{
 			nodes[1]->hasPole = hasPole ? 1 : 0;
 		}
 
-		void SetPoleWorld(const RE::NiPoint3& p, const RE::NiTransform& parentTransform, bool parentIsEffector = false) {
+		void SetPoleWorld(const RE::NiPoint3& p, const RE::NiTransform& parentTransform, bool parentIsEffector = false)
+		{
 			RE::NiPoint3 relative = p;
 			relative -= parentIsEffector ? IK3ToN3(effector->target_position) : parentTransform.translate;
 
@@ -173,41 +191,54 @@ namespace BodyAnimation
 
 			ik.vec3.rotate(ikRelativePos.f, ikWorldRot.f);
 			relativePole = ikRelativePos;
-
-			SetHasPole(true);
 		}
 
-		ik_vec3_t GetPoleWorldIK(const NodeTransform& parentTransform) {
+		ik_vec3_t GetPoleWorldIK(const NodeTransform& parentTransform)
+		{
 			return GetPoleWorldIK(N3ToIK3(parentTransform.translate), NQToIKQ(parentTransform.rotate));
 		}
 
-		ik_vec3_t GetPoleWorldIK(const ik_vec3_t& parentPos, const ik_quat_t& parentRot) {
+		ik_vec3_t GetPoleWorldIK(const ik_vec3_t& parentPos, const ik_quat_t& parentRot)
+		{
 			ik_vec3_t result = relativePole;
 			ik.vec3.rotate(result.f, parentRot.f);
 			ik.vec3.add_vec3(result.f, parentPos.f);
 			return result;
 		}
 
-		RE::NiPoint3 GetPoleWorld(const RE::NiTransform& parentTransform, bool parentIsEffector = false) {
+		RE::NiPoint3 GetPoleWorld(const RE::NiTransform& parentTransform, bool parentIsEffector = false)
+		{
 			return IK3ToN3(parentIsEffector ? GetPoleWorldIK(effector->target_position, targetRotation) : GetPoleWorldIK(parentTransform));
 		}
 
-		NodeTransform GetTarget() {
+		NodeTransform GetTarget()
+		{
 			return NodeTransform(IKQToNQ(targetRotation), IK3ToN3(effector->target_position));
 		}
 
-		void CalculateParentWorld(RE::NiAVObject* b1, RE::NiNode* rootNode) {
+		void CalculateParentWorld(RE::NiAVObject* b1, RE::NiNode* rootNode)
+		{
 			chainParent = b1->parent;
 			chainParentWorld = MathUtil::CalculateWorldAscending(rootNode, b1->parent);
 		}
 
-		void CopyToIK(RE::NiAVObject* b1, RE::NiAVObject* b2, RE::NiAVObject* b3)
+		void CopyToIK(const std::span<RE::NiPointer<RE::NiAVObject>>& bones)
 		{
-			RE::NiTransform b1W = CopyNiNodeToIKNode(b1, nodes[0], chainParent, chainParentWorld);
-			RE::NiTransform b2W = CopyNiNodeToIKNode(b2, nodes[1], b1->IsNode(), b1W);
-			CopyNiNodeToIKNode(b3, nodes[2], b2->IsNode(), b2W);
-
+			CopyToIKNoTransform(bones);
 			ik_transform_chain_list(&solver->chain_list, ik_transform_flags_e::TR_G2L);
+		}
+
+		void CopyToIKNoTransform(const std::span<RE::NiPointer<RE::NiAVObject>>& bones)
+		{
+			RE::NiAVObject* curBone = bones[0].get();
+			RE::NiTransform lastWorld = CopyNiNodeToIKNode(curBone, nodes[0], chainParent, chainParentWorld);
+			RE::NiAVObject* lastBone = curBone;
+
+			for (size_t i = 1; i < nodes.size(); i++) {
+				curBone = bones[i].get();
+				lastWorld = CopyNiNodeToIKNode(curBone, nodes[i], lastBone->IsNode(), lastWorld);
+				lastBone = curBone;
+			}
 		}
 
 		void Solve()
@@ -219,57 +250,103 @@ namespace BodyAnimation
 			ik.solver.solve(solver);
 		}
 
-		RE::NiTransform CopyToNodes(RE::NiAVObject* b1, RE::NiAVObject* b2, RE::NiAVObject* b3)
+		void CopyToNodes(const std::span<RE::NiPointer<RE::NiAVObject>>& bones)
 		{
 			ik_transform_chain_list(&solver->chain_list, ik_transform_flags_e::TR_L2G);
-			RE::NiTransform b1W = CopyIKNodeToNiNode(nodes[0], b1, chainParent, chainParentWorld);
-			RE::NiTransform b2W = CopyIKNodeToNiNode(nodes[1], b2, b1->IsNode(), b1W);
-			CopyIKNodeToNiNode(nodes[2], b3, b2->IsNode(), b2W);
-			return b2W;
+			CopyToNodesNoTransform(bones);
 		}
 
-		void SolveAndApply(RE::NiAVObject* b1, RE::NiAVObject* b2, RE::NiAVObject* b3, RE::NiNode* rootNode, RE::NiAVObject* poleParent)
+		void CopyToNodesNoTransform(const std::span<RE::NiPointer<RE::NiAVObject>>& bones)
 		{
-			if (!b1->parent || !b2->parent || !b3->parent) {
+			RE::NiAVObject* curBone = bones[0].get();
+			RE::NiTransform lastWorld = CopyIKNodeToNiNode(nodes[0], curBone, chainParent, chainParentWorld);
+			RE::NiAVObject* lastBone = curBone;
+
+			for (size_t i = 1; i < nodes.size(); i++) {
+				curBone = bones[i].get();
+				lastWorld = CopyIKNodeToNiNode(nodes[i], curBone, lastBone->IsNode(), lastWorld);
+				lastBone = curBone;
+			}
+		}
+
+		void SolveAndApply(const std::span<RE::NiPointer<RE::NiAVObject>>& bones, RE::NiNode* rootNode, RE::NiAVObject* poleParent)
+		{
+			if (!bones[0]->parent) {
 				return;
 			}
 
-			CalculateParentWorld(b1, rootNode);
+			CalculateParentWorld(bones[0].get(), rootNode);
 
-			if (nodes[1]->hasPole > 0) {
-				if (poleParent == b3) {
+			if (nodes[1]->hasPole > 0 && poleParent != nullptr) {
+				if (poleParent == bones[2].get()) {
 					nodes[1]->pole = GetPoleWorldIK(effector->target_position, targetRotation);
 				} else {
 					nodes[1]->pole = GetPoleWorldIK(MathUtil::CalculateWorldAscending(rootNode, poleParent));
 				}
 			}
 
-			RE::NiTransform b2W;
+			if (usePositions) {
+				CopyToIKNoTransform(bones);
+
+				ik_vec3_t endPos = nodes.back()->position;
+				ik_vec3_t startPos = nodes.front()->position;
+				ik.vec3.sub_vec3(endPos.f, startPos.f);
+				double endNodeDist = ik.vec3.length(endPos.f);
+
+				endPos = effector->target_position;
+				ik.vec3.sub_vec3(endPos.f, startPos.f);
+				double effectorDist = ik.vec3.length(endPos.f);
+
+				if (std::fabs(endNodeDist - effectorDist) > 0.001f) {
+					double segmentLength = effectorDist / static_cast<double>(nodes.size() - 1);
+
+					for (size_t i = 1; i < nodes.size(); i++) {
+						ik_vec3_t dir = nodes[i]->position;
+						ik.vec3.sub_vec3(dir.f, nodes[i - 1]->position.f);
+						ik.vec3.normalize(dir.f);
+						ik.vec3.mul_scalar(dir.f, segmentLength);
+						dirsCache[i] = dir;
+					}
+
+					for (size_t i = 1; i < nodes.size(); i++) {
+						nodes[i]->position = nodes[i - 1]->position;
+						ik.vec3.add_vec3(nodes[i]->position.f, dirsCache[i].f);
+					}
+
+					CopyToNodesNoTransform(bones);
+					ik_transform_chain_list(&solver->chain_list, ik_transform_flags_e::TR_G2L);
+					ik.solver.update_distances(solver);
+				}
+			}
+
 			for (size_t i = 0; i < 10; i++) {
-				CopyToIK(b1, b2, b3);
+				CopyToIK(bones);
 				Solve();
-				b2W = CopyToNodes(b1, b2, b3);
+				CopyToNodes(bones);
 			}
 
 			//Override the last node's rotation with our target world rotation.
-			nodes[2]->rotation = targetRotation;
-			CopyIKNodeToNiNode(nodes[2], b3, b2->IsNode(), b2W);
+			nodes.back()->rotation = targetRotation;
+			CopyToNodesNoTransform(bones);
 		}
 
-		void Reset() {
+		void Reset()
+		{
 			initialized = false;
 		}
 
+		bool usePositions = false;
 		bool initialized = false;
 		ik_vec3_t relativePole;
+		ik_solver_t* solver;
 
 	private:
 
+		std::vector<ik_vec3_t> dirsCache;
 		RE::NiNode* chainParent;
 		RE::NiTransform chainParentWorld;
-		std::array<ik_node_t*, 3> nodes;
+		std::vector<ik_node_t*> nodes;
 		ik_quat_t targetRotation;
-		ik_solver_t* solver;
 		ik_effector_t* effector;
 	};
 
@@ -294,37 +371,34 @@ namespace BodyAnimation
 		virtual RE::NiPoint3 GetPoleLocal() = 0;
 		virtual void SetTargetParent(RE::NiAVObject* parent, RE::NiNode* parentRoot) = 0;
 		virtual RE::NiMatrix3 GetTargetParentRotation() = 0;
+		virtual void SetControlsTranslation(bool set) = 0;
 
 		virtual ~IKHolder(){};
 	};
 
-	struct IKTwoBoneHolder : public IKHolder
+	struct IKArbitraryHolder : public IKHolder
 	{
-		std::array<std::string, 3> boneNames;
-		std::string poleParentName;
+		std::vector<std::string> boneNames;
+		std::vector<RE::NiPointer<RE::NiAVObject>> bones;
 		RE::NiPointer<RE::NiNode> rootNode = nullptr;
-		RE::NiPointer<RE::NiAVObject> poleParent = nullptr;
-		RE::NiPointer<RE::NiAVObject> targetNodes[3];
-		IKTwoBoneChain chain;
+		FABRIKChain chain;
 
 		RE::NiPointer<RE::NiAVObject> targetParent = nullptr;
 		RE::NiPointer<RE::NiNode> targetParentRoot = nullptr;
 
-		IKTwoBoneHolder(const std::string_view& b1, const std::string_view& b2, const std::string_view& b3, const std::string& poleParentName, const RE::NiPoint3& poleStartPos) :
-			poleParentName(poleParentName)
+		IKArbitraryHolder(const std::vector<std::string>& a_boneNames) :
+			chain(static_cast<uint16_t>(a_boneNames.size()))
 		{
-			boneNames[0] = b1;
-			boneNames[1] = b2;
-			boneNames[2] = b3;
-			SetPoleLocal(poleStartPos);
+			boneNames = a_boneNames;
+			bones.resize(a_boneNames.size());
 		}
 
 		virtual void Reset()
 		{
 			if (targetParent != nullptr) {
 				SetTarget(targetParent->world);
-			} else if (targetNodes[2] != nullptr) {
-				SetTarget(targetNodes[2]->world);
+			} else if (bones.back() != nullptr) {
+				SetTarget(bones.back()->world);
 			}
 		}
 
@@ -333,11 +407,13 @@ namespace BodyAnimation
 			chain.SetTarget(target);
 		}
 
-		virtual NodeTransform GetTarget() {
+		virtual NodeTransform GetTarget()
+		{
 			return chain.GetTarget();
 		}
 
-		virtual void SetTargetLocal(const NodeTransform& target) {
+		virtual void SetTargetLocal(const NodeTransform& target)
+		{
 			if (targetParent != nullptr) {
 				if (targetParentRoot != nullptr) {
 					chain.SetTargetLocal(target, MathUtil::CalculateWorldAscending(targetParentRoot.get(), targetParent.get()));
@@ -349,7 +425,8 @@ namespace BodyAnimation
 			}
 		}
 
-		virtual NodeTransform GetTargetLocal() {
+		virtual NodeTransform GetTargetLocal()
+		{
 			if (targetParent != nullptr) {
 				return chain.GetTargetLocal(targetParent->world);
 			} else if (rootNode != nullptr) {
@@ -358,21 +435,115 @@ namespace BodyAnimation
 			return NodeTransform::Identity();
 		}
 
-		virtual void SetTargetParent(RE::NiAVObject* parent, RE::NiNode* parentRoot) {
+		virtual void SetTargetParent(RE::NiAVObject* parent, RE::NiNode* parentRoot)
+		{
 			targetParent.reset(parent);
 			targetParentRoot.reset(parentRoot);
 		}
 
+		virtual void SetPole(const RE::NiPoint3&)
+		{
+		}
+
+		virtual NodeTransform GetPole()
+		{
+			return NodeTransform::Identity();
+		}
+
+		virtual void SetPoleLocal(const RE::NiPoint3&)
+		{
+		}
+
+		virtual RE::NiPoint3 GetPoleLocal()
+		{
+			return { .0f, .0f, .0f };
+		}
+
+		virtual RE::NiMatrix3 GetTargetParentRotation()
+		{
+			if (targetParent != nullptr) {
+				return targetParent->world.rotate;
+			} else if (rootNode != nullptr) {
+				return rootNode->world.rotate;
+			}
+			RE::NiMatrix3 res;
+			res.MakeIdentity();
+			return res;
+		}
+
+		virtual void ClearNodes()
+		{
+			for (auto& b : bones) {
+				b.reset();
+			}
+			rootNode.reset();
+		}
+
+		virtual void GetTargetNodes(const std::vector<RE::NiPointer<RE::NiAVObject>>& nodes, const std::vector<std::string>& nodeMap, RE::NiAVObject* root) override
+		{
+			auto nodeIdxMap = Utility::VectorToIndexMap(nodeMap);
+			rootNode.reset(root->IsNode());
+
+			for (size_t i = 0; i < boneNames.size(); i++) {
+				if (auto iter = nodeIdxMap.find(boneNames[i]); iter != nodeIdxMap.end()) {
+					bones[i] = nodes[iter->second];
+				}
+			}
+
+			if (auto curTarget = chain.GetTarget();
+				curTarget.translate.x == 0.0f &&
+				curTarget.translate.y == 0.0f &&
+				curTarget.translate.z == 0.0f) {
+				Reset();
+			}
+		}
+
+		virtual void SetControlsTranslation(bool set)
+		{
+			chain.usePositions = set;
+			if (set) {
+				chain.solver->flags &= ~IK_ENABLE_JOINT_ROTATIONS;
+			} else {
+				chain.solver->flags |= IK_ENABLE_JOINT_ROTATIONS;
+			}
+		}
+
+		virtual void Update()
+		{
+			if (rootNode == nullptr)
+				return;
+
+			for (const auto& b : bones) {
+				if (b == nullptr) {
+					return;
+				}
+			}
+
+			chain.SolveAndApply(bones, rootNode.get(), nullptr);
+		}
+	};
+
+	struct IKTwoBoneHolder : public IKArbitraryHolder
+	{
+		std::string poleParentName;
+		RE::NiPointer<RE::NiAVObject> poleParent = nullptr;
+
+		IKTwoBoneHolder(const std::vector<std::string>& a_boneNames, const std::string& poleParentName, const RE::NiPoint3& poleStartPos) :
+			IKArbitraryHolder(a_boneNames), poleParentName(poleParentName)
+		{
+			SetPoleLocal(poleStartPos);
+		}
+
 		virtual void SetPole(const RE::NiPoint3& p) {
 			if (poleParent != nullptr) {
-				chain.SetPoleWorld(p, poleParent->world, poleParent.get() == targetNodes[2].get());
+				chain.SetPoleWorld(p, poleParent->world, poleParent.get() == bones.back().get());
 			}
 		}
 
 		virtual NodeTransform GetPole() {
 			if (poleParent != nullptr) {
 				NodeTransform result;
-				result.translate = chain.GetPoleWorld(poleParent->world, poleParent.get() == targetNodes[2].get());
+				result.translate = chain.GetPoleWorld(poleParent->world, poleParent.get() == bones.back().get());
 				result.rotate.FromRotation(poleParent->world.rotate);
 				return result;
 			}
@@ -388,65 +559,31 @@ namespace BodyAnimation
 			return IK3ToN3(chain.relativePole);
 		}
 
-		virtual RE::NiMatrix3 GetTargetParentRotation() {
-			if (targetParent != nullptr) {
-				return targetParent->world.rotate;
-			} else if (rootNode != nullptr) {
-				return rootNode->world.rotate;
-			}
-			RE::NiMatrix3 res;
-			res.MakeIdentity();
-			return res;
-		}
-
-		virtual void ClearNodes()
-		{
-			for (size_t i = 0; i < 3; i++) {
-				targetNodes[i].reset();
-			}
-			rootNode.reset();
-			poleParent.reset();
-		}
-
 		virtual void GetTargetNodes(const std::vector<RE::NiPointer<RE::NiAVObject>>& nodes, const std::vector<std::string>& nodeMap, RE::NiAVObject* root) override
 		{
-			auto nodeIdxMap = Utility::VectorToIndexMap(nodeMap);
-			rootNode.reset(root->IsNode());
+			IKArbitraryHolder::GetTargetNodes(nodes, nodeMap, root);
 			poleParent.reset();
 
-			if (auto iter = nodeIdxMap.find(poleParentName); iter != nodeIdxMap.end()) {
-				poleParent = nodes[iter->second];
-			}
-
-			for (size_t i = 0; i < 3; i++) {
-				if (auto iter = nodeIdxMap.find(boneNames[i]); iter != nodeIdxMap.end()) {
-					targetNodes[i] = nodes[iter->second];
+			for (size_t i = 0; i < nodeMap.size(); i++) {
+				if (nodeMap[i] == poleParentName) {
+					poleParent = nodes[i];
+					break;
 				}
-			}
-
-			if (auto curTarget = chain.GetTarget();
-				curTarget.translate.x == 0.0f &&
-				curTarget.translate.y == 0.0f &&
-				curTarget.translate.z == 0.0f)
-			{
-				Reset();
 			}
 		}
 
 		virtual void Update()
 		{
-			if (poleParent == nullptr)
+			if (rootNode == nullptr || poleParent == nullptr)
 				return;
 
-			if (rootNode == nullptr)
-				return;
-
-			for (size_t i = 0; i < 3; i++) {
-				if (targetNodes[i] == nullptr)
+			for (const auto& b : bones) {
+				if (b == nullptr) {
 					return;
+				}
 			}
 
-			chain.SolveAndApply(targetNodes[0].get(), targetNodes[1].get(), targetNodes[2].get(), rootNode.get(), poleParent.get());
+			chain.SolveAndApply(bones, rootNode.get(), poleParent.get());
 		}
 	};
 

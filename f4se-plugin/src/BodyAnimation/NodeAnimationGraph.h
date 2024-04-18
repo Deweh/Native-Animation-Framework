@@ -99,14 +99,19 @@ namespace BodyAnimation
 			SetDisableOCBP(true);
 			ikManager.ClearChains();
 			for (const auto& pair : d.chains) {
-				if (pair.second.nodes.size() == 3) {
-					const auto& c = pair.second;
-					auto h = ikManager.AddChain(
-						std::make_unique<IKTwoBoneHolder>(c.nodes[0], c.nodes[1], c.nodes[2], c.poleParent, c.poleStartPos),
-						c.effectorNode,
-						c.poleNode);
-					h->holderId = pair.first;
+				const auto& c = pair.second;
+				std::unique_ptr<IKHolder> h;
+				if (c.nodes.size() == 3 && c.poleNode.has_value()) {
+					h = std::make_unique<IKTwoBoneHolder>(c.nodes, c.poleParent, c.poleStartPos);
+				} else {
+					h = std::make_unique<IKArbitraryHolder>(c.nodes);
 				}
+				h->holderId = pair.first;
+				h->SetControlsTranslation(c.controlsTranslation);
+				ikManager.AddChain(
+					std::move(h),
+					c.effectorNode,
+					c.poleNode);
 			}
 			ikManager.UpdateMappings();
 			transitionOutput.resize(nodeMap.size());

@@ -12,6 +12,7 @@ namespace Data
 			std::optional<std::string> poleNode = std::nullopt;
 			std::string poleParent = "";
 			RE::NiPoint3 poleStartPos;
+			bool controlsTranslation = false;
 		};
 
 		std::vector<std::string> nodeList;
@@ -47,16 +48,17 @@ namespace Data
 					return m;
 				}, "node", "Graph chain has no nodes!");
 
-				if (c.nodes.size() != 3) {
-					m.CustomFail("Graph chain must have 3 nodes!");
+				if (c.nodes.size() > UINT16_MAX) {
+					m.CustomFail(std::format("Graph chain cannot have more than {} nodes!", UINT16_MAX));
 				}
 
 				m(&c.effectorNode, std::optional<std::string>(std::nullopt), false, false, "", "effectorNode");
 				m(&c.poleNode, std::optional<std::string>(std::nullopt), false, false, "", "poleNode");
-				m(&c.poleParent, ""s, true, true, "Graph chain has no 'poleParent' attribute!", "poleParent");
+				m(&c.poleParent, ""s, true, false, "", "poleParent");
 				m(&c.poleStartPos.x, 0.0f, true, false, "", "poleStartX");
 				m(&c.poleStartPos.y, 0.0f, true, false, "", "poleStartY");
 				m(&c.poleStartPos.z, 0.0f, true, false, "", "poleStartZ");
+				m(&c.controlsTranslation, false, true, false, "", "controlsTranslation");
 
 				if (m) {
 					out.chains[idStr] = c;
