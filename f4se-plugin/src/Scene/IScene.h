@@ -5,6 +5,7 @@
 #include "Tasks/TaskFunctor.h"
 #include "Scene/DynamicIdle.h"
 #include "Scene/IControlSystem.h"
+#include "Misc/Strings.h"
 
 #define SCENE_FUNCTOR()                             \
 	using SceneFunctor::SceneFunctor;               \
@@ -118,23 +119,23 @@ namespace Scene
 		const std::string_view GetErrorMessage() const {
 			switch (err) {
 			case kBadLocation:
-				return "No location ref, or location ref has no parent cell.";
+				return Strings::ScnErr_BadLocation;
 			case kNoActors:
-				return "Actor array must have at least one actor.";
+				return Strings::ScnErr_NoActors;
 			case kInvalidActor:
-				return "One or more provided actors are None/Disabled/Dead.";
+				return Strings::ScnErr_InvalidActor;
 			case kActorInScene:
-				return "One or more provided actors are already in a scene and/or marked as unusable.";
+				return Strings::ScnErr_InScene;
 			case kPlayerWrongWorldspace:
-				return "Player must be in the same worldspace as the scene location.";
+				return Strings::ScnErr_WrongWorldspace;
 			case kNullPosition:
-				return "The provided position is no longer available.";
+				return Strings::ScnErr_NullPosition;
 			case kAlreadyStarted:
-				return "The scene has already been started.";
+				return Strings::ScnErr_AlreadyStarted;
 			case kNoAvailablePositions:
-				return "No available positions for provided combination of actors.";
+				return Strings::ScnErr_NoAvailablePositions;
 			case kSpecifiedPositionNotAvailable:
-				return "Provided position ID is not installed or not available for the provided combination of actors.";
+				return Strings::ScnErr_SpecifiedPositionNotAvailable;
 			default:
 				return "";
 			}

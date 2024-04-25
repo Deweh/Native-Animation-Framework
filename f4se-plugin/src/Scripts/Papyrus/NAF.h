@@ -432,6 +432,11 @@ namespace Papyrus::NAF
 		return "";
 	}
 
+	void ReEnablePlayerInput(std::monostate)
+	{
+		player->ReenableInputForPlayer();
+	}
+
 	/*
 	|----------------|
 	| Data Functions |

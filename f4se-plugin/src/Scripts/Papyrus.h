@@ -32,6 +32,7 @@ namespace Papyrus
 		PAPYRUS_BIND(IsSceneRunning);
 		PAPYRUS_BIND(GetSceneProperty);
 		PAPYRUS_BIND(ValidateSceneParams);
+		PAPYRUS_BIND(ReEnablePlayerInput);
 
 		PAPYRUS_BIND(PlayNANIM);
 		PAPYRUS_BIND(StopNANIM);

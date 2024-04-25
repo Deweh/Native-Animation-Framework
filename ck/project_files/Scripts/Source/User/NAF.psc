@@ -204,6 +204,9 @@ Var Function GetSceneProperty(SceneId akScene, String sProperty) Native Global
 ;Otherwise, returns an empty string.
 String Function ValidateSceneParams(Actor[] akActors, SceneSettings akSettings = None) Native Global
 
+;If the player's input is currently disabled by a NAF scene, this function force-enables it.
+Function ReEnablePlayerInput() Native Global
+
 ;|--------------------------|
 ;| Body Animation Functions |
 ;|--------------------------|

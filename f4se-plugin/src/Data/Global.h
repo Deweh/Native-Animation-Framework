@@ -2,6 +2,7 @@
 #include <ppl.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_unordered_set.h>
+#include "Misc/Strings.h"
 
 namespace Data
 {
@@ -69,31 +70,6 @@ namespace Data
 	class Global
 	{
 	public:
-		struct CaseInsensitiveStringHash
-		{
-			std::size_t operator()(const std::string& str) const
-			{
-				std::size_t hash = std::_FNV_offset_basis;
-				for (char c : str) {
-					hash ^= static_cast<std::size_t>(std::tolower(c));
-					hash *= std::_FNV_prime;
-				}
-
-				return hash;
-			}
-		};
-
-		struct CaseInsensitiveStringEqual
-		{
-			bool operator()(const std::string& lhs, const std::string& rhs) const
-			{
-				return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
-					[](char a, char b) {
-						return std::tolower(a) == std::tolower(b);
-					});
-			}
-		};
-
 		template <typename T>
 		class IDMap : public concurrency::concurrent_unordered_map<std::string, std::pair<RE::BSSpinLock, std::shared_ptr<T>>, CaseInsensitiveStringHash, CaseInsensitiveStringEqual>
 		{
