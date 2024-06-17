@@ -117,6 +117,17 @@ namespace Scene
 			if (!targetItem.object)
 				return true;
 
+			if (auto bObj = targetItem.object->As<RE::TESObjectARMO>(); bObj) {
+				if (bObj->HasKeyword(Data::Forms::NAFDoNotUseKW)) {
+					return true;
+				}
+				if (targetItem.instanceData != nullptr) {
+					if (auto kwForm = targetItem.instanceData->GetKeywordData(); kwForm && kwForm->HasKeyword(Data::Forms::NAFDoNotUseKW)) {
+						return true;
+					}
+				}
+			}
+
 			state->equipment[a->GetActorHandle()].storedEquipment.insert({ slot, targetItem.object });
 			DoUnequip(a, targetItem.object, targetItem.instanceData.get());
 
