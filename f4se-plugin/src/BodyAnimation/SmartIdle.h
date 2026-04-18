@@ -115,7 +115,8 @@ namespace BodyAnimation
 				},
 				false, true);
 
-			if (!managed) {
+			//if (managed == false)
+			if (managed == false && RE::PlayerCharacter::GetSingleton() != a) {
 				return GameUtil::SetAnimationGraphTime(a, t);
 			}
 			

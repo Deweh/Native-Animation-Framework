@@ -10,21 +10,25 @@ namespace CamHook
 		std::atomic<float> y = 0.0f;
 		std::atomic<float> z = 0.0f;
 
-		RE::NiPoint3 get() {
+		RE::NiPoint3 get()
+		{
 			return { x, y, z };
 		}
 
-		void operator=(const RE::NiPoint3& rhs) {
+		void operator=(const RE::NiPoint3& rhs)
+		{
 			x = rhs.x;
 			y = rhs.y;
 			z = rhs.z;
 		}
 
-		bool IsIdentity() {
+		bool IsIdentity()
+		{
 			return x == 0.0f && y == 0.0f && z == 0.0f;
 		}
 
-		void MakeIdentity() {
+		void MakeIdentity()
+		{
 			x = 0.0f;
 			y = 0.0f;
 			z = 0.0f;
@@ -50,6 +54,65 @@ namespace CamHook
 		turnUpDownInput = 0.0f;
 	}
 
+	// Moves a point along the XY plane by a given distance and direction (in radians)
+	inline RE::NiPoint3 MovePointAlongXY(const RE::NiPoint3& point, float direction, float distance)
+	{
+		RE::NiPoint3 result = point;
+		result.x += sin(direction) * distance;
+		result.y += cos(direction) * distance;
+		return result;
+	}
+
+	// Sets the camera position to look at the specified actor from a given distance, direction, and height offset
+	inline void SetCameraOnActor(RE::Actor* actor, float distance = 300.0f, float direction = 0.0f, float heightOffset = 0.0f)
+	{
+		if (!actor) {
+			return;
+		}
+
+		auto actorRoot = actor->Get3D();
+		if (!actorRoot) {
+			return;
+		}
+
+		const auto camera = RE::PlayerCamera::GetSingleton();
+		if (!camera || !camera->currentState || camera->currentState->id.get() != RE::CameraState::kFree) {
+			return;
+		}
+
+		auto freeCamState = static_cast<RE::FreeCameraState*>(camera->currentState.get());
+		if (!freeCamState || !camera->cameraRoot) {
+			return;
+		}
+
+		RE::NiPoint3 targetPos = actorRoot->world.translate;
+		RE::NiPoint3 camPos = MovePointAlongXY(targetPos, direction, distance);
+		camPos.z = targetPos.z + heightOffset;
+
+		auto camNode = camera->cameraRoot;
+		camNode->local.translate = camPos;
+
+		freeCamState->x = camPos.x;
+		freeCamState->y = camPos.y;
+		freeCamState->z = camPos.z;
+
+		auto r = MathUtil::GetLookAtRotation(camPos, targetPos);
+		freeCamState->yaw = r.x;
+		freeCamState->pitch = r.y;
+
+		camNode->local.rotate.FromEulerAnglesZXY(r.x, r.y, 0.0f);
+
+		RE::NiUpdateData d;
+		camNode->Update(d);
+	}
+
+	// Sets the camera to look at the player character
+	inline void SetCameraOnPlayer(float distance = 300.0f, float direction = 0.0f, float heightOffset = 0.0f)
+	{
+		auto playerRef = RE::PlayerCharacter::GetSingleton();
+		SetCameraOnActor(playerRef, distance, direction, heightOffset);
+	}
+
 	namespace detail
 	{
 		typedef void(UpdateSig)(RE::FreeCameraState*);
@@ -63,7 +126,8 @@ namespace CamHook
 		RE::NiPointer<RE::NiAVObject> lookAtNode;
 		safe_mutex lock;
 
-		bool UpdateLookAtNode() {
+		bool UpdateLookAtNode()
+		{
 			if (lookAtBase != nullptr) {
 				auto n = lookAtBase->GetObjectByName(Data::Settings::Values.sLookAtCamTarget.get());
 				if (n != nullptr) {
@@ -83,6 +147,7 @@ namespace CamHook
 				RegisterListener(Data::Events::HUD_Q_KEY_DOWN, &InputListener::OnHudKey);
 				RegisterListener(Data::Events::HUD_E_KEY_UP, &InputListener::OnHudKey);
 				RegisterListener(Data::Events::HUD_Q_KEY_UP, &InputListener::OnHudKey);
+				RegisterListener(Data::Events::HUD_SPACE_KEY_DOWN, &InputListener::OnHudKey);
 			}
 
 			void OnHudKey(Data::Events::event_type a_key, Data::Events::EventData&)
@@ -102,10 +167,14 @@ namespace CamHook
 					if (pendingInput == 2)
 						pendingInput = 0;
 					break;
+				case Data::Events::HUD_SPACE_KEY_DOWN:
+					SetCameraOnPlayer(125.0f, 0.0f, RE::PlayerCharacter::GetSingleton()->GetActorHeightOrRefBound());
+					break;
 				}
 			}
 
-			~InputListener() {
+			~InputListener()
+			{
 				pendingInput = 0;
 			}
 		};
@@ -140,13 +209,12 @@ namespace CamHook
 						s->x = camNode->local.translate.x;
 						s->y = camNode->local.translate.y;
 						s->z = camNode->local.translate.z;
-						
+
 						if (useExternalOrbit.load() == true && !orbitTarget.IsIdentity()) {
 							auto r = MathUtil::GetLookAtRotation(camNode->local.translate, orbitTarget.get());
 							s->yaw = r.x;
 							camNode->local.rotate.FromEulerAnglesZXY(s->yaw, s->pitch, 0.0f);
 						}
-						
 					}
 
 					if (turnRightLeftInput != 0.0f || turnUpDownInput != 0.0f) {
@@ -242,7 +310,8 @@ namespace CamHook
 		return true;
 	})();
 
-	void RegisterHook() {
+	void RegisterHook()
+	{
 		detail::RegisterHook();
 	}
 

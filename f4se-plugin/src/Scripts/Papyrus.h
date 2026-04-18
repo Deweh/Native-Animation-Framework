@@ -3,13 +3,19 @@
 #include "Papyrus/NAF.h"
 #include "Papyrus/EventProxy.h"
 
+#include "Bridge/Consts.h"
+
 #define PAPYRUS_BIND(funcName) a_VM->BindNativeMethod(NAF::SCRIPT_NAME, #funcName, NAF::funcName, true)
 #define PAPYRUS_BIND_LATENT(funcName, retType) a_VM->BindNativeMethod<retType>(NAF::SCRIPT_NAME, #funcName, NAF::funcName, true, true)
+
+extern RE::BSScript::IVirtualMachine* g_VM;
 
 namespace Papyrus
 {
 	bool RegisterFunctions(RE::BSScript::IVirtualMachine* a_VM)
 	{
+		g_VM = a_VM;
+		
 		PAPYRUS_BIND(ToggleMenu);
 		PAPYRUS_BIND(SetDisableRescaler);
 		PAPYRUS_BIND(GetDisableRescaler);		
@@ -61,6 +67,24 @@ namespace Papyrus
 		PAPYRUS_BIND(GetLocalTransform);
 		PAPYRUS_BIND(SynchronizeAnimations);
 
+//Bridge papyrus
+#undef PAPYRUS_BIND
+#undef PAPYRUS_BIND_LATENT
+#define PAPYRUS_BIND(funcName) a_VM->BindNativeMethod(MODNAME, #funcName, NAFBridge::funcName, true)
+#define PAPYRUS_BIND_LATENT(funcName, retType) a_VM->BindNativeMethod<retType>(MODNAME, #funcName, NAFBridge::funcName, true, true)
+
+		PAPYRUS_BIND(ApplyMorphSet);
+		PAPYRUS_BIND(CompleteWalkForActor);
+		PAPYRUS_BIND(CompleteWalkForScene);
+		PAPYRUS_BIND(FindPositionBySceneSettings);
+		PAPYRUS_BIND(ApplyEquipmentSet);
+		PAPYRUS_BIND(ValidateSceneParamsIgnoreInScene);
+		PAPYRUS_BIND(GetPositionInstalled);
+		PAPYRUS_BIND(GetFurnitureList);
+		PAPYRUS_BIND(GetOverlay);
+
 		return true;
 	}
+#undef PAPYRUS_BIND
+#undef PAPYRUS_BIND_LATENT
 }

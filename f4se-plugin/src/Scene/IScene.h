@@ -6,6 +6,7 @@
 #include "Scene/DynamicIdle.h"
 #include "Scene/IControlSystem.h"
 #include "Misc/Strings.h"
+#include "Bridge/NewData/FannyAnimation.h"
 
 #define SCENE_FUNCTOR()                             \
 	using SceneFunctor::SceneFunctor;               \
@@ -183,6 +184,7 @@ namespace Scene
 		float duration = 0.0f;
 		bool autoAdvance = false;
 		bool ignoreCombat = false;
+		std::unordered_map<uint32_t, float> initialScales;  //NAF Bridge fix scale after scene if scale was overridden. Key is actor FormID.
 
 		std::vector<RE::NiPointer<RE::Actor>> QActors() const {
 			std::vector<RE::NiPointer<RE::Actor>> result;
@@ -199,9 +201,25 @@ namespace Scene
 		}
 
 		template <class Archive>
-		void serialize(Archive& ar, const uint32_t)
+		void save(Archive& ar, const uint32_t) const
 		{
-			ar(actors, startPosition, locationRefr, duration, autoAdvance, ignoreCombat);
+			ar(actors, startPosition, locationRefr, duration, autoAdvance, ignoreCombat, initialScales);
+		}
+
+		template <class Archive>
+		void load(Archive& ar, const uint32_t ver)
+		{
+			if (ver < 1) {
+				// Old format: initialScales was std::vector<float>
+				std::vector<float> oldScales;
+				ar(actors, startPosition, locationRefr, duration, autoAdvance, ignoreCombat, oldScales);
+				// Cannot properly migrate without actor FormIDs, so just clear it
+				// Scales will default to 1.0f or bDisableRescaler behavior
+				initialScales.clear();
+			} else {
+				// New format: initialScales is std::unordered_map<uint32_t, float>
+				ar(actors, startPosition, locationRefr, duration, autoAdvance, ignoreCombat, initialScales);
+			}
 		}
 	};
 
@@ -230,10 +248,9 @@ namespace Scene
 		std::string startEquipSet;
 		std::string stopEquipSet;
 		SceneSettings settings;
-
-		IScene()
-		{
-		}
+		std::shared_ptr<const Data::Position> currentPosition = settings.startPosition;  //NAFBridge offsets
+		Data::FannyAnimation fannyAnim;													 //NAF Bridge Fanny Animation
+		IScene() {}
 
 		virtual bool PushQueuedControlSystem() { return false; }
 
@@ -286,6 +303,8 @@ namespace Scene
 
 		virtual void SetSyncState(SyncState) {}
 
+		virtual void Update3dPos() {} //NAF Bridge offset
+
 		void ForEachActor(std::function<void(RE::Actor*, ActorPropertyMap&)> func, bool require3d = true)
 		{
 			RE::NiPointer<RE::Actor> currentActor = nullptr;
@@ -315,4 +334,5 @@ namespace Scene
 
 CEREAL_REGISTER_TYPE(Scene::SceneFunctor);
 CEREAL_CLASS_VERSION(Scene::IdleInfo, 2);
-CEREAL_CLASS_VERSION(Scene::IScene, 2);
+CEREAL_CLASS_VERSION(Scene::SceneSettings, 1);  // Version 1: initialScales changed from vector<float> to unordered_map<uint32_t, float>
+CEREAL_CLASS_VERSION(Scene::IScene, 3);

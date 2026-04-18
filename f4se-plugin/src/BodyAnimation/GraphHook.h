@@ -248,6 +248,17 @@ namespace BodyAnimation
 		static void HookedGraphUpdate(RE::IAnimationGraphManagerHolder* a_graphHolder, float* a_deltaTime)
 		{
 			OriginalUpdate(a_graphHolder, a_deltaTime);
+			
+			bool isPlayer = false;
+			if (auto actor = RE::fallout_cast<RE::Actor*>(a_graphHolder)) {
+				isPlayer = (actor == RE::PlayerCharacter::GetSingleton());
+			}
+
+			// Пропускаем блокировку для игрока, иначе где-то происходит дедлок
+			if (isPlayer /*&& RE::PlayerCharacter::GetSingleton()->HasKeyword(Data::Forms::NAFInSceneKW) == false*/) {
+				return;
+			}
+
 			std::shared_lock l1{ stateLock };
 
 			auto iter = state->graphs.find(a_graphHolder);

@@ -186,7 +186,8 @@ namespace Scene
 			return { kNone };
 		}
 
-		static bool CompleteWalk(uint64_t instanceId) {
+		static bool CompleteWalk(uint64_t instanceId)
+		{
 			std::unique_lock l{ actorsWalkingLock };
 			auto iter = state->actorsWalkingToScene.find(instanceId);
 
@@ -299,10 +300,20 @@ namespace Scene
 				if (scn->status != SceneState::PendingDeletion && !scn->noUpdate && scn->actors.size() > 0) {
 					auto firstActor = scn->actors.begin()->first.get().get();
 					if (firstActor != nullptr && firstActor->parentCell != nullptr && firstActor->parentCell->loadedData != nullptr) {
-						scn->Update();
+						//scn->Update();
+						//NAF Bridge play animations after game was load fix
+						if (!m_justLoaded) {
+							scn->Update();
+						} else {
+							scn->status = SceneState::Initializing;
+							scn->SetSyncState(SyncState::SettingUp);
+							scn->Begin();                                                           \
+						}
+						//NAF Bridge end
 					}
 				}
 			}
+			m_justLoaded = false; //NAF Bridge play animations after game was load fix
 		}
 
 		static void Reset() {
@@ -436,7 +447,7 @@ namespace Scene
 
 			for (auto& aNi : actors) {
 				auto a = aNi.get();
-				if (!GameUtil::ActorIsAlive(a, false) || a->HasKeyword(Data::Forms::ActorTypeChildKW)) {
+				if ((a != player) && ((!GameUtil::ActorIsAlive(a, false)) || a->HasKeyword(Data::Forms::ActorTypeChildKW))) {
 					return { kInvalidActor };
 				} else if (IsActorInScene(a, ignoreInScene)) {
 					return { kActorInScene };
@@ -448,6 +459,9 @@ namespace Scene
 
 			return { kNone };
 		}
+
+		//NAF Bridge play animations after game was load fix
+		inline static bool m_justLoaded{ false };
 	};
 }
 

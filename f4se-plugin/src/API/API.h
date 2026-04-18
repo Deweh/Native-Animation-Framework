@@ -124,6 +124,196 @@ namespace NAFAPI
 	{
 		return detail::invokeWithReturn<decltype(FreeHandle)*>("NAFAPI_FreeHandle", false, a_handle);
 	}
+
+	//For AAF-NAF Bridge
+	bool ApplyEquipmentSet(RE::Actor* a, const std::string& id)
+	{
+		return detail::invokeWithReturn<decltype(ApplyEquipmentSet)*>("NAFAPI_ApplyEquipmentSet", false, a, id);
+	}
+
+	bool GetPositionInstalled(const std::string& id)
+	{
+		return detail::invokeWithReturn<decltype(GetPositionInstalled)*>("NAFAPI_GetPositionInstalled", false, id);
+	}
+
+	bool ApplyMorphSet(RE::Actor* a, const std::string& id)
+	{
+		return detail::invokeWithReturn<decltype(ApplyMorphSet)*>("NAFAPI_ApplyMorphSet", false, a, id);
+	}
+
+	bool CompleteWalkForActor(const RE::Actor* a)
+	{
+		return detail::invokeWithReturn<decltype(CompleteWalkForActor)*>("NAFAPI_CompleteWalkForActor", false, a);
+	}
+
+	bool CompleteWalkForScene(uint64_t scene_id)
+	{
+		return detail::invokeWithReturn<decltype(CompleteWalkForScene)*>("NAFAPI_CompleteWalkForScene", false, scene_id);
+	}
+
+	const char* FindPositionBySceneSettings(const std::vector<RE::Actor*>& a_actors, const std::optional<const Papyrus::NAF::SceneSettings>& a_settings)
+	{
+		return detail::invokeWithReturn<decltype(FindPositionBySceneSettings)*>("NAFAPI_FindPositionBySceneSettings", "10", a_actors, a_settings);
+	}
+
+	const Scene::SceneManager* GetSceneManager()
+	{
+		const Scene::SceneManager* null_ptr = nullptr;
+		return detail::invokeWithReturn<decltype(GetSceneManager)*>("NAFAPI_GetSceneManager", null_ptr);
+	}
+
+	void HotReload(bool RebuildFiles)
+	{
+		detail::invoke<decltype(HotReload)*>("NAFAPI_HotReload", RebuildFiles);
+	}
+
+	const char* ValidateSceneParamsIgnoreInScene
+		(std::vector<RE::Actor*> a_actors, std::optional<Papyrus::NAF::SceneSettings> a_settings)
+	{
+		return detail::invokeWithReturn<decltype(ValidateSceneParamsIgnoreInScene)*>("NAFAPI_ValidateSceneParamsIgnoreInScene", "", a_actors, a_settings);
+	}
+
+	template <class T>
+	bool AddToMap(T* obj)
+	{
+		const auto hndl = GetModuleHandleA("NAF.dll");
+		if (hndl == NULL)
+			return false;
+
+		if (std::is_same_v<T, Data::Race>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapRace");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::Animation>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapAnimation");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::Position>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapPosition");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::FaceAnim>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapFaceAnim");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::MorphSet>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapMorphSet");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::EquipmentSet>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapEquipmentSet");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::Action>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapAction");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::AnimationGroup>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapAnimationGroup");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::Furniture>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapFurniture");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::PositionTree>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapPositionTree");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else if (std::is_same_v<T, Data::GraphInfo>) {
+			const auto addr = GetProcAddress(hndl, "NAFAPI_AddToMapGraphInfo");
+			if (addr == NULL) {
+				return false;
+			}
+			typedef bool(__cdecl * f)(void*);
+			return ((f)addr)(obj);
+		} else
+			return false;
+	}
+
+		std::shared_ptr<const Data::Animation> GetAnimation(const std::string& id)
+	{
+		std::shared_ptr<const Data::Animation> null_ptr(nullptr);
+		return std::shared_ptr<const Data::Animation>(detail::invokeWithReturn<decltype(GetAnimation)*>("NAFAPI_GetAnimation", null_ptr, id));
+	}
+
+	std::shared_ptr<const Data::Position> GetPosition(const std::string& id)
+	{
+		std::shared_ptr<const Data::Position> null_ptr(nullptr);
+		return std::shared_ptr<const Data::Position>(detail::invokeWithReturn<decltype(GetPosition)*>("NAFAPI_GetPosition", null_ptr, id));
+	}
+
+	std::shared_ptr<const Data::FaceAnim> GetFaceAnim(const std::string& id)
+	{
+		std::shared_ptr<const Data::FaceAnim> null_ptr(nullptr);
+		return std::shared_ptr<const Data::FaceAnim>(detail::invokeWithReturn<decltype(GetFaceAnim)*>("NAFAPI_FaceAnim", null_ptr, id));
+	}
+
+	std::shared_ptr<const Data::MorphSet> GetMorphSet(const std::string& id)
+	{
+		std::shared_ptr<const Data::MorphSet> null_ptr(nullptr);
+		return std::shared_ptr<const Data::MorphSet>(detail::invokeWithReturn<decltype(GetMorphSet)*>("NAFAPI_GetMorphSet", null_ptr, id));
+	}
+
+	std::shared_ptr<const Data::EquipmentSet> GetEquipmentSet(const std::string& id)
+	{
+		std::shared_ptr<const Data::EquipmentSet> null_ptr(nullptr);
+		return std::shared_ptr<const Data::EquipmentSet>(detail::invokeWithReturn<decltype(GetEquipmentSet)*>("NAFAPI_GetEquipmentSet", null_ptr, id));
+	}
+
+	std::shared_ptr<const Data::Action> GetAction(const std::string& id)
+	{
+		std::shared_ptr<const Data::Action> null_ptr(nullptr);
+		return std::shared_ptr<const Data::Action>(detail::invokeWithReturn<decltype(GetAction)*>("NAFAPI_GetAction", null_ptr, id));
+	}
+
+	std::shared_ptr<const Data::AnimationGroup> GetAnimationGroup(const std::string& id)
+	{
+		std::shared_ptr<const Data::AnimationGroup> null_ptr(nullptr);
+		return std::shared_ptr<const Data::AnimationGroup>(detail::invokeWithReturn<decltype(GetAnimationGroup)*>("NAFAPI_GetAnimationGroup", null_ptr, id));
+	}
+
+	std::shared_ptr<const Data::PositionTree> GetPositionTree(const std::string& id)
+	{
+		std::shared_ptr<const Data::PositionTree> null_ptr(nullptr);
+		return std::shared_ptr<const Data::PositionTree>(detail::invokeWithReturn<decltype(GetPositionTree)*>("NAFAPI_GetPositionTree", null_ptr, id));
+	}
+
+	std::shared_ptr<const Data::Race> GetRace(const std::string& id)
+	{
+		std::shared_ptr<const Data::Race> null_ptr(nullptr);
+		return std::shared_ptr<const Data::Race>(detail::invokeWithReturn<decltype(GetRace)*>("NAFAPI_GetRace", null_ptr, id));
+	}
 }
 
 //Below is the INTERNAL portion of the API - it should NOT be copied into other plugins.
@@ -277,3 +467,271 @@ extern "C" __declspec(dllexport) bool NAFAPI_FreeHandle(
 {
 	return API_Internal::FreeObject(a_handle);
 }
+
+//For AAF-NAF Bridge
+extern "C" __declspec(dllexport) bool NAFAPI_ApplyEquipmentSet(RE::Actor* a, const std::string& id)
+{
+	return Data::ApplyEquipmentSet(a, id);
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_GetPositionInstalled(const std::string& id)
+{
+	return Data::GetPosition(id) == nullptr ? false : true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_ApplyMorphSet(RE::Actor* a, const std::string& id)
+{
+	return Data::ApplyMorphSet(a, id);
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_CompleteWalkForActor(const RE::Actor* akActor)
+{
+	if (!akActor) {
+		return false;
+	}
+	bool result = false;
+
+	Scene::SceneManager::GetSingleton()->VisitAllScenes([&](Scene::IScene* scn) 
+		{
+		scn->ForEachActor([&](RE::Actor* currentActor, Scene::ActorPropertyMap&) 
+		{
+			if (currentActor == akActor) {
+				Scene::SceneManager::CompleteWalk(scn->uid);
+				result = true;
+			}
+		});
+	},
+		true);
+
+	return result;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_CompleteWalkForScene(uint64_t scene_id)
+{
+	return Scene::SceneManager::CompleteWalk(scene_id);
+}
+
+extern "C" __declspec(dllexport) const char* NAFAPI_FindPositionBySceneSettings(const std::vector<RE::Actor*>& a_actors, const std::optional<const Papyrus::NAF::SceneSettings>& a_settings)
+{
+	std::string result;
+	if (a_actors.size() < 1) {
+		result = { Scene::kNoActors };
+		return result.c_str();
+	}
+
+	std::string a_position = "";
+	std::string includeTags = "";
+	std::string excludeTags = "";
+	std::string requireTags = "";
+	RE::TESObjectREFR* posRefr = nullptr;
+
+	if (a_settings.has_value()) 
+	{
+		auto& s = a_settings.value();
+		if (auto v = s.find<std::string>("position", true); v) 
+		{
+			a_position = v.value();
+			if (!a_position.empty()) 
+			{
+				return a_position.c_str();
+			}
+		}
+		if (auto v = s.find<RE::TESObjectREFR*>("positionRef", true); v) 
+		{
+			posRefr = v.value();
+		}
+		if (auto v = s.find<std::string>("includeTags", true); v) 
+		{
+			includeTags = v.value();
+		}
+		if (auto v = s.find<std::string>("excludeTags", true); v) 
+		{
+			excludeTags = v.value();
+		}
+		if (auto v = s.find<std::string>("requireTags", true); v) 
+		{
+			requireTags = v.value();
+		}
+	}
+
+	std::optional<Data::Global::TagFilter> tFilter;
+	if (includeTags.size() > 0 || excludeTags.size() > 0 || requireTags.size() > 0) 
+	{
+		Utility::TransformStringToLower(includeTags);
+		Utility::TransformStringToLower(excludeTags);
+		Utility::TransformStringToLower(requireTags);
+		tFilter.emplace(
+			Utility::SplitString(includeTags, ","),
+			Utility::SplitString(excludeTags, ","),
+			Utility::SplitString(requireTags, ","));
+	}
+
+	Data::AnimationFilter filter(a_actors);
+	if (filter.numTotalActors != a_actors.size()) 
+	{
+		result = { Scene::kInvalidActor };
+		return result.c_str();
+	}
+	auto positions = Data::Global::GetFilteredPositions(filter, a_position.size() < 1, false, posRefr, false, tFilter);
+
+	if (a_position.size() < 1) 
+	{
+		if (positions.size() > 0) 
+		{
+			return Utility::SelectRandom(positions).c_str();
+		} 
+		else 
+		{
+			result = { Scene::kNoAvailablePositions };
+			return result.c_str();
+		}
+	} 
+	else if (!Utility::VectorContains(positions, a_position)) 
+	{
+		result = { Scene::kSpecifiedPositionNotAvailable };
+		return result.c_str();
+	}
+
+	return "10";
+}
+
+extern "C" __declspec(dllexport) const Data::Animation* NAFAPI_GetAnimation(const std::string& id)
+{
+	return Data::GetAnimation(id).get();
+}
+
+extern "C" __declspec(dllexport) const Data::Position* NAFAPI_GetPosition(const std::string& id)
+{
+	return Data::GetPosition(id).get();
+}
+
+extern "C" __declspec(dllexport) const Data::FaceAnim* NAFAPI_GetFaceAnim(const std::string& id)
+{
+	return Data::GetFaceAnim(id).get();
+}
+
+extern "C" __declspec(dllexport) const Data::MorphSet* NAFAPI_GetMorphSet(const std::string& id)
+{
+	return Data::GetMorphSet(id).get();
+}
+
+extern "C" __declspec(dllexport) const Data::EquipmentSet* NAFAPI_GetEquipmentSet(const std::string& id)
+{
+	return Data::GetEquipmentSet(id).get();
+}
+
+extern "C" __declspec(dllexport) const Data::Action* NAFAPI_GetAction(const std::string& id)
+{
+	return Data::GetAction(id).get();
+}
+
+extern "C" __declspec(dllexport) const Data::AnimationGroup* NAFAPI_GetAnimationGroup(const std::string& id)
+{
+	return Data::GetAnimationGroup(id).get();
+}
+
+extern "C" __declspec(dllexport) const Data::PositionTree* NAFAPI_GetPositionTree(const std::string& id)
+{
+	return Data::GetPositionTree(id).get();
+}
+
+extern "C" __declspec(dllexport) const Data::Race* NAFAPI_GetRace(const std::string& id)
+{
+	return Data::GetRace(id).get();
+}
+
+//extern "C" __declspec(dllexport) const Data::FurnitureList* NAFAPI_GetFurnitureList(const std::string& id)
+//{
+//	return Data::GetFurniture(id).get();
+//}
+extern "C" __declspec(dllexport) const Scene::SceneManager* NAFAPI_GetSceneManager()
+{
+	return Scene::SceneManager::GetSingleton();
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapRace(void* obj)
+{
+	Data::Global::Races.priority_insert(std::shared_ptr<Data::Race>(static_cast<Data::Race*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapAnimation(void* obj)
+{
+	Data::Global::Animations.priority_insert(std::shared_ptr<Data::Animation>(static_cast<Data::Animation*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapPosition(void* obj)
+{
+	Data::Global::Positions.priority_insert(std::shared_ptr<Data::Position>(static_cast<Data::Position*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapFaceAnim(void* obj)
+{
+	Data::Global::FaceAnims.priority_insert(std::shared_ptr<Data::FaceAnim>(static_cast<Data::FaceAnim*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapMorphSet(void* obj)
+{
+	Data::Global::MorphSets.priority_insert(std::shared_ptr<Data::MorphSet>(static_cast<Data::MorphSet*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapEquipmentSet(void* obj)
+{
+	Data::Global::EquipmentSets.priority_insert(std::shared_ptr<Data::EquipmentSet>(static_cast<Data::EquipmentSet*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapAction(void* obj)
+{
+	Data::Global::Actions.priority_insert(std::shared_ptr<Data::Action>(static_cast<Data::Action*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapAnimationGroup(void* obj)
+{
+	Data::Global::AnimationGroups.priority_insert(std::shared_ptr<Data::AnimationGroup>(static_cast<Data::AnimationGroup*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapFurniture(void* obj)
+{
+	Data::Global::Furnitures.priority_insert(std::shared_ptr<Data::Furniture>(static_cast<Data::Furniture*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapPositionTree(void* obj)
+{
+	Data::Global::PositionTrees.priority_insert(std::shared_ptr<Data::PositionTree>(static_cast<Data::PositionTree*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) bool NAFAPI_AddToMapGraphInfo(void* obj)
+{
+	Data::Global::GraphInfos.priority_insert(std::shared_ptr<Data::GraphInfo>(static_cast<Data::GraphInfo*>(obj)));
+	return true;
+}
+
+extern "C" __declspec(dllexport) void NAFAPI_HotReload(bool RebuildFiles)
+{
+	Data::Global::HotReload(RebuildFiles);
+}
+
+extern "C" __declspec(dllexport) const char* NAFAPI_ValidateSceneParamsIgnoreInScene
+	(std::vector<RE::Actor*> a_actors, std::optional<Papyrus::NAF::SceneSettings> a_settings)
+{
+	auto data = Papyrus::NAF::GetSceneData(a_actors, a_settings);
+	if (!data.result) {
+		return std::string(data.result.GetErrorMessage()).c_str();
+	}
+
+	if (auto res = Scene::SceneManager::ValidateStartSceneArgs(data.settings, true); !res) {
+		return std::string(res.GetErrorMessage()).c_str();
+	}
+
+	return "";
+}
+

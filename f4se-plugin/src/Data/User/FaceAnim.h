@@ -1,5 +1,13 @@
 #pragma once
-#include "FaceAnimation/AnimationData.h"
+
+namespace FaceAnimation
+{
+	namespace FaceUpdateHook
+	{
+		extern bool LoadAndPlayAnimationNoCheck(RE::ActorHandle targetActor, std::string id, bool loop, bool havokSync);
+		extern void StopAnimation(RE::ActorHandle targetActor, bool animOverride);
+	}
+}
 
 namespace Data
 {
@@ -61,7 +69,6 @@ namespace Data
 						v.ConvertRange(true);
 						data.GetTimeline(0, true, true)->keys[frame].eyesValue = v;
 					}
-
 					return m;
 				});
 				return m;
@@ -95,6 +102,18 @@ namespace Data
 			}
 			
 			return m;
+		}
+
+		//NAF Bridge mfgSet
+		bool Play(RE::ActorHandle a) const
+		{
+			return FaceAnimation::FaceUpdateHook::LoadAndPlayAnimationNoCheck(a, id, true, false);
+		}
+
+		//NAF Bridge mfgSet
+		void Stop(RE::ActorHandle a) const
+		{
+			FaceAnimation::FaceUpdateHook::StopAnimation(a, false);
 		}
 	};
 }

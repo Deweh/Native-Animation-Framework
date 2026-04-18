@@ -13,12 +13,16 @@ namespace Data
 
 			m(&out.startEquipSet, std::optional<std::string>(std::nullopt), true, false, "", "startEquipmentSet");
 			m(&out.stopEquipSet, std::optional<std::string>(std::nullopt), true, false, "", "stopEquipmentSet");
+			m(&out.mfgSet, std::optional<std::string>(std::nullopt), true, false, "", "mfgSet"); //NAF Bridge
+			m(&out.stopMfgSet, std::optional<std::string>(std::nullopt), true, false, "", "stopMfgSet"); //NAF Bridge - separate stop animation
 
 			return m;
 		}
 
 		std::optional<std::string> startEquipSet;
 		std::optional<std::string> stopEquipSet;
+		std::optional<std::string> mfgSet;
+		std::optional<std::string> stopMfgSet; //NAF Bridge - separate stop animation
 
 		void RunStart(RE::Actor* a) const;
 		void RunStop(RE::Actor* a) const;

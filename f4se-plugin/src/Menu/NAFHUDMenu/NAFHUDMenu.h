@@ -64,7 +64,8 @@ namespace Menu
 			}
 		}
 
-		virtual void HandleEvent(const RE::ButtonEvent* a_event) override {
+		virtual void HandleEvent(const RE::ButtonEvent* a_event) override
+		{
 			if (inputEventHandlingEnabled && a_event->strUserEvent != "NextFocus") {
 				if (a_event->QJustPressed()) {
 					switch (a_event->GetBSButtonCode()) {
@@ -86,6 +87,9 @@ namespace Menu
 					case RE::BS_BUTTON_CODE::kE:
 						Data::Events::Send(Data::Events::HUD_E_KEY_DOWN);
 						break;
+					case RE::BS_BUTTON_CODE::kSpace:
+						Data::Events::Send(Data::Events::HUD_SPACE_KEY_DOWN);
+						break;
 					};
 				} else {
 					switch (a_event->GetBSButtonCode()) {
@@ -106,6 +110,9 @@ namespace Menu
 						break;
 					case RE::BS_BUTTON_CODE::kE:
 						Data::Events::Send(Data::Events::HUD_E_KEY_UP);
+						break;
+					case RE::BS_BUTTON_CODE::kSpace:
+						Data::Events::Send(Data::Events::HUD_SPACE_KEY_UP);
 						break;
 					};
 				}

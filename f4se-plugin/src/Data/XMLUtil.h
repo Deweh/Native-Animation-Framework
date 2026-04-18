@@ -6,6 +6,7 @@ namespace Data {
 	public:
 		class Mapper
 		{
+			pugi::xml_node rootNode;  //NAF Bridge
 			pugi::xml_node defaultsNode;
 			pugi::xml_node currentNode;
 			std::string_view fileName;
@@ -15,11 +16,31 @@ namespace Data {
 			inline static std::string emptyStr = "";
 			bool verbose = true;
 
-			Mapper(const pugi::xml_node& defaults, const pugi::xml_node& node, const std::string_view fName) {
+			//NAF Bridge
+			Mapper(const pugi::xml_node& defaults, const pugi::xml_node& node, const std::string_view fName)
+			{
+				rootNode = node;
 				defaultsNode = defaults;
 				currentNode = node;
 				fileName = fName;
 			}
+
+			Mapper GetRoot()
+			{
+				return Mapper(defaultsNode, rootNode, fileName);
+			}
+
+			pugi::xml_node GetDefaultsNode()
+			{
+				return defaultsNode;
+			}
+
+			/*Mapper(const pugi::xml_node& defaults, const pugi::xml_node& node, const std::string_view fName) {
+				defaultsNode = defaults;
+				currentNode = node;
+				fileName = fName;
+			}*/
+			//NAF Bridge end 
 
 			void LogError(const std::string_view& errMsg) {
 				if (verbose)

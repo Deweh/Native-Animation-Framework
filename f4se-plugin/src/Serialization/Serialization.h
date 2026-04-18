@@ -1,45 +1,60 @@
 #pragma once
 #include "General.h"
 
-#define LOAD_PERSISTENT_STATE(_recordId, _recordName, _typePath) \
-case _recordId: \
-{ \
-	auto state = std::make_unique<_typePath::PersistentState>(); \
-	if (Serialization::General::LoadRecord(_recordName, state)) { \
-		_typePath::state.reset(state.release()); \
-	} \
-	break; \
-}
+#define LOAD_PERSISTENT_STATE(_recordId, _recordName, _typePath)                               \
+	case _recordId:                                                                            \
+		{                                                                                      \
+			auto state = std::make_unique<_typePath::PersistentState>();                       \
+			if (Serialization::General::LoadRecord(_recordName, state)) {                      \
+				_typePath::state.reset(state.release());                                       \
+			}                                                                                  \
+			break;                                                                             \
+		}
+
+// LOAD_PERSISTENT_STATE_SCENEMANAGER('SCNE', "scene", Scene::SceneManager);
+// NAF Bridge fix for reversing actors in scenes NAF bug.
+#define LOAD_PERSISTENT_STATE_SCENEMANAGER(_recordId, _recordName, _typePath)                   \
+	case _recordId:                                                                             \
+		{                                                                                       \
+			auto state = std::make_unique<_typePath::PersistentState>();                        \
+			if (Serialization::General::LoadRecord(_recordName, state)) {                       \
+				auto& scenes = state->scenes;                                                   \
+				for (auto& [id, scn] : scenes) {                                                \
+					if (scn) {																	\
+						std::reverse(scn->settings.actors.begin(), scn->settings.actors.end()); \
+					}                                                                           \
+				}                                                                               \
+				_typePath::state.reset(state.release());                                        \
+			}                                                                                   \
+			break;                                                                              \
+		}																						
 
 #define LOAD_PERSISTENT_STATE_CL(_recordId, _recordName, _typePath, _statePath) \
-	case _recordId:                                                          \
-		{                                                                    \
-			auto state = std::make_unique<_typePath::PersistentState>();     \
-			if (Serialization::General::LoadRecord(_recordName, state)) {    \
-				_statePath.reset(state.release());                           \
-			}                                                                \
-			break;                                                           \
+	case _recordId:                                                             \
+		{                                                                       \
+			auto state = std::make_unique<_typePath::PersistentState>();        \
+			if (Serialization::General::LoadRecord(_recordName, state)) {       \
+				_statePath.reset(state.release());                              \
+			}                                                                   \
+			break;                                                              \
 		}
 
 #define LOAD_PERSISTENT_STATE_NP(_recordId, _recordName, _typePath, _statePath) \
-	case _recordId:                                                          \
-		{                                                                    \
-			_typePath state;     \
-			if (Serialization::General::LoadRecord(_recordName, state)) {    \
-				_statePath = std::move(state);                                \
-			}                                                                \
-			break;                                                           \
+	case _recordId:                                                             \
+		{                                                                       \
+			_typePath state;                                                    \
+			if (Serialization::General::LoadRecord(_recordName, state)) {       \
+				_statePath = std::move(state);                                  \
+			}                                                                   \
+			break;                                                              \
 		}
 
-#define SAVE_PERSISTENT_STATE(_recordId, _ver, _recordName, _statePath) \
-if (!a_intfc->OpenRecord(_recordId, _ver)) { \
-logger::error("Failed to open co-save {} record. Some data will not be saved!", _recordName); \
-} \
-else \
-{ \
-	Serialization::General::SaveRecord(_recordName, _statePath); \
-} \
-	
+#define SAVE_PERSISTENT_STATE(_recordId, _ver, _recordName, _statePath)                               \
+	if (!a_intfc->OpenRecord(_recordId, _ver)) {                                                      \
+		logger::error("Failed to open co-save {} record. Some data will not be saved!", _recordName); \
+	} else {                                                                                          \
+		Serialization::General::SaveRecord(_recordName, _statePath);                                  \
+	}
 
 namespace Serialization
 {
@@ -95,6 +110,8 @@ namespace Serialization
 
 	void LoadCallback(const F4SE::SerializationInterface* a_intfc)
 	{
+		Scene::SceneManager::m_justLoaded = true;  // NAF Bridge play animations after game was load fix
+		
 		if (DISABLE_SERIALIZATION) {
 			return;
 		}
@@ -131,7 +148,8 @@ namespace Serialization
 				if (version >= 5) {
 					switch (type) {
 						LOAD_PERSISTENT_STATE_CL('TASK', "task", Tasks::TimerThread, tThread->state);
-						LOAD_PERSISTENT_STATE('SCNE', "scene", Scene::SceneManager);
+						//LOAD_PERSISTENT_STATE('SCNE', "scene", Scene::SceneManager);
+						LOAD_PERSISTENT_STATE_SCENEMANAGER('SCNE', "scene", Scene::SceneManager);  // NAF Bridge fix for reversing actors in scenes
 						LOAD_PERSISTENT_STATE('EQPT', "equipment", Scene::OrderedActionQueue);
 						LOAD_PERSISTENT_STATE('UID', "UID", Data::Uid);
 						LOAD_PERSISTENT_STATE('FACE', "face animation", FaceAnimation::FaceUpdateHook);

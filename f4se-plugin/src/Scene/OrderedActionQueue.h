@@ -64,17 +64,17 @@ namespace Scene
 
 		static void UnEquip(RE::Actor* a, uint8_t slot) {
 			std::unique_lock l{ lock };
-			if (!a || !a->biped)
-				return;
-
+				if (!a || !a->biped)
+					return;
+			
 			equipQueue.push(std::function<bool()>(std::bind(&ProcessUnEquip, RE::NiPointer<RE::Actor>(a), slot)));
 		}
 
 		static void ReEquip(RE::Actor* a, std::optional<uint8_t> slot = std::nullopt) {
 			std::unique_lock l{ lock };
-			if (!a || !a->biped)
-				return;
-
+				if (!a || !a->biped)
+					return;
+			
 			equipQueue.push(std::function<bool()>(std::bind(&ProcessReEquip, RE::NiPointer<RE::Actor>(a), slot)));
 		}
 
@@ -121,16 +121,34 @@ namespace Scene
 				if (bObj->HasKeyword(Data::Forms::NAFDoNotUseKW)) {
 					return true;
 				}
-				if (targetItem.instanceData != nullptr) {
-					if (auto kwForm = targetItem.instanceData->GetKeywordData(); kwForm && kwForm->HasKeyword(Data::Forms::NAFDoNotUseKW)) {
-						return true;
+			}
+
+			if (targetItem.instanceData != nullptr) {
+				if (auto kwForm = targetItem.instanceData->GetKeywordData(); kwForm && kwForm->HasKeyword(Data::Forms::NAFDoNotUseKW)) {
+					return true;
+				}
+			}
+			//NAFBridge protectedKeywords
+
+			auto Obj = targetItem.object->As<RE::TESObjectARMO>();
+			auto kwForm = targetItem.instanceData ? targetItem.instanceData->GetKeywordData() : nullptr;
+
+			if (Data::Forms::protectedKeywords) {
+				for (auto& item : Data::Forms::protectedKeywords->arrayOfForms) {
+					if (auto kwd = item->As<RE::BGSKeyword>(); kwd) {
+						if (Obj && Obj->HasKeyword(kwd)) {
+							return true;
+						}
+						if (kwForm && kwForm->HasKeyword(kwd)) {
+								return true;
+						}
 					}
 				}
 			}
-
+			//NAFBridge end
 			state->equipment[a->GetActorHandle()].storedEquipment.insert({ slot, targetItem.object });
 			DoUnequip(a, targetItem.object, targetItem.instanceData.get());
-
+			
 			return true;
 		}
 

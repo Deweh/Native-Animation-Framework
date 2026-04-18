@@ -2,6 +2,9 @@
 #include <random>
 #include "Structs.h"
 
+//NAF BRIDGE
+extern int PRINT_LOG;
+
 namespace Papyrus::NAF
 {
 	constexpr auto SCRIPT_NAME{ "NAF"sv };
@@ -41,7 +44,7 @@ namespace Papyrus::NAF
 			resultData.result = { Scene::kNoActors };
 			return resultData;
 		}
-		
+
 		std::string a_position = "";
 		std::string includeTags = "";
 		std::string excludeTags = "";
@@ -84,8 +87,7 @@ namespace Papyrus::NAF
 			tFilter.emplace(
 				Utility::SplitString(includeTags, ","),
 				Utility::SplitString(excludeTags, ","),
-				Utility::SplitString(requireTags, ",")
-			);
+				Utility::SplitString(requireTags, ","));
 		}
 
 		Data::AnimationFilter filter(a_actors);
@@ -125,7 +127,7 @@ namespace Papyrus::NAF
 		for (auto& a : a_actors) {
 			settings.actors.push_back(a->GetActorHandle());
 		}
-		
+
 		return resultData;
 	}
 
@@ -187,7 +189,8 @@ namespace Papyrus::NAF
 		PackageOverride::Clear(a_actor->GetActorHandle());
 	}
 
-	void PlayDynamicIdle(std::monostate, RE::Actor* a_actor, std::string a_fileName, std::string a_animEvent, std::string a_behvGraph) {
+	void PlayDynamicIdle(std::monostate, RE::Actor* a_actor, std::string a_fileName, std::string a_animEvent, std::string a_behvGraph)
+	{
 		if (!a_actor) {
 			return;
 		}
@@ -241,7 +244,8 @@ namespace Papyrus::NAF
 		Scene::SceneManager::StopScene(sceneId);
 	}
 
-	bool SetScenePosition(std::monostate, SceneId a_id, std::string a_position) {
+	bool SetScenePosition(std::monostate, SceneId a_id, std::string a_position)
+	{
 		bool successful = false;
 		Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
 			successful = scn->SetPosition(a_position);
@@ -249,11 +253,14 @@ namespace Papyrus::NAF
 		return successful;
 	}
 
-	std::vector<RE::Actor*> GetSceneActors(std::monostate, SceneId a_id) {
+	std::vector<RE::Actor*> GetSceneActors(std::monostate, SceneId a_id)
+	{
 		std::vector<RE::NiPointer<RE::Actor>> actors;
-		Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
-			actors = Scene::GetActorsInOrder(scn->actors);
-		}, true);
+		Scene::SceneManager::VisitScene(
+			UnpackSceneId(a_id), [&](Scene::IScene* scn) {
+				actors = Scene::GetActorsInOrder(scn->actors);
+			},
+			true);
 
 		std::vector<RE::Actor*> result;
 		result.reserve(actors.size());
@@ -264,19 +271,25 @@ namespace Papyrus::NAF
 		return result;
 	}
 
-	std::vector<std::string> GetSceneHKXs(std::monostate, SceneId a_id) {
+	std::vector<std::string> GetSceneHKXs(std::monostate, SceneId a_id)
+	{
 		std::vector<std::string> result;
-		Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
-			result = scn->QCachedHKXStrings();
-		}, true);
+		Scene::SceneManager::VisitScene(
+			UnpackSceneId(a_id), [&](Scene::IScene* scn) {
+				result = scn->QCachedHKXStrings();
+			},
+			true);
 		return result;
 	}
 
-	std::vector<std::string> GetSceneTags(std::monostate, SceneId a_id) {
+	std::vector<std::string> GetSceneTags(std::monostate, SceneId a_id)
+	{
 		std::string id = "";
-		Scene::SceneManager::VisitScene(UnpackSceneId(a_id), [&](Scene::IScene* scn) {
-			id = scn->controlSystem->QSystemID();
-		}, true);
+		Scene::SceneManager::VisitScene(
+			UnpackSceneId(a_id), [&](Scene::IScene* scn) {
+				id = scn->controlSystem->QSystemID();
+			},
+			true);
 		std::shared_ptr<const Data::Position> pos = Data::GetPosition(id);
 		std::vector<std::string> result;
 		if (pos != nullptr) {
@@ -287,7 +300,8 @@ namespace Papyrus::NAF
 		return result;
 	}
 
-	void SetSceneSpeed(std::monostate, SceneId a_id, float a_speed) {
+	void SetSceneSpeed(std::monostate, SceneId a_id, float a_speed)
+	{
 		auto sceneId = UnpackSceneId(a_id);
 		Scene::SceneManager::VisitScene(sceneId, [&](Scene::IScene* scn) {
 			scn->SetAnimMult(a_speed);
@@ -298,13 +312,16 @@ namespace Papyrus::NAF
 	{
 		auto sceneId = UnpackSceneId(a_id);
 		float speed = 0.0f;
-		Scene::SceneManager::VisitScene(sceneId, [&](Scene::IScene* scn) {
-			speed = scn->animMult;
-		}, true);
+		Scene::SceneManager::VisitScene(
+			sceneId, [&](Scene::IScene* scn) {
+				speed = scn->animMult;
+			},
+			true);
 		return speed;
 	}
 
-	SceneId GetSceneFromActor(std::monostate, RE::Actor* a_actor) {
+	SceneId GetSceneFromActor(std::monostate, RE::Actor* a_actor)
+	{
 		if (!a_actor) {
 			return PackSceneId(0);
 		}
@@ -318,7 +335,8 @@ namespace Papyrus::NAF
 					}
 				});
 			}
-		}, true);
+		},
+			true);
 
 		return PackSceneId(targetSceneId);
 	}
@@ -332,64 +350,64 @@ namespace Papyrus::NAF
 		return running;
 	}
 
-	static const std::unordered_map<std::string, std::function<void(Scene::IScene*, Variable*)>> ScenePropGetters =
-	{
+	static const std::unordered_map<std::string, std::function<void(Scene::IScene*, Variable*)>> ScenePropGetters = {
 		{ "locationref", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->settings.locationRefr.get().get());
-		} },
+		 } },
 		{ "totalduration", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->settings.duration);
-		} },
+		 } },
 		{ "remainingduration", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->GetRemainingDuration());
-		} },
+		 } },
 		{ "status", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, static_cast<int32_t>(scn->status));
-		} },
+		 } },
 		{ "syncstatus", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, static_cast<int32_t>(scn->syncStatus));
-		} },
+		 } },
 		{ "animationtime", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->animTime);
-		} },
+		 } },
 		{ "startequipset", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->startEquipSet);
-		} },
+		 } },
 		{ "stopequipset", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->stopEquipSet);
-		} },
+		 } },
 		{ "autoadvance", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->QAutoAdvance());
-		} },
+		 } },
 		{ "ignorecombat", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->settings.ignoreCombat);
-		} },
+		 } },
 		{ "positiontype", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->controlSystem->QTypeName());
-		} },
+		 } },
 		{ "animationid", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->controlSystem->QAnimationID());
-		} },
+		 } },
 		{ "positionid", [](Scene::IScene* scn, Variable* res) {
 			 PackVariable(*res, scn->controlSystem->QSystemID());
-		} },
+		 } },
 		{ "location", [](Scene::IScene* scn, Variable* res) {
 			 auto arr = MakeVarArray(3);
 			 *arr[0] = scn->location.x;
 			 *arr[1] = scn->location.y;
 			 *arr[2] = scn->location.z;
 			 PackVariable(*res, std::move(arr));
-		} },
+		 } },
 		{ "angle", [](Scene::IScene* scn, Variable* res) {
 			 auto arr = MakeVarArray(3);
 			 *arr[0] = scn->angle.x;
 			 *arr[1] = scn->angle.y;
 			 *arr[2] = scn->angle.z;
 			 PackVariable(*res, std::move(arr));
-		} }
+		 } }
 	};
 
-	const RE::BSScript::Variable* GetSceneProperty(std::monostate, SceneId a_id, std::string a_prop) {
+	const RE::BSScript::Variable* GetSceneProperty(std::monostate, SceneId a_id, std::string a_prop)
+	{
 		Variable* result = new Variable();
 		uint64_t id = UnpackSceneId(a_id);
 		Utility::TransformStringToLower(a_prop);
@@ -400,9 +418,11 @@ namespace Papyrus::NAF
 				walkInstResult = 1;
 			});
 			if (walkInstResult == 0) {
-				Scene::SceneManager::VisitScene(id, [&](Scene::IScene*) {
-					walkInstResult = 2;
-				}, true);
+				Scene::SceneManager::VisitScene(
+					id, [&](Scene::IScene*) {
+						walkInstResult = 2;
+					},
+					true);
 			}
 			if (walkInstResult != 0) {
 				PackVariable(*result, walkInstResult != 1);
@@ -410,9 +430,11 @@ namespace Papyrus::NAF
 		} else {
 			auto prop = ScenePropGetters.find(a_prop);
 			if (prop != ScenePropGetters.end()) {
-				Scene::SceneManager::VisitScene(id, [&](Scene::IScene* scn) {
-					prop->second(scn, result);
-				}, true);
+				Scene::SceneManager::VisitScene(
+					id, [&](Scene::IScene* scn) {
+						prop->second(scn, result);
+					},
+					true);
 			}
 		}
 		return result;
@@ -444,12 +466,14 @@ namespace Papyrus::NAF
 	*/
 
 	//Not yet implemented in PSC
-	bool PositionExists(std::monostate, std::string a_pos) {
+	bool PositionExists(std::monostate, std::string a_pos)
+	{
 		return (Data::GetPosition(a_pos) != nullptr);
 	}
 
 	//Not yet implemented in PSC
-	int32_t GetPositionType(std::monostate, std::string a_pos) {
+	int32_t GetPositionType(std::monostate, std::string a_pos)
+	{
 		int32_t result = 0;
 		if (auto pos = Data::GetPosition(a_pos); pos != nullptr) {
 			result = pos->posType;
@@ -458,7 +482,8 @@ namespace Papyrus::NAF
 	}
 
 	//Not yet implemented in PSC
-	std::string GetPositionBaseAnimation(std::monostate, std::string a_pos) {
+	std::string GetPositionBaseAnimation(std::monostate, std::string a_pos)
+	{
 		std::string result = "";
 		if (auto pos = Data::GetPosition(a_pos); pos != nullptr) {
 			if (auto anim = pos->GetBaseAnimation(); anim != nullptr) {
@@ -469,7 +494,8 @@ namespace Papyrus::NAF
 	}
 
 	//Not yet implemented in PSC
-	bool AnimationExists(std::monostate, std::string a_anim) {
+	bool AnimationExists(std::monostate, std::string a_anim)
+	{
 		return (Data::GetAnimation(a_anim) != nullptr);
 	}
 
@@ -479,15 +505,18 @@ namespace Papyrus::NAF
 	|--------------------------|
 	*/
 
-	bool PlayNANIM(std::monostate, RE::Actor* a_actor, std::string a_filePath, std::string a_animID, float a_transitionTime) {
+	bool PlayNANIM(std::monostate, RE::Actor* a_actor, std::string a_filePath, std::string a_animID, float a_transitionTime)
+	{
 		return BodyAnimation::GraphHook::LoadAndPlayAnimation(a_actor, USERDATA_DIR + a_filePath, a_transitionTime, a_animID);
 	}
 
-	bool StopNANIM(std::monostate, RE::Actor* a_actor, float a_transitionTime) {
+	bool StopNANIM(std::monostate, RE::Actor* a_actor, float a_transitionTime)
+	{
 		return BodyAnimation::GraphHook::StopAnimation(a_actor, a_transitionTime);
 	}
 
-	void SetIKChainTarget(std::monostate, RE::Actor* a_actor, std::string a_chainName, RE::TESObjectREFR* a_target) {
+	void SetIKChainTarget(std::monostate, RE::Actor* a_actor, std::string a_chainName, RE::TESObjectREFR* a_target)
+	{
 		if (!a_actor || !a_target)
 			return;
 
@@ -501,7 +530,8 @@ namespace Papyrus::NAF
 		});
 	}
 
-	void SetIKChainEnabled(std::monostate, RE::Actor* a_actor, std::string a_chainName, bool a_enabled) {
+	void SetIKChainEnabled(std::monostate, RE::Actor* a_actor, std::string a_chainName, bool a_enabled)
+	{
 		if (!a_actor)
 			return;
 
@@ -534,7 +564,7 @@ namespace Papyrus::NAF
 
 	bool PlayFaceAnimation(std::monostate, RE::Actor* a_actor, std::string a_id, bool a_loop, bool a_bodySync)
 	{
-		if (!a_actor) {
+		if (!a_actor || a_id.empty()) {
 			return false;
 		}
 		return FaceAnimation::FaceUpdateHook::LoadAndPlayAnimation(a_actor->GetActorHandle(), a_id, a_loop, a_bodySync);
@@ -554,27 +584,33 @@ namespace Papyrus::NAF
 	|---------------|
 	*/
 
-	int32_t DrawRectangle(std::monostate, float a_X, float a_Y, float a_width, float a_height, int32_t a_color, float a_alpha, float a_borderSize, int32_t a_borderColor, float a_borderAlpha) {
+	int32_t DrawRectangle(std::monostate, float a_X, float a_Y, float a_width, float a_height, int32_t a_color, float a_alpha, float a_borderSize, int32_t a_borderColor, float a_borderAlpha)
+	{
 		return Menu::HUDManager::DrawRectangle(a_X, a_Y, a_width, a_height, a_color, a_alpha, a_borderSize, a_borderColor, a_borderAlpha);
 	}
 
-	int32_t DrawText(std::monostate, std::string a_text, float a_X, float a_Y, float a_txtSize, int32_t a_color, float a_alpha, bool a_bold, bool a_italic, bool a_underline) {
+	int32_t DrawText(std::monostate, std::string a_text, float a_X, float a_Y, float a_txtSize, int32_t a_color, float a_alpha, bool a_bold, bool a_italic, bool a_underline)
+	{
 		return Menu::HUDManager::DrawText(a_text, a_X, a_Y, a_txtSize, a_color, a_alpha, a_bold, a_italic, a_underline);
 	}
 
-	int32_t DrawLine(std::monostate, float a_startX, float a_startY, float a_endX, float a_endY, float a_thickness, int32_t a_color, float a_alpha) {
+	int32_t DrawLine(std::monostate, float a_startX, float a_startY, float a_endX, float a_endY, float a_thickness, int32_t a_color, float a_alpha)
+	{
 		return Menu::HUDManager::DrawLine(a_startX, a_startY, a_endX, a_endY, a_thickness, a_color, a_alpha);
 	}
 
-	void SetElementPosition(std::monostate, int32_t a_handle, float a_X, float a_Y) {
+	void SetElementPosition(std::monostate, int32_t a_handle, float a_X, float a_Y)
+	{
 		Menu::HUDManager::SetElementPosition(a_handle, a_X, a_Y);
 	}
 
-	void TranslateElementTo(std::monostate, int32_t a_handle, float a_endX, float a_endY, float a_seconds) {
+	void TranslateElementTo(std::monostate, int32_t a_handle, float a_endX, float a_endY, float a_seconds)
+	{
 		Menu::HUDManager::TranslateElementTo(a_handle, a_endX, a_endY, a_seconds);
 	}
 
-	void StopElementTranslation(std::monostate, int32_t a_handle) {
+	void StopElementTranslation(std::monostate, int32_t a_handle)
+	{
 		Menu::HUDManager::StopElementTranslation(a_handle);
 	}
 
@@ -638,7 +674,7 @@ namespace Papyrus::NAF
 		} else {
 			transform.rotate.ToEulerAnglesXYZ(result[0], result[1], result[2]);
 		}
-		
+
 		result[3] = transform.translate.x;
 		result[4] = transform.translate.y;
 		result[5] = transform.translate.z;
@@ -675,5 +711,288 @@ namespace Papyrus::NAF
 		}
 
 		return allSuccessful;
+	}
+}
+	/*
+	|-------------------|
+	| BRIDGE		    |
+	|-------------------|
+	*/
+namespace Papyrus::NAFBridge
+{
+	using namespace RE::BSScript;
+	using SceneId = structure_wrapper<"NAF", "SceneId">;
+	using StartSceneResult = structure_wrapper<"NAF", "StartSceneResult">;
+	using SceneSettings = structure_wrapper<"NAF", "SceneSettings">;
+	using SceneData = Papyrus::NAF::SceneData;
+	
+	bool ApplyEquipmentSet(std::monostate, RE::Actor* akActor, std::string equipmentSetId)
+	{
+		if ((akActor == nullptr) || equipmentSetId.empty())
+			return false;
+		return Data::ApplyEquipmentSet(akActor, equipmentSetId);
+	}
+
+	bool GetPositionInstalled(std::monostate, std::string id)
+	{
+		if (id.empty())
+			return false;
+		return Data::GetPosition(id) == nullptr ? false : true;
+	}
+
+	bool ApplyMorphSet(std::monostate, RE::Actor* akActor, std::string id)
+	{
+		if ((akActor == nullptr) || id.empty())
+			return false;
+		return Data::ApplyMorphSet(akActor, id);
+	}
+
+	bool CompleteWalkForActor(std::monostate, RE::Actor* akActor)
+	{
+		if (!akActor) {
+			return false;
+		}
+		bool result = false;
+
+		Scene::SceneManager::GetSingleton()->VisitAllScenes([&](Scene::IScene* scn) {
+			scn->ForEachActor([&](RE::Actor* currentActor, Scene::ActorPropertyMap&) {
+				if (currentActor == akActor) {
+					Scene::SceneManager::CompleteWalk(scn->uid);
+					result = true;
+				}
+			});
+		},
+			true);
+
+		return result;
+	}
+
+	bool CompleteWalkForScene(std::monostate, std::optional<SceneId> id)
+	{
+		if (!id || !id.has_value()) {
+			return false;
+		}
+		uint64_t id64 = Papyrus::NAF::UnpackSceneId(id.value());
+		return Scene::SceneManager::GetSingleton()->CompleteWalk(id64);
+	}
+
+	std::string FindPositionBySceneSettings(std::monostate, std::vector<RE::Actor*> a_actors, std::optional<SceneSettings> a_settings)
+	{
+		std::string result;
+		if (a_actors.size() < 1) {
+			result = { Scene::kNoActors };
+			if (PRINT_LOG) 
+				logger::info("Bridge : FindPositionBySceneSettings failed : kNoActors : {}", result);
+			return "";
+		}
+
+		std::string a_position = "";
+		std::string includeTags = "";
+		std::string excludeTags = "";
+		std::string requireTags = "";
+		RE::TESObjectREFR* posRefr = nullptr;
+
+		if (a_settings.has_value()) {
+			auto& s = a_settings.value();
+			if (auto v = s.find<std::string>("position", true); v) {
+				a_position = v.value();
+				if (!a_position.empty()) {
+					return a_position;
+				}
+			}
+			if (auto v = s.find<RE::TESObjectREFR*>("positionRef", true); v) {
+				posRefr = v.value();
+			}
+			if (auto v = s.find<std::string>("includeTags", true); v) {
+				includeTags = v.value();
+			}
+			if (auto v = s.find<std::string>("excludeTags", true); v) {
+				excludeTags = v.value();
+			}
+			if (auto v = s.find<std::string>("requireTags", true); v) {
+				requireTags = v.value();
+			}
+		}
+
+		std::optional<Data::Global::TagFilter> tFilter;
+		if (includeTags.size() > 0 || excludeTags.size() > 0 || requireTags.size() > 0) {
+			Utility::TransformStringToLower(includeTags);
+			Utility::TransformStringToLower(excludeTags);
+			Utility::TransformStringToLower(requireTags);
+			tFilter.emplace(
+				Utility::SplitString(includeTags, ","),
+				Utility::SplitString(excludeTags, ","),
+				Utility::SplitString(requireTags, ","));
+		}
+
+		Data::AnimationFilter filter(a_actors);
+		if (filter.numTotalActors != a_actors.size()) {
+			result = { Scene::kInvalidActor };
+			if (PRINT_LOG) 
+				logger::info("Bridge : FindPositionBySceneSettings failed : kInvalidActor : {}", result);
+			return "";
+		}
+		auto positions = Data::Global::GetFilteredPositions(filter, a_position.size() < 1, false, posRefr, false, tFilter);
+
+		if (a_position.size() < 1) {
+			if (positions.size() > 0) {
+				return Utility::SelectRandom(positions);
+			} else {
+				result = { Scene::kNoAvailablePositions };
+				if (PRINT_LOG)
+					logger::info("Bridge : FindPositionBySceneSettings failed : kNoAvailablePositions : {}", result);
+				return "";
+			}
+		} else if (!Utility::VectorContains(positions, a_position)) {
+			result = { Scene::kSpecifiedPositionNotAvailable };
+			if (PRINT_LOG)
+				logger::info("Bridge : FindPositionBySceneSettings failed : kSpecifiedPositionNotAvailable : {}", result);
+			return "";
+		}
+
+		if (PRINT_LOG)
+			logger::info("Bridge : FindPositionBySceneSettings failed : unknown reason");
+		return "";
+	}
+
+	std::string_view ValidateSceneParamsIgnoreInScene(std::monostate, std::vector<RE::Actor*> a_actors, std::optional<SceneSettings> a_settings)
+	{
+		auto data = Papyrus::NAF::GetSceneData(a_actors, a_settings);
+		if (!data.result) {
+			return std::string(data.result.GetErrorMessage()).c_str();
+		}
+
+		if (auto res = Scene::SceneManager::GetSingleton()->ValidateStartSceneArgs(data.settings, true); !res) {
+			return std::string(res.GetErrorMessage()).c_str();
+		}
+
+		return "";
+	}
+
+	SceneData GetSceneFromSceneSettings(std::vector<RE::Actor*>& a_actors, std::optional<SceneSettings>& a_settings)
+	{
+		SceneData resultData;
+		Scene::SceneSettings& settings = resultData.settings;
+
+		if (a_actors.size() < 1) {
+			resultData.result = { Scene::kNoActors };
+			return resultData;
+		}
+
+		std::string a_position = "";
+		std::string includeTags = "";
+		std::string excludeTags = "";
+		std::string requireTags = "";
+		RE::TESObjectREFR* posRefr = nullptr;
+
+		if (a_settings.has_value()) {
+			auto& s = a_settings.value();
+			if (auto v = s.find<std::string>("position", true); v) {
+				a_position = v.value();
+			}
+			if (auto v = s.find<float>("duration", true); v) {
+				settings.duration = v.value();
+			}
+			if (auto v = s.find<RE::TESObjectREFR*>("positionRef", true); v) {
+				posRefr = v.value();
+			}
+			if (auto v = s.find<std::string>("includeTags", true); v) {
+				includeTags = v.value();
+			}
+			if (auto v = s.find<std::string>("excludeTags", true); v) {
+				excludeTags = v.value();
+			}
+			if (auto v = s.find<std::string>("requireTags", true); v) {
+				requireTags = v.value();
+			}
+			if (auto v = s.find<bool>("forceNPCControlled", true); v) {
+				settings.autoAdvance = v.value();
+			}
+			if (auto v = s.find<bool>("ignoreCombat", true); v) {
+				settings.ignoreCombat = v.value();
+			}
+		}
+
+		std::string position = Papyrus::NAFBridge::FindPositionBySceneSettings(std::monostate(), a_actors, a_settings);
+		if (position == "") {
+			resultData.result = { Scene::kNoAvailablePositions };
+			return resultData;
+		}
+		auto targetPosition = Data::GetPosition(position);
+		if (!targetPosition) {
+			resultData.result = { Scene::kNoAvailablePositions };
+			return resultData;
+		}
+
+		settings.startPosition = std::shared_ptr<const Data::Position>(targetPosition);
+
+		if (posRefr == nullptr) {
+			settings.locationRefr = a_actors[0]->GetHandle();
+		} else {
+			settings.locationRefr = posRefr->GetHandle();
+		}
+
+		settings.actors.reserve(a_actors.size());
+		for (auto& a : a_actors) {
+			settings.actors.push_back(a->GetActorHandle());
+		}
+
+		return resultData;
+	}
+
+	RE::BGSListForm* GetFurnitureList(std::monostate, RE::BGSListForm* formlist)
+	{
+		if (formlist == nullptr)
+			return nullptr;
+		formlist->ClearData();
+
+		for (auto& el : Data::Global::Furnitures) {
+			auto furniture = el.second.second;
+			for (auto& form : furniture.get()->forms)
+			{
+				formlist->arrayOfForms.push_back(form.get());
+			}
+		}
+		return formlist;
+	}
+
+	using OverlaySet = RE::BSScript::structure_wrapper<"NAFBridge", "OverlaySet">;
+
+	OverlaySet GetOverlay(std::monostate, std::string id)
+	{
+		OverlaySet res;
+
+		auto ovrl = Data::GetOverlaySet(id);
+
+		auto setNull = [&]() {
+			res.insert("template", ""s);
+			res.insert("duration", 0);
+			res.insert("isFemale", false);
+			res.insert("alpha", 0);
+			logger::critical("GetOverlay returned empty struct for id {}!", id);
+		};
+
+		if (ovrl && (ovrl->overlays.size() > 0)) {
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_int_distribution<> distr(0, (ovrl->overlays.size() - 1));
+			int rnd = distr(gen);
+
+			if (ovrl->overlays[rnd].Template != "") {
+				auto tmplt = ovrl->overlays[rnd];
+
+				res.insert("template", tmplt.Template);
+				res.insert("duration", ovrl->duration);
+				res.insert("isFemale", tmplt.isFemale);
+				res.insert("alpha", tmplt.alpha);
+				if (PRINT_LOG) {
+					logger::info("GetOverlay request {}, result {}, dur:{}, isFemale:{}, alpha:{}", id, tmplt.Template, ovrl->duration, tmplt.isFemale, tmplt.alpha);
+				}
+			} else
+				setNull();
+		} else {
+			setNull();
+		}
+		return res;
 	}
 }

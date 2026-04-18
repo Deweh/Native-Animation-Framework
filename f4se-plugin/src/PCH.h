@@ -5,6 +5,7 @@
 #include "RE/Fallout.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
+
 #pragma warning(pop)
 
 #define DLLEXPORT __declspec(dllexport)

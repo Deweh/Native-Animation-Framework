@@ -1,22 +1,26 @@
 #pragma once
-#include "IScene.h"
-#include "Functors.h"
-#include "FaceAnimation/FaceUpdateHook.h"
-#include "Misc/MathUtil.h"
 #include "EventProxy.h"
+#include "FaceAnimation/FaceUpdateHook.h"
+#include "Functors.h"
+#include "IScene.h"
+#include "Misc/MathUtil.h"
 
-#define SCNSYNC_DELAY_FUNCTOR(delName)	           \
-namespace Scene{								   \
-	class delName##Delegate : public SceneDelegate \
-	{											   \
-		using SceneDelegate::SceneDelegate;		   \
-		virtual void Run() override				   \
-		{										   \
-			Process##delName##Functor(sceneId);	   \
-		}										   \
-	};											   \
-}												   \
-CEREAL_REGISTER_TYPE(Scene::DelegateFunctor<Scene::delName##Delegate>); \
+#include "Bridge/NewData/OffsetClass.h"
+
+
+#define SCNSYNC_DELAY_FUNCTOR(delName)                 \
+	namespace Scene                                    \
+	{                                                  \
+		class delName##Delegate : public SceneDelegate \
+		{                                              \
+			using SceneDelegate::SceneDelegate;        \
+			virtual void Run() override                \
+			{                                          \
+				Process##delName##Functor(sceneId);    \
+			}                                          \
+		};                                             \
+	}                                                  \
+	CEREAL_REGISTER_TYPE(Scene::DelegateFunctor<Scene::delName##Delegate>);
 
 namespace Scene
 {
@@ -26,12 +30,13 @@ namespace Scene
 		uint64_t sceneId = 0;
 		uint16_t timerId = 0;
 
-		SystemTimerFunctor(){}
+		SystemTimerFunctor() {}
 
 		SystemTimerFunctor(uint64_t _sceneId, uint16_t _timerId) :
 			sceneId(_sceneId), timerId(_timerId) {}
 
-		virtual void Run() override {
+		virtual void Run() override
+		{
 			F4SE::GetTaskInterface()->AddTask([sceneId = sceneId, timerId = timerId]() {
 				SceneManager::VisitScene(sceneId, [timerId = timerId](IScene* scn) {
 					scn->controlSystem->OnTimer(timerId);
@@ -106,7 +111,8 @@ namespace Scene
 				scn->ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
 					hasPlayer = hasPlayer || currentActor == player;
 					currentActor->SetGraphVariable("bHumanoidFootIKDisable", false);
-				}, false);
+				},
+					false);
 				scn->TransitionToAnimation(nullptr);
 				scn->ApplyEquipmentSet(scn->stopEquipSet);
 				if (hasPlayer) {
@@ -184,15 +190,18 @@ namespace Scene
 			logger::trace("Scene ID#{} deleted.", uid);
 		}
 
-		virtual void StartTimer(uint16_t id, double durationMs) override {
+		virtual void StartTimer(uint16_t id, double durationMs) override
+		{
 			tasks.StartNumbered<SystemTimerFunctor>(id, durationMs, uid, id);
 		}
 
-		virtual void StopTimer(uint16_t id) override {
+		virtual void StopTimer(uint16_t id) override
+		{
 			tasks.StopNumbered<SystemTimerFunctor>(id);
 		}
 
-		virtual bool HasPlayer() override {
+		virtual bool HasPlayer() override
+		{
 			bool result = false;
 			ForEachActor([&](RE::Actor* a, ActorPropertyMap&) {
 				if (a == player)
@@ -201,15 +210,18 @@ namespace Scene
 			return result;
 		}
 
-		virtual uint64_t QUID() override {
+		virtual uint64_t QUID() override
+		{
 			return uid;
 		}
 
-		virtual bool QAutoAdvance() override {
-			return settings.autoAdvance;		
+		virtual bool QAutoAdvance() override
+		{
+			return settings.autoAdvance;
 		}
 
-		virtual std::vector<std::string> QCachedHKXStrings() override {
+		virtual std::vector<std::string> QCachedHKXStrings() override
+		{
 			std::vector<std::string> result;
 			auto order = GetActorHandlesInOrder(actors);
 			result.resize(order.size());
@@ -224,7 +236,8 @@ namespace Scene
 			return result;
 		}
 
-		virtual bool PushQueuedControlSystem() override {
+		virtual bool PushQueuedControlSystem() override
+		{
 			if (queuedSystem != nullptr) {
 				auto lastId = controlSystem->QAnimationID();
 				controlSystem.reset(queuedSystem.release());
@@ -236,11 +249,65 @@ namespace Scene
 			}
 		}
 
-		void QueueControlSystem(std::unique_ptr<IControlSystem> sys) {
+		void QueueControlSystem(std::unique_ptr<IControlSystem> sys)
+		{
 			queuedSystem = std::move(sys);
 			std::string nextId = queuedSystem->QAnimationID();
 			controlSystem->OnEnd(this, nextId);
 		}
+
+		////NAF Bridge offset
+		//virtual void UpdatePositionOffsetInScene(const Data::Position* position)
+		//{
+		//	offset.clear();
+		//	if (position) {
+		//		switch (position->posType) {
+		//		case Data::Position::Type::kAnimation:
+		//			{
+		//				if (position->offset.size() > 0 && position->offset.at(0).has_value()) {
+		//					auto rit = position->offset.rbegin();
+		//					while (rit != position->offset.rend()) {
+		//						offset.push_back(*rit++);
+		//					}
+		//				}
+		//			}
+		//		case Data::Position::Type::kAnimationGroup:
+		//			{
+		//				if (position->offset.size() > 0 && position->offset.at(0).has_value()) {
+		//					auto rit = position->offset.rbegin();
+		//					while (rit != position->offset.rend()) {
+		//						offset.push_back(*rit++);
+		//					}
+		//				}
+		//			}
+		//		case Data::Position::Type::kPositionTree:
+		//			{
+		//				offset.clear();
+		//				auto treePos = Data::GetPositionTree(position->id).get();
+		//				if (treePos && treePos->tree->offset.size() > 0 && treePos->tree->offset.at(0).has_value()) {
+		//					auto rit = treePos->tree->offset.rbegin();
+		//					while (rit != treePos->tree->offset.rend()) {
+		//						offset.push_back(*rit++);
+		//					}
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
+
+		//virtual void UpdatePositionOffsetInScene(const Data::PositionTree* positionTree)
+		//{
+		//	offset.clear();
+		//	if (positionTree && positionTree->tree->offset.size() > 0 && positionTree->tree->offset.at(0).has_value()) {
+		//		offset = positionTree->tree->offset;
+		//	}
+		//}
+
+		//virtual void UpdatePositionOffsetInScene(std::vector<offset_optional> new_offset)
+		//{
+		//	offset.clear();
+		//	offset = new_offset;
+		////NAF Bridge end
 
 		virtual bool Init(std::shared_ptr<const Data::Position> position) override
 		{
@@ -249,7 +316,25 @@ namespace Scene
 			controlSystem = GetControlSystem(position);
 			baseLocation = location;
 			baseAngle = angle;
-			SetDuration(settings.duration);
+			
+			// AnimationGroupSystem and PositionTreeSystem manage their own timing
+			// Only set duration for regular animations
+			/*if (position->posType == Data::Position::kAnimation) {
+				SetDuration(settings.duration);
+			}*/
+
+			bool shouldSetDuration = (position->posType == Data::Position::kAnimation);
+			if (position->posType == Data::Position::kAnimationGroup) {
+				auto group = Data::GetAnimationGroup(position->idForType);
+				if (group && group->sequential == false) {
+					shouldSetDuration = true;
+				}
+			}
+
+			if (shouldSetDuration) {
+				SetDuration(settings.duration);
+			}
+
 			return true;
 		}
 
@@ -264,9 +349,13 @@ namespace Scene
 			angle.y = 0;
 			SetAnimMult(100);
 
+			std::vector<RE::NiPointer<RE::Actor>> actorList;
+
+			size_t actor_count = 0; //NAFBridge offset
 			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
 				currentActor->StopInteractingQuick();
-
+				//logger::info{ "pos : {}, {}, {}\t actor : {} Begin start",
+				//	currentActor->data.location.x, currentActor->data.location.y, currentActor->data.location.z, currentActor->GetDisplayFullName() };
 				if (currentActor != player) {
 					if (currentActor->HasKeyword(Data::Forms::TeammateReadyWeaponKW)) {
 						props[kHadReadyWeapon].value = true;
@@ -292,14 +381,40 @@ namespace Scene
 					if (RE::UI::GetSingleton()->GetMenuOpen("PipboyMenu"))
 						RE::UIMessageQueue::GetSingleton()->AddMessage("PipboyMenu", RE::UI_MESSAGE_TYPE::kHide);
 					RE::PlayerCamera::GetSingleton()->Force3rdPerson();
+					if (!(RE::PlayerCamera::GetSingleton()->currentState.get()->STATE & RE::CameraState::kFree)) {
+						RE::PlayerCamera::GetSingleton()->ToggleFreeCameraMode(false);
+					}
 					player->StopMoving(5.0f);
 				}
 
-				currentActor->SetPosition(location, true);
+				//NAFBridge offset
+				RE::NiPoint3 actorLoc = location;
+				if (currentPosition) {
+					auto& currentPositionOffset = currentPosition->offset;
+					if (currentPositionOffset.size() > 0 && currentPositionOffset[0].has_value()) {
+						size_t c = ((currentPositionOffset.size() > actor_count) && (currentPositionOffset[actor_count].has_value())) ? actor_count : 0;
+						auto os = currentPositionOffset[c];
+						MathUtil::ApplyOffsetToLocalSpace(actorLoc, os.value(), os.valueA());
+					}
+				}
+
+				actorList.push_back(RE::NiPointer<RE::Actor>(currentActor));
+				++actor_count;
+				//NAFBridge end
+
+				currentActor->SetPosition(actorLoc, true);
 				currentActor->SetAngleOnReference(angle);
 				currentActor->ClearLookAtTarget();
 				currentActor->TurnOffHeadtracking();
+					
+				//currentActor->SetPosition(location, true); NAFBridge offset off
+				//logger::info{ "pos : {}, {}, {}\t actor : {} Begin end",
+				//	currentActor->data.location.x, currentActor->data.location.y, currentActor->data.location.z, currentActor->GetDisplayFullName() };
 			});
+
+			if (actorList.size() > 0) {
+				fannyAnim.StartTracking(actorList);
+			}
 
 			status = SceneState::Active;
 			Data::Events::Send(Data::Events::SCENE_START, uid);
@@ -352,10 +467,39 @@ namespace Scene
 					currentActor->EvaluatePackage(false, true);
 				}
 
-				if (!Data::Settings::Values.bDisableRescaler) {
-					currentActor->SetScale(1.0f);
+				// NAF Bridge fix scale after scene if scale was overridden
+				// Look up initial scale by actor's FormID
+				uint32_t actorFormID = currentActor->formID;
+				auto scaleIt = settings.initialScales.find(actorFormID);
+				
+				if (scaleIt == settings.initialScales.end()) {
+					// No saved scale for this actor - use default behavior
+					if (!Data::Settings::Values.bDisableRescaler) {
+						currentActor->SetScale(1.0f);
+					}
+				} else {
+					float targetScale = scaleIt->second;
+					constexpr float EPSILON = 0.001f;
+					
+					// First attempt to set the scale
+					currentActor->SetScale(targetScale);
+					float actualScale = currentActor->GetScale();
+					
+					// GetScale() returns refScale * baseScale, but SetScale() sets refScale only.
+					// If actual scale doesn't match target, we need to compensate for baseScale.
+					// actualScale = setScale * baseScale
+					// We want: targetScale = newSetScale * baseScale
+					// So: newSetScale = targetScale / baseScale = targetScale / (actualScale / setScale)
+					// Since we set setScale = targetScale: newSetScale = targetScale / (actualScale / targetScale) = targetScale^2 / actualScale
+					if (std::fabs(actualScale - targetScale) > EPSILON && std::fabs(actualScale) > EPSILON) {
+						float baseScale = actualScale / targetScale;  // baseScale = actualScale / refScale (where refScale was set to targetScale)
+						float compensatedScale = targetScale / baseScale;
+						currentActor->SetScale(compensatedScale);
+					}
 				}
-			}, false);
+				// NAF Bridge fix scale end
+			},
+				false);
 
 			status = SceneState::PendingDeletion;
 			Data::Events::Send(Data::Events::SCENE_END, Data::Events::SceneData{ uid, GetActorsInOrder(actors) });
@@ -363,17 +507,36 @@ namespace Scene
 			return true;
 		}
 
-		virtual void OnActorDeath(RE::Actor*) override {
+		virtual void OnActorDeath(RE::Actor*) override
+		{
 			ProcessCanNotContinue();
 		}
-
-		virtual void OnActorHit(RE::Actor*, const RE::TESHitEvent&) override {
+	
+		virtual void OnActorHit(RE::Actor*, const RE::TESHitEvent& hit) override
+		{
+			//Bridge end scene on radiation hit fix object->As<RE::TESObjectARMO>() if (auto bObj = targetItem.object->As<RE::TESObjectARMO>(); bObj)
+			// Проверка sourceFormID на валидность
+			
+			if (hit.sourceFormID != 0) {
+				if (auto sourceForm = RE::TESForm::GetFormByID(hit.sourceFormID); sourceForm) {
+					if (auto spell = sourceForm->As<RE::SpellItem>(); spell) {
+						if (spell->HasKeyword(static_cast<RE::BGSKeyword*>(RE::TESForm::GetFormByID(0x4B25C))))
+							return;
+						for (auto& mgef : spell->listOfEffects) {
+							if (mgef->effectSetting->HasKeyword(static_cast<RE::BGSKeyword*>(RE::TESForm::GetFormByID(0x4B25C))))  //DamageTypeRadiation [KYWD:0004B25C]
+								return;
+						}
+					}
+				}
+			}
+			
 			if (!settings.ignoreCombat) {
 				ProcessCanNotContinue();
 			}
 		}
 
-		virtual void OnActorLocationChange(RE::Actor*, RE::BGSLocation* newLocation) override {
+		virtual void OnActorLocationChange(RE::Actor*, RE::BGSLocation* newLocation) override
+		{
 			auto refr = settings.locationRefr.get();
 			if (refr != nullptr && refr->parentCell != nullptr) {
 				auto loc = refr->parentCell->GetLocation();
@@ -384,18 +547,21 @@ namespace Scene
 			ProcessCanNotContinue();
 		}
 
-		void ProcessCanNotContinue() {
+		void ProcessCanNotContinue()
+		{
 			noUpdate = true;
 			F4SE::GetTaskInterface()->AddTask([uid = uid]() {
 				SceneManager::StopScene(uid);
 			});
 		}
 
-		virtual double QDuration() override {
+		virtual double QDuration() override
+		{
 			return settings.duration;
 		}
 
-		virtual void SetDuration(float dur) override {
+		virtual void SetDuration(float dur) override
+		{
 			if (settings.duration != dur)
 				settings.duration = dur;
 
@@ -410,7 +576,8 @@ namespace Scene
 			}
 		}
 
-		virtual float GetRemainingDuration() override {
+		virtual float GetRemainingDuration() override
+		{
 			return static_cast<float>(tasks.GetRemainingTime<DelegateFunctor<StopDelegate>>());
 		}
 
@@ -420,26 +587,31 @@ namespace Scene
 			SetSyncState(Synced);
 		}
 
-		virtual void ApplyMorphSet(const std::string& set) override {
+		virtual void ApplyMorphSet(const std::string& set) override
+		{
 			if (auto morphSet = Data::GetMorphSet(set); morphSet != nullptr) {
 				ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
 					morphSet->Apply(currentActor);
-				}, false);
+				},
+					false);
 			}
 		}
 
-		virtual void ApplyEquipmentSet(const std::string& set) override {
+		virtual void ApplyEquipmentSet(const std::string& set) override
+		{
 			OrderedActionQueue::InsertDelay(10);
 			if (auto equipSet = Data::GetEquipmentSet(set); equipSet != nullptr) {
 				ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
 					equipSet->Apply(currentActor);
-				}, false);
+				},
+					false);
 			}
 		}
 
-		void ClearAnimObjects() {
+		void ClearAnimObjects()
+		{
 			const auto t_intfc = F4SE::GetTaskInterface();
-			for(auto& p : actors) {
+			for (auto& p : actors) {
 				t_intfc->AddTask([hndl = p.first]() {
 					if (auto a = hndl.get(); a != nullptr) {
 						RE::BSAnimationGraphEvent evnt{ a.get(), "AnimObjUnequip", "" };
@@ -449,7 +621,8 @@ namespace Scene
 			}
 		}
 
-		virtual void TransitionToAnimation(std::shared_ptr<const Data::Animation> anim) {
+		virtual void TransitionToAnimation(std::shared_ptr<const Data::Animation> anim)
+		{
 			StopSmoothSync();
 			SetTrackAnimTime(false);
 			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
@@ -486,11 +659,27 @@ namespace Scene
 			Data::Events::Send(Data::Events::SCENE_ANIM_CHANGE, std::pair<uint64_t, std::string>{ uid, anim->id });
 		}
 
-		virtual void PlayAnimations() override {
+		virtual void PlayAnimations() override
+		{
 			cachedIdlesMap.clear();
 			ForEachActor([&](RE::Actor* a, ActorPropertyMap& props) {
 				auto hndl = a->GetActorHandle();
-				FaceAnimation::FaceUpdateHook::StopAnimation(hndl);
+				//FaceAnimation::FaceUpdateHook::StopAnimation(hndl);
+				// NAF Bridge: Only stop face animation if NOT managed by Action's mfgSet
+				bool hasMfgSetFromAction = false;
+				if (auto actions = GetProperty<Data::ActionSet>(props, kAction); actions.has_value()) {
+					for (auto& actionId : *actions) {
+						if (auto action = Data::GetAction(actionId); action != nullptr && action->mfgSet.has_value()) {
+							hasMfgSetFromAction = true;
+							break;
+						}
+					}
+				}
+
+				// Only stop face animation if not managed by Action
+				if (!hasMfgSetFromAction) {
+					FaceAnimation::FaceUpdateHook::StopAnimation(hndl);
+				}
 
 				if (auto idl = GetProperty<SerializableIdle>(props, kIdle); idl.has_value()) {
 					cachedIdlesMap[hndl].idle.SetIdleForm(idl.value());
@@ -516,12 +705,42 @@ namespace Scene
 			SetSyncState(SettingUp);
 		}
 
-		virtual bool SetPosition(const std::string& id) override {
+		virtual bool SetPosition(const std::string& id) override
+		{
 			auto targetPos = Data::GetPosition(id);
 
 			if (targetPos == nullptr) {
 				return false;
 			}
+
+			//NAFBridge offset
+			currentPosition = targetPos;
+
+			RE::NiPoint3 actorLoc = location;
+			size_t actor_count = 0;
+
+			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
+				//logger::info{ "pos : {}, {}, {}\t actor : {} SetPosition start",
+				//	currentActor->data.location.x, currentActor->data.location.y, currentActor->data.location.z, currentActor->GetDisplayFullName() };
+				if (currentPosition) {
+					auto& currentPositionOffset = currentPosition->offset;
+					if (currentPositionOffset.size() > 0 && currentPositionOffset[0].has_value()) {
+						size_t c = ((currentPositionOffset.size() > actor_count) && (currentPositionOffset[actor_count].has_value())) ? actor_count : 0;
+						auto os = currentPositionOffset[c];
+						MathUtil::ApplyOffsetToLocalSpace(actorLoc, os.value(), os.valueA());
+					}
+				}
+
+				if (!MathUtil::CoordsWithinError(currentActor->data.location, actorLoc)) {
+					currentActor->SetPosition(actorLoc, true);
+					currentActor->DisableCollision();
+					currentActor->SetNoCollision(true);
+				}
+				//logger::info{ "pos : {}, {}, {}\t actor :  {} SetPosition end",
+				//	currentActor->data.location.x, currentActor->data.location.y, currentActor->data.location.z, currentActor->GetDisplayFullName() };
+				++actor_count;
+			});
+			//NAFBridge end
 
 			QueueControlSystem(GetControlSystem(targetPos));
 
@@ -529,7 +748,8 @@ namespace Scene
 			return true;
 		}
 
-		virtual void SetOffset(const RE::NiPoint3& a_location, RE::NiPoint3 a_angle, bool angleIsDegrees = false) {
+		virtual void SetOffset(const RE::NiPoint3& a_location, RE::NiPoint3 a_angle, bool angleIsDegrees = false)
+		{
 			if (angleIsDegrees) {
 				a_angle = MathUtil::DegreesToRadians(a_angle);
 			}
@@ -545,7 +765,8 @@ namespace Scene
 			MathUtil::ConstrainRadians(angle);
 		}
 
-		virtual void SetAnimMult(float mult) override {
+		virtual void SetAnimMult(float mult) override
+		{
 			animMult = mult;
 			diffLimit = animMult * 0.05f;
 			basicallyFullSpeed = animMult * 0.9999f;
@@ -555,14 +776,16 @@ namespace Scene
 			Data::Events::Send(Data::Events::SCENE_SPEED_CHANGE, std::pair<uint64_t, float>{ uid, mult });
 		}
 
-		virtual void SetSyncState(SyncState s) override {
+		virtual void SetSyncState(SyncState s) override
+		{
 			if (syncStatus != s) {
 				syncStatus = s;
 				Data::Events::Send(Data::Events::SCENE_SYNC_STATUS_CHANGE, std::pair<uint64_t, SyncState>{ uid, s });
 			}
 		}
 
-		void SetTrackAnimTime(bool track) {
+		void SetTrackAnimTime(bool track)
+		{
 			if (track != trackAnimTime) {
 				trackAnimTime = track;
 				animTime = 0.0f;
@@ -570,19 +793,33 @@ namespace Scene
 			}
 		}
 
-		void PerformSync() {
+		void PerformSync()
+		{
 			bool noActorsReady = true;
 			bool allActorsReady = true;
-			float minTime = 0.0f;
+			float minTime = std::numeric_limits<float>::infinity();
 			size_t i = 0;
+			size_t readyCount = 0;
+			std::optional<bool> playerReady = std::nullopt;
+
+			// NAF Bridge fix for player sync issue
+			// In some kind of reason player can be not ready while other actors are ready.
+			// Despite this, the player still participates correctly in the scene. Therefore, we use this workaround.
+			// Fill syncInfoVec entries only for actors that returned valid times
 			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
 				if (BodyAnimation::SmartIdle::GetGraphTime(currentActor, cachedSyncInfo) &&
 					cachedSyncInfo.current >= 0.0f) {
-
-					if (currentActor == player && cachedSyncInfo.current <= playerSyncOffset) {
-						allActorsReady = false;
+					if (currentActor == player) {
+						if (cachedSyncInfo.current <= playerSyncOffset) {
+							// Player reported time but it's below the sync offset threshold -> treat as not ready
+							playerReady = false;
+							allActorsReady = false;
+							return;
+						}
+						playerReady = true;
 					}
 
+					// Accept this actor's timing
 					auto& ele = syncInfoVec[i];
 					ele.actor.reset(currentActor);
 					ele.currentAnimTime = cachedSyncInfo.current + ((currentActor == player) * playerSyncOffset);
@@ -590,17 +827,31 @@ namespace Scene
 
 					//If this is the first actor, set minTime to its anim time to kick off the process.
 					//Use arithmetic here instead of a conditional to avoid an unneccesary branch.
-					minTime += ele.currentAnimTime * noActorsReady;
+					
+					// minTime += ele.currentAnimTime * noActorsReady; //Bridge removed
 					noActorsReady = false;
 					minTime = std::min(minTime, ele.currentAnimTime);
-					i++;
+					++i;
+					++readyCount;
 				} else {
+					// Mark actor (and possibly player) as not ready
 					allActorsReady = false;
+					if (currentActor == player) {
+						playerReady = false;
+					}
 				}
 			});
 
-			if (minTime > 0 && allActorsReady) {
-				for (auto& info : syncInfoVec) {
+			// If only the player is not ready, consider all actors ready
+			if (playerReady.has_value() && playerReady.value() == false && actors.size() - readyCount == 1) {
+				allActorsReady = true;
+				//Force sync even if only player
+				readyCount += 1;
+			}
+
+			if (minTime > 0 && allActorsReady && readyCount > 0) {
+				for (size_t idx = 0; idx < i; ++idx) {
+					auto& info = syncInfoVec[idx];
 					if (minTime < info.totalAnimTime) {
 						BodyAnimation::SmartIdle::SetGraphTime(info.actor.get(), minTime - ((info.actor.get() == player) * playerSyncOffset));
 					}
@@ -664,7 +915,13 @@ namespace Scene
 			}
 
 			if (trackAnimTime) {
+				// NAF Bridge fix for player sync issue
+				// In some kind of reason player can be not ready while other actors are ready.
+				// Despite this, the player still participates correctly in the scene. Therefore, we use this workaround.
 				auto trackingActor = actors.begin()->first.get();
+				if (trackingActor.get() == RE::PlayerCharacter::GetSingleton() && actors.size() > 1) {
+					trackingActor = (++actors.begin())->first.get();
+				}
 				if (trackingActor != nullptr &&
 					BodyAnimation::SmartIdle::GetGraphTime(trackingActor.get(), cachedSyncInfo) &&
 					cachedSyncInfo.current >= 0.0f) {
@@ -677,12 +934,28 @@ namespace Scene
 				}
 			}
 
+			fannyAnim.Update(0.32f);  //0.16f ~ 60 FPS
+
+			size_t actor_count = 0; //NAFBridge offset
 			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap& props) {
 				if (currentActor == player) {
 					player->UpdatePlayer3D();
 				}
 				RE::NiPoint3 actorLoc = location;
 				RE::NiPoint3 actorAngle = angle;
+				//NAFBridge offset
+				//logger::info{ "pos : {}, {}, {}\t actor : {} Update start",
+				//	currentActor->data.location.x, currentActor->data.location.y, currentActor->data.location.z, currentActor->GetDisplayFullName() };
+				if (currentPosition) {
+					auto& currentPositionOffset = currentPosition->offset;
+					if (currentPositionOffset.size() > 0 && currentPositionOffset[0].has_value()) {
+						size_t c = ((currentPositionOffset.size() > actor_count) && currentPositionOffset[actor_count].has_value()) ? actor_count : 0;
+						auto os = currentPositionOffset[c];
+						MathUtil::ApplyOffsetToLocalSpace(actorLoc, os.value(), os.valueA());
+					}
+				}
+				++actor_count;
+				//NAFBridge end
 				if (auto offset = GetProperty<std::pair<RE::NiPoint3, float>>(props, kOffset); offset.has_value()) {
 					MathUtil::ApplyOffsetToLocalSpace(actorLoc, offset->first, actorAngle.z);
 					actorAngle.z += offset->second;
@@ -691,11 +964,14 @@ namespace Scene
 				if (!MathUtil::CoordsWithinError(currentActor->data.angle, actorAngle)) {
 					currentActor->SetAngleOnReference(actorAngle);
 				}
+
 				if (!MathUtil::CoordsWithinError(currentActor->data.location, actorLoc)) {
 					currentActor->SetPosition(actorLoc, true);
 					currentActor->DisableCollision();
 					currentActor->SetNoCollision(true);
 				}
+				//logger::info{ "pos : {}, {}, {}\t actor : {} Update end",
+				//	currentActor->data.location.x, currentActor->data.location.y, currentActor->data.location.z, currentActor->GetDisplayFullName() };
 			});
 		}
 
@@ -709,7 +985,40 @@ namespace Scene
 				syncInfoVec.resize(actors.size());
 			}
 		}
+
+		virtual void Update3dPos() //NAF Bridge offset
+		{
+			//NAFBridge offset
+			RE::NiPoint3 actorLoc = location;
+			size_t actor_count = 0;
+
+			ForEachActor([&](RE::Actor* currentActor, ActorPropertyMap&) {
+				//logger::info{ "pos : {}, {}, {}\t actor : {} SetPosition start",
+				//	currentActor->data.location.x, currentActor->data.location.y, currentActor->data.location.z, currentActor->GetDisplayFullName() };
+				if (currentPosition) {
+					auto& currentPositionOffset = currentPosition->offset;
+					if (currentPositionOffset.size() > 0 && currentPositionOffset[0].has_value()) {
+						size_t c = ((currentPositionOffset.size() > actor_count) && (currentPositionOffset[actor_count].has_value())) ? actor_count : 0;
+						auto os = currentPositionOffset[c];
+						MathUtil::ApplyOffsetToLocalSpace(actorLoc, os.value(), os.valueA());
+					}
+				}
+
+				if (!MathUtil::CoordsWithinError(currentActor->data.location, actorLoc)) {
+					currentActor->SetPosition(actorLoc, true);
+					currentActor->DisableCollision();
+					currentActor->SetNoCollision(true);
+				}
+				//logger::info{ "pos : {}, {}, {}\t actor :  {} SetPosition end",
+				//	currentActor->data.location.x, currentActor->data.location.y, currentActor->data.location.z, currentActor->GetDisplayFullName() };
+				++actor_count;
+			});
+			//NAFBridge end
+		}
+		//NAFBridge
 	};
+
+	extern RE::BSScript::IVirtualMachine* g_VM;
 
 	StartResult SceneManager::StartScene(const SceneSettings& settings, uint64_t& sceneIdInOut, bool overrideId, bool ignoreInScene)
 	{
@@ -721,14 +1030,22 @@ namespace Scene
 			Data::Events::Send(Data::Events::SCENE_FAILED, overrideId ? sceneIdInOut : 0ui64);
 			return res;
 		}
-			
 
 		std::shared_ptr<IScene> newScene = std::make_shared<Scene>();
 		newScene->location = locationRef->data.location;
 		newScene->angle = locationRef->data.angle;
 		newScene->settings = settings;
 		newScene->settings.ClearPreStartInfo();
-
+		//NAF Bridge offset
+		newScene->currentPosition = position;
+		if (newScene->currentPosition.get()->posType == newScene->currentPosition.get()->kPositionTree)
+		{
+			auto node = Data::GetPositionTree(newScene->currentPosition.get()->idForType);
+			if (node) {
+				newScene->currentPosition = Data::GetPosition(node->tree->position);
+			}
+		}
+		//NAF Bridge offset
 		for (size_t i = 0; i < actors.size(); i++) {
 			newScene->actors.insert({ actors[i]->GetActorHandle(), { { kOrder, ActorProperty{ i } } } });
 		}
@@ -742,6 +1059,23 @@ namespace Scene
 		newScene->Init(position);
 
 		for (auto& a : actors) {
+			if (!a)
+				continue;
+
+			if (a.get() == player) {
+				if (static_cast<size_t>(RE::PlayerCamera::GetSingleton()->currentState->id.get()) != RE::CameraState::k3rdPerson) {
+					RE::PlayerCamera::GetSingleton()->ForceVATSMode();
+					RE::PlayerCamera::GetSingleton()->Force3rdPerson();
+				}
+				player->DisableCollision();
+				/*if (!(RE::PlayerCamera::GetSingleton()->currentState.get()->STATE & RE::CameraState::kFree)) {
+					RE::PlayerCamera::GetSingleton()->ToggleFreeCameraMode(false);
+				}*/
+			}
+			//NAFBridge end
+			//NAF Bridge scale fix : save initial scale by FormID
+			newScene->settings.initialScales[a->formID] = a->GetScale();
+			//NAF Bridge scale fix end
 			if (a->parentCell != locationRef->parentCell)
 				a->WarpToRef(locationRef.get());
 		}

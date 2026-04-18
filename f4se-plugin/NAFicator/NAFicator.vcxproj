@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{d68f6d2c-3bd4-468a-b76e-9104b8b85916}</ProjectGuid>
+    <RootNamespace>NAFicator</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>E:\Games\Fallout 4\MO2\mods\BASE 134. NAFicator\F4SE\Plugins</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(BOOST);C:/cpp/Native-Animation-Framework/f4se-plugin/build/vcpkg_installed/x64-windows-static-md/include/libzippp;C:\cpp\Native-Animation-Framework\f4se-plugin\build\vcpkg_installed\x64-windows-static-md\include;C:\cpp\Native-Animation-Framework\f4se-plugin\build\extern\ik\ik\include\public;C:\cpp\Native-Animation-Framework\f4se-plugin\extern\ik\ik\include\public;C:\cpp\Native-Animation-Framework\f4se-plugin\extern\CommonLibF4\CommonLibF4\include;C:\cpp\Native-Animation-Framework\f4se-plugin\src;C:\cpp\Native-Animation-Framework\f4se-plugin\build\include;C:\cpp\Native-Animation-Framework\f4se-plugin\extern;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>/wd"4324" /wd"4102" /wd"4305" /wd"4201" /wd"4309" /wd"4200" /wd"4068" /wd"4267" /wd"4244" /wd"4101" /wd"4459" /wd"4100" %(AdditionalOptions)</AdditionalOptions>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\build\CommonLibF4\Release\CommonLibF4.lib;..\build\vcpkg_installed\x64-windows-static-md\lib\spdlog.lib;..\build\extern\ik\ik\Release\ik.lib;..\build\vcpkg_installed\x64-windows-static-md\lib\libzippp_static.lib;..\build\vcpkg_installed\x64-windows-static-md\lib\mmio.lib;..\build\vcpkg_installed\x64-windows-static-md\lib\fmt.lib;..\build\vcpkg_installed\x64-windows-static-md\lib\zip.lib;..\build\vcpkg_installed\x64-windows-static-md\lib\bz2.lib;bcrypt.lib;..\build\vcpkg_installed\x64-windows-static-md\lib\zlib.lib;advapi32.lib;kernel32.lib;user32.lib;version.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+      <AdditionalLibraryDirectories>$(BOOSTLIBS);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\extern\IniParser\Ini.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Form\Form.cpp" />
+    <ClCompile Include="..\extern\NAFicator\NAFicate.cpp" />
+    <ClCompile Include="..\extern\NAFicator\NAFicator_main.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\Action.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\Animation.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\AnimationGroup.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\ConditionSet.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\EquipmentSet.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\Furniture.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\MfgSet.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\MorphSet.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\objects_map.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\Overlay.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\ParsedObject.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\Position.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\PositionTree.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\ProtectedEquipment.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\Race.cpp" />
+    <ClCompile Include="..\extern\NAFicator\Objects\Tag.cpp" />
+    <ClCompile Include="..\extern\NAFicator\ThreadPool\ThreadPool.cpp" />
+    <ClCompile Include="..\extern\NAFicator\XML\XMLFile.cpp" />
+    <ClCompile Include="..\extern\pugixml\src\pugixml.cpp" />
+    <ClCompile Include="..\extern\utils\utility.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\extern\IniParser\Ini.h" />
+    <ClInclude Include="..\extern\NAFicator\Form\Form.h" />
+    <ClInclude Include="..\extern\NAFicator\NAFicate.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\Action.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\Animation.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\AnimationGroup.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\ConditionSet.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\EquipmentSet.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\Furniture.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\MfgSet.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\MorphSet.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\ObjectsHeader.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\objects_map.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\OffsetParser.hpp" />
+    <ClInclude Include="..\extern\NAFicator\Objects\Overlay.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\ParsedObject.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\Position.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\PositionTree.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\ProtectedEquipment.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\Race.h" />
+    <ClInclude Include="..\extern\NAFicator\Objects\Tag.h" />
+    <ClInclude Include="..\extern\NAFicator\ThreadPool\Queue\Queue.hpp" />
+    <ClInclude Include="..\extern\NAFicator\ThreadPool\ThreadPool.h" />
+    <ClInclude Include="..\extern\NAFicator\Version.h" />
+    <ClInclude Include="..\extern\NAFicator\XML\utils.h" />
+    <ClInclude Include="..\extern\NAFicator\XML\XMLFile.h" />
+    <ClInclude Include="..\extern\pugixml\src\pugiconfig.hpp" />
+    <ClInclude Include="..\extern\pugixml\src\pugixml.hpp" />
+    <ClInclude Include="..\extern\utils\utility.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

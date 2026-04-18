@@ -56,6 +56,7 @@ namespace Tasks
 
 		bool HookedGameLoop(void* qintfc, float unk01, uint32_t unk02) {
 			bool res = OriginalProcessQueues(qintfc, unk01, unk02);
+
 			Scene::SceneManager::UpdateScenes();
 			Scene::OrderedActionQueue::Update();
 
@@ -64,6 +65,7 @@ namespace Tasks
 				if (!MathUtil::CoordsWithinError(info.actor->data.angle, info.angle)) {
 					info.actor->SetAngleOnReference(info.angle);
 				}
+
 				if (!MathUtil::CoordsWithinError(info.actor->data.location, info.location)) {
 					info.actor->SetPosition(info.location, true);
 					info.actor->DisableCollision();

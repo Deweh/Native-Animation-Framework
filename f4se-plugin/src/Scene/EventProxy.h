@@ -15,7 +15,7 @@ namespace Scene
 				if (auto a = refr->As<RE::Actor>(); a) {
 					auto hndl = a->GetActorHandle();
 					SceneManager::VisitAllScenes([&](IScene* scn) {
-						if (scn->actors.contains(hndl)) {
+						if (scn && scn->actors.contains(hndl)) {
 							func(scn, a);
 						}
 					});
@@ -26,7 +26,8 @@ namespace Scene
 		virtual RE::BSEventNotifyControl ProcessEvent(const RE::TESHitEvent& a_event, RE::BSTEventSource<RE::TESHitEvent>*) override
 		{
 			VisitAllScenesWithRef(a_event.victim, [&](IScene* scn, RE::Actor* a) {
-				scn->OnActorHit(a, a_event);
+				if (scn)
+					scn->OnActorHit(a, a_event);
 			});
 			return RE::BSEventNotifyControl::kContinue;
 		}
@@ -34,7 +35,8 @@ namespace Scene
 		virtual RE::BSEventNotifyControl ProcessEvent(const RE::TESDeathEvent& a_event, RE::BSTEventSource<RE::TESDeathEvent>*) override
 		{
 			VisitAllScenesWithRef(a_event.actorDying.get(), [&](IScene* scn, RE::Actor* a) {
-				scn->OnActorDeath(a);
+				if (scn)
+					scn->OnActorDeath(a);
 			});
 			return RE::BSEventNotifyControl::kContinue;
 		}
@@ -42,7 +44,8 @@ namespace Scene
 		virtual RE::BSEventNotifyControl ProcessEvent(const RE::TESActorLocationChangeEvent& a_event, RE::BSTEventSource<RE::TESActorLocationChangeEvent>*) override
 		{
 			VisitAllScenesWithRef(a_event.refr.get(), [&](IScene* scn, RE::Actor* a) {
-				scn->OnActorLocationChange(a, a_event.newLocation);
+				if (scn)
+					scn->OnActorLocationChange(a, a_event.newLocation);
 			});
 			return RE::BSEventNotifyControl::kContinue;
 		}

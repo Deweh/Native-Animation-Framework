@@ -34,6 +34,8 @@ namespace Data
 			HUD_Q_KEY_UP,
 			HUD_E_KEY_DOWN,
 			HUD_E_KEY_UP,
+			HUD_SPACE_KEY_DOWN,
+			HUD_SPACE_KEY_UP,
 			SETTINGS_CHANGED
 		};
 

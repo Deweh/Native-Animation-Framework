@@ -1,6 +1,7 @@
 # Native Animation Framework
 
 A multi-character animation framework for Fallout 4.
+It is just a fork for blescent original [Deweh/Native-Animation-Framework](https://github.com/Deweh/Native-Animation-Framework)
 
 ## Features
 

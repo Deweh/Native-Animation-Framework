@@ -1,0 +1,9 @@
+﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(524,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+  The vcpkg manifest was disabled, but we found a manifest file in C:\cpp\Native-Animation-Framework\f4se-plugin\. You may want to enable vcpkg manifests in your properties page or pass /p:VcpkgEnableManifest=true to the msbuild invocation.
+     Creating library E:\Games\Fallout 4\MO2\mods\BASE 134. NAFicator\F4SE\Plugins\NAFicator.lib and object E:\Games\Fallout 4\MO2\mods\BASE 134. NAFicator\F4SE\Plugins\NAFicator.exp
+  Generating code
+  1 of 12771 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    10 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  NAFicator.vcxproj -> E:\Games\Fallout 4\MO2\mods\BASE 134. NAFicator\F4SE\Plugins\NAFicator.dll

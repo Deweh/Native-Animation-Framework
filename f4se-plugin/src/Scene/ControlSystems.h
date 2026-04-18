@@ -1,8 +1,12 @@
 #pragma once
 #include "Menu/NAFHUDMenu/SceneHUD.h"
+#include "Scene/SceneManager.h"  //NAF Bridge
 
 namespace Scene
 {
+	// Maximum duration for looped animations in PositionTree with autoAdvance enabled
+	inline static const float TREE_SCENE_LOOP_TIMING = 15.0f;
+
 	class BaseControlSystem : public IControlSystem
 	{
 	public:
@@ -22,11 +26,13 @@ namespace Scene
 
 		virtual std::string_view QTypeName() { return "Animation"; }
 
-		virtual std::string QSystemID() override {
+		virtual std::string QSystemID() override
+		{
 			return id;
 		}
 
-		virtual std::string QAnimationID() override {
+		virtual std::string QAnimationID() override
+		{
 			if (currentAnim != nullptr) {
 				return currentAnim->id;
 			} else {
@@ -39,24 +45,27 @@ namespace Scene
 			scn->ReportSystemCompletion();
 		}
 
-		virtual void SetInfo(Data::Position::ControlSystemInfo* info) override {
+		virtual void SetInfo(Data::Position::ControlSystemInfo* info) override
+		{
 			id = info->id;
 			currentAnim = info->anim;
 			startMorphSet = info->startMorphSet;
 			stopMorphSet = info->stopMorphSet;
 		}
 
-		virtual void OnBegin(IControllable* scn, std::string_view) override {
+		virtual void OnBegin(IControllable* scn, std::string_view) override
+		{
 			scn->ApplyMorphSet(startMorphSet);
 			scn->TransitionToAnimation(currentAnim);
 			state.set(StateFlag::kStarted);
-			
+
 			if (state.any(StateFlag::kEndQueued)) {
 				OnEnd(scn, queuedNextId);
 			}
 		}
 
-		virtual void OnEnd(IControllable* scn, std::string_view nextId) override {
+		virtual void OnEnd(IControllable* scn, std::string_view nextId) override
+		{
 			state.set(StateFlag::kEndQueued);
 
 			if (!state.any(StateFlag::kStarted)) {
@@ -86,6 +95,7 @@ namespace Scene
 		size_t currentStage = 0;
 		uint32_t loopsRemaining = 1;
 		std::vector<std::pair<uint32_t, size_t>> weights;
+		bool sequenceCompleted = false;  // Track if we've completed all stages in sequential mode
 
 		virtual std::string_view QTypeName() { return "AnimationGroup"; }
 
@@ -96,6 +106,7 @@ namespace Scene
 				auto groupInfo = static_cast<Data::Position::AnimationGroupInfo*>(info);
 				group = groupInfo->group;
 
+				//NAF Bridge ctd
 				if (!group->sequential) {
 					for (size_t i = 0; i < group->stages.size(); i++) {
 						weights.push_back({ group->stages[i].weight, i });
@@ -110,13 +121,15 @@ namespace Scene
 			BaseControlSystem::OnBegin(scn, lastId);
 		}
 
-		void SetLoopInfo(const Data::AnimationGroup::Stage& s) {
+		void SetLoopInfo(const Data::AnimationGroup::Stage& s)
+		{
 			loopsRemaining = Utility::RandomNumber(s.loopMin, s.loopMax);
 			if (loopsRemaining < 1)
 				loopsRemaining = 1;
 		}
 
-		void TransitionToStage(IControllable* scn, size_t index) {
+		void TransitionToStage(IControllable* scn, size_t index)
+		{
 			currentStage = index;
 			const Data::AnimationGroup::Stage& targetStage = group->stages[currentStage];
 			SetLoopInfo(targetStage);
@@ -133,8 +146,18 @@ namespace Scene
 					if ((currentStage + 1) < group->stages.size()) {
 						TransitionToStage(scn, currentStage + 1);
 					} else {
-						TransitionToStage(scn, 0);
-						scn->ReportSystemCompletion();
+						// All stages completed in sequential mode
+						// If scene has infinite duration (started from HUD), loop back to first stage
+						// Otherwise end the scene
+						if (scn->QDuration() < 0) {
+							// Infinite duration scene - restart from first stage
+							TransitionToStage(scn, 0);
+							scn->ReportSystemCompletion();
+						} else {
+							// Finite duration scene - end normally
+							sequenceCompleted = true;
+							scn->SoftEnd();
+						}
 					}
 				} else {
 					TransitionToStage(scn, Utility::SelectWeightedRandom(weights));
@@ -235,8 +258,10 @@ namespace Scene
 				return true;
 			} else {
 				CheckParentPointer();
-				if (parent != nullptr)
+				if (parent != nullptr) {
 					return parent->PushQueuedControlSystem();
+				}
+
 				return false;
 			}
 		}
@@ -248,7 +273,8 @@ namespace Scene
 				parent->TransitionToAnimation(anim);
 		}
 
-		virtual void SoftEnd() override {
+		virtual void SoftEnd() override
+		{
 			CheckParentPointer();
 			if (parent != nullptr)
 				parent->SoftEnd();
@@ -275,7 +301,8 @@ namespace Scene
 				parent->StopTimer(a_id);
 		}
 
-		virtual void ReportSystemCompletion() override {
+		virtual void ReportSystemCompletion() override
+		{
 			nodeState.set(TreeNodeState::SubSystemCompleted);
 			Advance(false, true);
 		}
@@ -323,7 +350,50 @@ namespace Scene
 				auto treeInfo = static_cast<Data::Position::PositionTreeInfo*>(info);
 				tree = treeInfo->tree;
 				currentNode = tree->tree;
+				//NAF Bridge offset
+#pragma warning(push)
+#pragma warning(disable: 4457)
+				{
+					std::shared_ptr<IScene> scn;
+					if (SceneManager::GetScene(parentId, scn)) {
+						if (scn && currentNode) {
+							scn->currentPosition = Data::GetPosition(currentNode->position);
+						}
+					}
+					if (scn)
+						scn->Update3dPos();
+				}
+#pragma warning(pop)
+				//NAF Bridge end
 			}
+		}
+
+		// Check if we're at the last node of the trunk (no children)
+		bool IsAtTreeEnd() const
+		{
+			return currentNode && currentNode->children.empty();
+		}
+
+		// Check if the current animation is a looping type (needs special handling in autoAdvance)
+		bool IsCurrentAnimationLooping() const
+		{
+			if (!currentNode)
+				return false;
+
+			auto pos = Data::GetPosition(currentNode->position);
+			if (!pos)
+				return false;
+
+			// AnimationGroup in sequential mode ends naturally, non-sequential loops
+			// Simple animations loop indefinitely
+			// PositionTree shouldn't be nested (excluded)
+			if (pos->posType == Data::Position::kAnimationGroup) {
+				auto group = Data::GetAnimationGroup(pos->idForType);
+				return group && !group->sequential;
+			}
+
+			// Regular animations are considered looping
+			return pos->posType == Data::Position::kAnimation;
 		}
 
 		virtual void OnBegin(IControllable* scn, std::string_view lastId) override
@@ -332,8 +402,10 @@ namespace Scene
 			CheckParentPointer();
 
 			if (scn->HasPlayer()) {
-				hudActive = true;
 				autoAdvance = scn->QAutoAdvance();
+				if (autoAdvance == false) {
+					hudActive = true;
+				}
 			} else {
 				autoAdvance = true;
 			}
@@ -350,7 +422,9 @@ namespace Scene
 				RegisterListener(Data::Events::HUD_LEFT_KEY_DOWN, &PositionTreeControlSystem::OnHudKey);
 				RegisterListener(Data::Events::HUD_RIGHT_KEY_DOWN, &PositionTreeControlSystem::OnHudKey);
 				UpdateHUDState();
-			}	
+			}
+
+			autoAdvance = scn->QAutoAdvance();
 		}
 
 		virtual void OnAnimationLoop(IControllable*) override
@@ -401,9 +475,10 @@ namespace Scene
 			}
 		}
 
-		void Advance(bool noChange = false, bool checkConditions = false) {
+		void Advance(bool noChange = false, bool checkConditions = false)
+		{
 			if (checkConditions && (!currentNode || !autoAdvance || !nodeState.any(TreeNodeState::TimerCompleted) ||
-				(currentNode->forceComplete && !nodeState.any(TreeNodeState::SubSystemCompleted)))) {
+									   (currentNode->forceComplete && !nodeState.any(TreeNodeState::SubSystemCompleted)))) {
 				return;
 			}
 
@@ -417,6 +492,7 @@ namespace Scene
 					}
 					SwitchToNode(nextNode);
 				} else {
+					// At tree end - end the scene
 					SoftEnd();
 					return;
 				}
@@ -425,12 +501,13 @@ namespace Scene
 			CheckParentPointer();
 			double timerDur = Data::Settings::Values.iDefaultSceneDuration;
 
-			if (currentNode->duration > 0.5f) {
+			// For autoAdvance mode, use TREE_SCENE_LOOP_TIMING for looping animations
+			if (autoAdvance && IsCurrentAnimationLooping()) {
+				timerDur = TREE_SCENE_LOOP_TIMING;
+			} else if (currentNode->duration > 0.5f) {
 				timerDur = currentNode->duration;
-			} else if (parent != nullptr && parent->QDuration() > 0.5) {
-				timerDur = parent->QDuration();
 			}
-
+			// Note: We ignore parent->QDuration() for PositionTree - it should manage its own timing
 
 			StartTimer(100, timerDur * 1000);
 
@@ -476,7 +553,8 @@ namespace Scene
 			RE::UIUtils::PlayMenuSound("UIMenuCancel");
 		}
 
-		virtual void Notify(const std::any& info) override {
+		virtual void Notify(const std::any& info) override
+		{
 			if (autoAdvance) {
 				PlayCancelSound();
 				return;
@@ -484,7 +562,7 @@ namespace Scene
 			using Data::Events;
 			if (const Events::event_type* e = std::any_cast<Events::event_type>(&info); e) {
 				switch (*e) {
-					case Events::HUD_DOWN_KEY_DOWN:
+				case Events::HUD_DOWN_KEY_DOWN:
 					{
 						if (currentNode->children.size() > 1) {
 							if (!(++nextIndex < currentNode->children.size())) {
@@ -497,10 +575,10 @@ namespace Scene
 						}
 						break;
 					}
-					case Events::HUD_UP_KEY_DOWN:
+				case Events::HUD_UP_KEY_DOWN:
 					{
 						if (currentNode->children.size() > 1) {
-							if (!(nextIndex --> 0)) {
+							if (!(nextIndex-- > 0)) {
 								nextIndex = (currentNode->children.size() - 1);
 							}
 							UpdateHUDState();
@@ -510,7 +588,7 @@ namespace Scene
 						}
 						break;
 					}
-					case Events::HUD_LEFT_KEY_DOWN:
+				case Events::HUD_LEFT_KEY_DOWN:
 					{
 						auto c = currentNode;
 						auto p = currentNode->parent.lock();
@@ -528,12 +606,21 @@ namespace Scene
 						}
 						break;
 					}
-					case Events::HUD_RIGHT_KEY_DOWN:
+				case Events::HUD_RIGHT_KEY_DOWN:
 					{
 						if (currentNode->children.size() > 0 && SwitchToNode(currentNode->children[nextIndex])) {
 							UpdateHUDState();
 							PlayOKSound();
 						} else {
+							// At the end of the tree - end the scene
+							if (IsAtTreeEnd()) {
+								// Wait for current animation to complete before ending
+								nodeState.set(TreeNodeState::TimerCompleted);
+								if (nodeState.any(TreeNodeState::SubSystemCompleted)) {
+									SoftEnd();
+								}
+								// If SubSystemCompleted is not set, it will end when the animation completes
+							}
 							PlayCancelSound();
 						}
 						break;

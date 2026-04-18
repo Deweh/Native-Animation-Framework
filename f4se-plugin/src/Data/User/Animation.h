@@ -8,6 +8,7 @@ namespace Data
 	public:
 		struct Slot
 		{
+			//Bridge offset
 			template <typename T>
 			struct integrated_optional
 			{
@@ -42,10 +43,11 @@ namespace Data
 					ar(hasVal, val);
 				}
 			private:
-				bool hasVal;
+				bool hasVal = false;
 				T val;
 			};
-			
+			//Bridge offset end
+
 			ActorGender gender;
 			bool behaviorRequiresConvert = false;
 			bool idleRequiresConvert = false;
@@ -258,12 +260,13 @@ namespace Data
 					s.idle[0] = tmp;
 					s.idle[1] = "default";
 				} else {
-					m.GetOptNode(&tmp, XMLUtil::Mapper::emptyStr, "idle", true, true, "Animation actor node has no idle source!", "idleSource", "source");
+					//NAFBridge empty idles patch
+					m.GetOptNode(&tmp, XMLUtil::Mapper::emptyStr, "idle", true, false, "Animation actor node has no idle source! Probably it is stop idle, then it is okay!", "idleSource", "source");
 					s.idle[0] = tmp;
-					m.GetOptNode(&tmp, XMLUtil::Mapper::emptyStr, "idle", true, true, "Animation actor node has no idle form!", "idleForm", "idle", "form");
+					m.GetOptNode(&tmp, XMLUtil::Mapper::emptyStr, "idle", true, false, "Animation actor node has no idle form! Probably it is stop idle, then it is okay!", "idleForm", "idle", "form");
 					s.idle[1] = tmp;
 				}
-				
+
 				m(&s.rootBehavior, "Human"s, true, false, "", "skeleton");
 				m(&s.gender, Any, true, false, "", "gender");
 				s.faceAnim.set_has_value(m(&s.faceAnim.value(), XMLUtil::Mapper::emptyStr, true, false, "", "faceAnim"));
@@ -286,6 +289,26 @@ namespace Data
 
 					return m;
 				}, "morph", "", false);
+
+				// support <value path="morph" value="morphId" to="..."/> nodes
+				m.GetArray([&](XMLUtil::Mapper& m) {
+					std::string pathAttr;
+					// read path attribute; if missing, default will be empty and we ignore the node
+					m(&pathAttr, XMLUtil::Mapper::emptyStr, true, false, "", "path");
+
+					if (pathAttr == "morph") {
+						auto& p = actorMorphs.emplace_back();
+						// 'value' attribute holds the morph id/name in this node form
+						m(&p.name, XMLUtil::Mapper::emptyStr, true, true, "value node with path='morph' has no 'value' attribute!", "value");
+						m(&p.value, 0.0f, false, true, "value node with path='morph' has no 'to' attribute!", "to");
+
+						if (m)
+							hasMorphs = true;
+					}
+
+					return m;
+				},
+					"value", "", false);
 
 				s.morphs.set_has_value(hasMorphs);
 

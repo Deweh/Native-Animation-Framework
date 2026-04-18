@@ -1,8 +1,18 @@
 #pragma once
+#include "Bridge/Consts.h"
 #include <ppl.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_unordered_set.h>
 #include "Misc/Strings.h"
+#include "Bridge/Bridge.h"
+
+int PRINT_LOG = 1;
+
+namespace patches
+{
+	void PatchFerralHeads();
+	void PatchProtectedKeywords();
+}
 
 namespace Data
 {
@@ -18,6 +28,10 @@ namespace Data
 	class PositionTree;
 	class Race;
 	class GraphInfo;
+	//NAF Bridge;
+	class Overlay;
+	class MfgSet;
+	class ProtectedKeyword;
 
 	std::shared_ptr<const Animation> GetAnimation(const std::string&);
 	std::shared_ptr<const Position> GetPosition(const std::string&);
@@ -31,6 +45,8 @@ namespace Data
 	std::shared_ptr<const Race> GetRaceFromGraph(const std::string&);
 	std::shared_ptr<const Race> GetRace(RE::Actor*);
 	std::shared_ptr<const GraphInfo> GetGraphInfo(const std::string&, RE::Actor* actorBase = nullptr);
+	//NAF Bridge;
+	std::shared_ptr<const Overlay> GetOverlay(const std::string&);
 }
 
 #include <Windows.h>
@@ -62,6 +78,16 @@ namespace Data
 #include <shared_mutex>
 #include "BodyAnimation/NodeAnimationData.h"
 #include "BodyAnimation/NANIM.h"
+//NAF Bridge
+#include "Bridge/NewData/MfgSet.h"
+#include "Bridge/NewData/Overlay.h"
+#include "Bridge/NewData/ProtectedEquipment.h"
+//#include "FaceAnimation/Animation.h"
+//#include "FaceAnimation/AnimationData.h"
+//#include "FaceAnimation/FaceUpdateHook.h"
+//#include "Bridge/NewData/Topic.h"
+
+bool cache_updated = false; //NAF Bridge
 
 namespace Data
 {
@@ -76,11 +102,46 @@ namespace Data
 		public:
 			using super = concurrency::concurrent_unordered_map<std::string, std::pair<RE::BSSpinLock, std::shared_ptr<T>>, CaseInsensitiveStringHash, CaseInsensitiveStringEqual>;
 
-			void priority_insert(std::shared_ptr<T> ele) {
+			/*void priority_insert(std::shared_ptr<T> ele) {
 				auto& target = super::operator[](ele->id);
 				RE::BSAutoLock l{ target.first };
 				if (target.second == nullptr || target.second->loadPriority < ele->loadPriority) {
 					target.second = ele;
+				}
+			}*/
+
+			template <typename U = T>
+			typename std::enable_if<!std::is_same<U, Data::Furniture>::value>::type
+				priority_insert(std::shared_ptr<U> ele)
+			{
+				auto& target = super::operator[](ele->id);
+				auto l{ target.first };
+				if (target.second == nullptr || target.second->loadPriority < ele->loadPriority) {
+					target.second = ele;
+				}
+			}
+
+			void priority_insert(std::shared_ptr<Data::Furniture> ele)
+			{
+				auto& target = super::operator[](ele->id);
+				RE::BSAutoLock l{ target.first };
+				if (target.second == nullptr) {
+					target.second = ele; 
+				} else {
+					std::vector<LinkableForm<RE::TESBoundObject>> tmp;
+
+					std::sort(target.second->forms.begin(), target.second->forms.end());
+					std::sort(ele->forms.begin(), ele->forms.end());
+
+					std::set_union(
+						target.second->forms.begin(), target.second->forms.end(),
+						ele->forms.begin(), ele->forms.end(),
+						std::back_inserter(tmp),
+						[](const LinkableForm<RE::TESBoundObject>& a, const LinkableForm<RE::TESBoundObject>& b) {
+							return a < b;
+						});
+
+					target.second->forms = std::move(tmp);
 				}
 			}
 
@@ -107,6 +168,9 @@ namespace Data
 		inline static IDMap<Furniture> Furnitures;
 		inline static IDMap<PositionTree> PositionTrees;
 		inline static IDMap<GraphInfo> GraphInfos;
+		//NAF Bridge
+		inline static IDMap<Overlay> Overlays;
+		inline static IDMap<ProtectedKeyword> ProtectedKeywords;
 
 		struct ApplicableFurniture
 		{
@@ -311,6 +375,7 @@ namespace Data
 				for (auto& p : xmlFiles) {
 					XMLCache::AddFileToCache(p.first);
 				}
+				cache_updated = true;
 			} else {
 				FaceAnim::nextFileId = XMLCache::primaryCache.nextFaceAnimId;
 			}
@@ -340,6 +405,10 @@ namespace Data
 		{
 			LinkDataReferences();
 			Forms::GetFormPointers();
+
+			//NAF Bridge
+			patches::PatchFerralHeads();
+			patches::PatchProtectedKeywords();
 		}
 
 		inline static safe_mutex reloadLock;
@@ -368,10 +437,18 @@ namespace Data
 			Furnitures.clear();
 			PositionTrees.clear();
 			GraphInfos.clear();
+			Overlays.clear(); //NAF Bridge
+			ProtectedKeywords.clear(); //NAF Bridge
 			FaceAnim::nextFileId = 0;
 			Init(false);
 			LinkDataReferences(false);
+
+			//NAF Bridge
+			patches::PatchFerralHeads();
+			patches::PatchProtectedKeywords();
+
 			logger::info("Finished rebuilding in {:.0f}ms", Utility::QueryPerfCounterTime(timer));
+
 		}
 
 		template <typename T, typename J>
@@ -389,7 +466,9 @@ namespace Data
 			ParseXMLType<T, T>(map);
 		}
 
-		static inline constexpr std::array<std::string_view, 10> topNodeNames{
+		//NAF Bridge
+		//static inline constexpr std::array<std::string_view, 10> topNodeNames{
+		static inline constexpr std::array<std::string_view, 13> topNodeNames{
 			"animationData",
 			"raceData",
 			"positionData",
@@ -399,7 +478,12 @@ namespace Data
 			"animationGroupData",
 			"furnitureData",
 			"positionTreeData",
-			"tagData"
+			"tagData",
+			//NAF Bridge
+			"mfgSetData",
+			"overlayData",
+			"protectedEquipmentData"
+			//"topicData"
 		};
 
 		static inline const std::unordered_map<std::string_view, std::function<void(XMLUtil::Mapper&)>> nodeMappings{
@@ -415,6 +499,11 @@ namespace Data
 			{ "tree", [](auto& m) { ParseXMLType<PositionTree>(PositionTrees, m); } },
 			{ "tag", [](auto& m) { TagData::Parse(m); } },
 			{ "graph", [](auto& m) { ParseXMLType<GraphInfo>(GraphInfos, m); } }
+			,//NAF Bridge
+			{ "mfgSet", [](auto& m) { ParseXMLType<MfgSet>(FaceAnims, m); } },
+			{ "overlaySet", [](auto& m) { ParseXMLType<Overlay>(Overlays, m); } },
+			{ "condition", [](auto& m) { ParseXMLType<ProtectedKeyword>(ProtectedKeywords, m); } }
+			//{ "topicGroup", [](auto& m) { ParseXMLType<Topic>(Actions, m); } }
 		};
 
 		static bool ParseNANIM(const std::string& fName, bool = true) {
@@ -477,6 +566,7 @@ namespace Data
 			auto m = XMLUtil::Mapper(defaults, topNode, fName);
 			m.verbose = verbose;
 	
+			std::vector<std::string> nodes;
 			for (auto& node : childNodes) {
 				m.ResetSuccessFlag();
 				m.SetCurrentNode(&node);
@@ -566,6 +656,14 @@ namespace Data
 					form.get(verbose);
 				}
 			}
+
+			//NAF Bridge
+			//Link any LinkableForms
+
+			for (auto& form : Data::ProtectedKeyword::forms) {
+				form.get(verbose);
+			}
+			
 
 			//Link Animation information.
 
@@ -658,6 +756,7 @@ namespace Data
 	std::shared_ptr<const AnimationGroup> GetAnimationGroup(const std::string& id) { return GetObjectFromIDMap(Global::AnimationGroups, id); }
 	std::shared_ptr<const PositionTree> GetPositionTree(const std::string& id) { return GetObjectFromIDMap(Global::PositionTrees, id); }
 	std::shared_ptr<const Race> GetRace(const std::string& id) { return GetObjectFromIDMap(Global::Races, id); }
+	std::shared_ptr<const Overlay> GetOverlaySet(const std::string& id) { return GetObjectFromIDMap(Global::Overlays, id); } //NAF Bridge
 
 	std::shared_ptr<const GraphInfo> GetGraphInfo(const std::string& id, RE::Actor* actorBase) {
 		auto result = GetObjectFromIDMap(Global::GraphInfos, id);
@@ -743,6 +842,15 @@ namespace Data
 		return GetRaceFromGraph(a->race->behaviorGraphProjectName[0].c_str());
 	}
 
+	std::shared_ptr<const Overlay> GetOverlay(const std::string& id) {  //NAF Bridge
+		for (auto& o : Data::Global::Overlays)
+		{
+			if (id == o.second.second.get()->id)
+				return o.second.second;
+		}
+	}
+
+
 	bool ApplyEquipmentSet(RE::Actor* a, const std::string& id) {
 		if (auto set = GetEquipmentSet(id); set != nullptr) {
 			set->Apply(a);
@@ -782,14 +890,27 @@ namespace Data
 		if (startEquipSet.has_value()) {
 			if (auto set = GetEquipmentSet(startEquipSet.value()); set != nullptr) {
 				set->Apply(a);
+			}	
+		}
+		//NAF Bridge actor handle
+		if (mfgSet.has_value()) {
+			if (auto mfg = GetFaceAnim(mfgSet.value()); mfg != nullptr) {
+				mfg->Play(RE::ActorHandle(a));
 			}
 		}
 	}
+
 
 	void Action::RunStop(RE::Actor* a) const {
 		if (stopEquipSet.has_value()) {
 			if (auto set = GetEquipmentSet(stopEquipSet.value()); set != nullptr) {
 				set->Apply(a);
+			}
+		}
+		//NAF Bridge actor handle - use stopMfgSet instead of mfgSet
+		if (stopMfgSet.has_value()) {
+			if (auto mfg = GetFaceAnim(stopMfgSet.value()); mfg != nullptr) {
+				mfg->Stop(RE::ActorHandle(a));
 			}
 		}
 	}
@@ -799,4 +920,97 @@ namespace Data
 	}
 }
 
+namespace patches
+{
+	template <typename T>
+	bool AddToMap(T* obj)
+	{
+		if (obj) {
+			if (std::is_same_v<T, Data::Race>) {
+				Data::Global::Races.priority_insert(std::make_shared<Data::Race>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::Animation>) {
+				Data::Global::Animations.priority_insert(std::make_shared<Data::Animation>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::Position>) {
+				Data::Global::Positions.priority_insert(std::make_shared<Data::Position>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::FaceAnim>) {
+				Data::Global::FaceAnims.priority_insert(std::make_shared<Data::FaceAnim>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::MorphSet>) {
+				Data::Global::MorphSets.priority_insert(std::make_shared<Data::MorphSet>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::EquipmentSet>) {
+				Data::Global::EquipmentSets.priority_insert(std::make_shared<Data::EquipmentSet>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::Action>) {
+				Data::Global::Actions.priority_insert(std::make_shared<Data::Action>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::AnimationGroup>) {
+				Data::Global::AnimationGroups.priority_insert(std::make_shared<Data::AnimationGroup>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::Furniture>) {
+				Data::Global::Furnitures.priority_insert(std::make_shared<Data::Furniture>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::PositionTree>) {
+				Data::Global::PositionTrees.priority_insert(std::make_shared<Data::PositionTree>(*obj));
+				return true;
+			} else if (std::is_same_v<T, Data::GraphInfo>) {
+				Data::Global::GraphInfos.priority_insert(std::make_shared<Data::GraphInfo>(*obj));
+				return true;
+			}
+ else
+	 return false;
+		}
+ else
+	 return false;
+	}
 
+	void PatchFerralHeads()
+	{
+		auto armors = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESObjectARMO>();
+		
+		size_t count = 0;
+		if (Data::Forms::NAFDoNotUseKW && (armors.size() > 0)) {
+			for (auto& el : armors) {
+				if (!el->HasKeyword(Data::Forms::NAFDoNotUseKW)) {
+					std::string edid = el->GetFormEditorID();
+					Utility::TransformStringToLower(edid);
+					if (edid.find("feral"s) != std::string::npos && edid.find("head"s) != std::string::npos) {
+						el->AddKeyword(Data::Forms::NAFDoNotUseKW);
+						if (PRINT_LOG)
+							logger::info("Patched head : {}", el->GetFormEditorID());
+						++count;
+					}
+				}
+			}
+			logger::info("PatchFerralHeads ...applied! Count : {}", count);
+		}
+		else {
+			logger::critical("PatchFerralHeads failed!");
+		}
+	}
+
+	//NAF Bridge
+	void PatchProtectedKeywords()
+	{
+		auto HasForm = [](RE::BGSListForm* f, RE::BGSKeyword* k) {
+			for (auto& i : f->arrayOfForms) {
+				if (i == k)
+					return true;
+			}
+			return false;
+		};
+
+		if (Data::Forms::protectedKeywords) {
+			for (auto& lf : Data::ProtectedKeyword::forms) {
+				if (auto f = lf.get(true); f)
+					if (!HasForm(Data::Forms::protectedKeywords, f))
+						Data::Forms::protectedKeywords->arrayOfForms.push_back(f);
+			}
+		} else {
+			logger::critical("Formlist 0x31752, AAF.esm unavailable");
+		}
+	}
+}

@@ -12,7 +12,8 @@ namespace FaceAnimation
 		bool havokSync = false;
 		bool paused = false;
 
-		FaceAnimation(AnimationData _data) {
+		FaceAnimation(AnimationData _data)
+		{
 			data = _data;
 		}
 
@@ -42,15 +43,18 @@ namespace FaceAnimation
 			return true;
 		}
 
-		void SetDuration(double durationMs) {
+		void SetDuration(double durationMs)
+		{
 			data.duration = durationMs / 1000;
 		}
 
-		void SetStartNow() {
+		void SetStartNow()
+		{
 			timeElapsed = 0.00001;
 		}
 
-		bool Update(RE::BSFaceGenAnimationData* animData, RE::BSGeometry* eyeGeo, float timeDelta) {
+		bool Update(RE::BSFaceGenAnimationData* animData, RE::BSGeometry* eyeGeo, float timeDelta)
+		{
 			std::scoped_lock l{ lock };
 
 			if (!paused)

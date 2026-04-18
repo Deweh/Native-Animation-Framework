@@ -1,7 +1,7 @@
 #pragma once
-#include <shared_mutex>
-#include "Serialization/General.h"
 #include "FaceAnimation/Animation.h"
+#include "Serialization/General.h"
+#include <shared_mutex>
 
 namespace FaceAnimation
 {
@@ -103,7 +103,8 @@ namespace FaceAnimation
 			return result;
 		}
 
-		SerializableActorHandle IsDataManaged(RE::BSFaceGenAnimationData* data) {
+		SerializableActorHandle IsDataManaged(RE::BSFaceGenAnimationData* data)
+		{
 			SerializableActorHandle result;
 			auto iter = state->managedDatas.find(data);
 			if (iter != state->managedDatas.end()) {
@@ -129,7 +130,8 @@ namespace FaceAnimation
 			}
 		}
 
-		bool HookedUpdateLip(RE::BSFaceGenAnimationData* data, float ptimeDelta) {
+		bool HookedUpdateLip(RE::BSFaceGenAnimationData* data, float ptimeDelta)
+		{
 			std::shared_lock l{ stateLock };
 
 			if (auto h = IsDataManaged(data); h) {
@@ -149,6 +151,12 @@ namespace FaceAnimation
 			if (auto h = IsDataManaged(data); h) {
 				auto eyeGeo = GetCachedEyeGeometry(h);
 				auto a = state->managedAnims.find(h);
+
+				if (a == state->managedAnims.end()) { //NAF Bridge 1.52.2
+					l.unlock();
+					return result;
+				}
+
 				bool pendingDelete = false;
 				RE::BSAutoLock bl{ data->instanceData.lock };
 
@@ -207,13 +215,67 @@ namespace FaceAnimation
 			state->managedDatas[GameUtil::GetFaceAnimData(a.get())] = targetActor;
 		}
 
+		//NAF Bridge
+		void printFaceAnimation(FaceAnimation* anim)
+		{
+			if (anim == nullptr) {
+				logger::info("AnimData is null");
+				return;
+			}
+			std::ostringstream ss;
+			ss << "duration=" << anim->data.duration << "; timelines=" << anim->data.timelines.size();
+			size_t ti = 0;
+			for (const auto& tl : anim->data.timelines) {
+				ss << "\n  timeline[" << ti++ << "] morph=" << static_cast<int>(tl.morph) << " isEyes=" << (tl.isEyes ? 1 : 0) << " keys={";
+
+				bool firstKey = true;
+				for (const auto& k : tl.keys) {
+					if (!firstKey)
+						ss << ", ";
+					firstKey = false;
+					ss << "(" << k.first << ": value=" << k.second.value << ", ease=" << static_cast<int>(k.second.ease) << ", eyes=(" << k.second.eyesValue.u << "," << k.second.eyesValue.v << "))";
+				}
+				ss << "}";
+			}
+			std::string animData = ss.str();
+			logger::info("AnimData {}", animData);
+		}
+
+		inline bool LoadAndPlayAnimationNoCheck(RE::ActorHandle targetActor, std::string id, bool loop = true, bool havokSync = false)
+		{
+			auto newAnim = std::make_unique<FaceAnimation>();
+			newAnim->loop = loop;
+			newAnim->havokSync = havokSync;
+
+			std::unique_lock l{ loadingAnimsLock };
+			loadingAnims[targetActor] = id;
+			l.unlock();
+
+			std::thread([targetActor = std::move(targetActor), inst = std::move(newAnim), id = std::move(id)]() mutable {
+				bool successful = inst->LoadData(id);
+				std::unique_lock l{ loadingAnimsLock };
+				bool contains = loadingAnims.contains(targetActor);
+				bool matches = contains && loadingAnims[targetActor] == id;
+				logger::info("LoadAndPlayAnimationNoCheck: successful={}, contains={}, matches={}", successful, contains, matches);
+				if (matches) {
+					loadingAnims.erase(targetActor);
+					if (successful) {
+						printFaceAnimation(inst.get());
+						StartAnimation(targetActor, std::move(inst), id);
+					}
+				}
+			}).detach();
+
+			return true;
+		}
+
 		bool LoadAndPlayAnimation(RE::ActorHandle targetActor, std::string id, bool loop = false, bool havokSync = false)
 		{
-			if (auto targetAnim = Data::GetFaceAnim(id); targetAnim == nullptr) {
+			if (Data::GetFaceAnim(id) == nullptr) {
 				return false;
 			}
-
-			auto newAnim = std::make_unique<FaceAnimation>();
+			//NAF Bridge
+			/*auto newAnim = std::make_unique<FaceAnimation>();
 			newAnim->loop = loop;
 			newAnim->havokSync = havokSync;
 
@@ -232,10 +294,12 @@ namespace FaceAnimation
 				}
 			}).detach();
 
-			return true;
+			return true;*/
+			return LoadAndPlayAnimationNoCheck(targetActor, id, loop, havokSync);  //NAF Bridge
 		}
 
-		void StopAnimation(RE::ActorHandle targetActor, bool animOverride = false) {
+		void StopAnimation(RE::ActorHandle targetActor, bool animOverride = false)
+		{
 			std::unique_lock l1{ loadingAnimsLock };
 			if (loadingAnims.contains(targetActor)) {
 				loadingAnims.erase(targetActor);
@@ -263,7 +327,8 @@ namespace FaceAnimation
 		}
 
 		//Thread-safe method for modifying an animation object already playing on an actor.
-		bool VisitAnimation(RE::ActorHandle targetActor, std::function<void(FaceAnimation*)> visitFunc) {
+		bool VisitAnimation(RE::ActorHandle targetActor, std::function<void(FaceAnimation*)> visitFunc)
+		{
 			std::shared_lock l1{ stateLock };
 			if (state->managedAnims.contains(targetActor) && state->managedAnims[targetActor].anim != nullptr) {
 				auto& anim = state->managedAnims[targetActor].anim;
@@ -291,7 +356,8 @@ namespace FaceAnimation
 			}
 		}
 
-		void Reset() {
+		void Reset()
+		{
 			std::scoped_lock l{ loadingAnimsLock, stateLock, geoCacheLock };
 			state = std::make_unique<PersistentState>();
 			loadingAnims.clear();

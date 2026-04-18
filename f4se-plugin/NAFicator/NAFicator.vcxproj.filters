@@ -1,0 +1,207 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="NAFICATOR">
+      <UniqueIdentifier>{1b74ff95-c79a-4bbe-8c0a-adb2225999b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NAFICATOR\Form">
+      <UniqueIdentifier>{7cd3349d-28e3-451b-8278-f783a9ac1251}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NAFICATOR\INIparser">
+      <UniqueIdentifier>{e2808940-dbcc-423f-868c-85c64fe13b20}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NAFICATOR\Objects">
+      <UniqueIdentifier>{e4235546-3e14-4a70-8367-ab92cee9f9a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NAFICATOR\Pugi">
+      <UniqueIdentifier>{d9dfd2fd-4db9-4763-a400-828f07b523a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NAFICATOR\ThreadPool">
+      <UniqueIdentifier>{d2d8ebcc-e90c-4a3a-a711-d4129234ad50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NAFICATOR\Utility">
+      <UniqueIdentifier>{efe5c049-3456-4bab-8432-3ff86c698705}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NAFICATOR\XML">
+      <UniqueIdentifier>{d5860ad4-b766-4920-ba48-531132d2d26b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NAFICATOR\ThreadPool\Queue">
+      <UniqueIdentifier>{dc4dca9d-bc7b-4d85-9f84-4eeeb5c29def}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\extern\NAFicator\Form\Form.cpp">
+      <Filter>NAFICATOR\Form</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\Action.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\Animation.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\AnimationGroup.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\ConditionSet.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\EquipmentSet.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\Furniture.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\MfgSet.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\MorphSet.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\objects_map.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\Overlay.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\ParsedObject.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\Position.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\PositionTree.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\ProtectedEquipment.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\Race.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\Objects\Tag.cpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\ThreadPool\ThreadPool.cpp">
+      <Filter>NAFICATOR\ThreadPool</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\XML\XMLFile.cpp">
+      <Filter>NAFICATOR\XML</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\utils\utility.cpp">
+      <Filter>NAFICATOR\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\pugixml\src\pugixml.cpp">
+      <Filter>NAFICATOR\Pugi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\IniParser\Ini.cpp">
+      <Filter>NAFICATOR\INIparser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\NAFicate.cpp">
+      <Filter>NAFICATOR</Filter>
+    </ClCompile>
+    <ClCompile Include="..\extern\NAFicator\NAFicator_main.cpp">
+      <Filter>NAFICATOR</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\extern\NAFicator\Form\Form.h">
+      <Filter>NAFICATOR\Form</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\Action.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\Animation.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\AnimationGroup.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\ConditionSet.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\EquipmentSet.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\Furniture.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\MfgSet.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\MorphSet.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\objects_map.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\ObjectsHeader.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\OffsetParser.hpp">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\Overlay.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\ParsedObject.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\Position.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\PositionTree.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\ProtectedEquipment.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\Race.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Objects\Tag.h">
+      <Filter>NAFICATOR\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\ThreadPool\ThreadPool.h">
+      <Filter>NAFICATOR\ThreadPool</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\ThreadPool\Queue\Queue.hpp">
+      <Filter>NAFICATOR\ThreadPool\Queue</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\XML\utils.h">
+      <Filter>NAFICATOR\XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\XML\XMLFile.h">
+      <Filter>NAFICATOR\XML</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\utils\utility.h">
+      <Filter>NAFICATOR\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\pugixml\src\pugiconfig.hpp">
+      <Filter>NAFICATOR\Pugi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\pugixml\src\pugixml.hpp">
+      <Filter>NAFICATOR\Pugi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\IniParser\Ini.h">
+      <Filter>NAFICATOR\INIparser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\NAFicate.h">
+      <Filter>NAFICATOR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\extern\NAFicator\Version.h">
+      <Filter>NAFICATOR</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

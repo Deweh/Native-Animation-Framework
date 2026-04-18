@@ -1,9 +1,12 @@
 #pragma once
 #include "Data/ControlSystemTypes.h"
 #include "Data/XMLUtil.h"
+#include "Bridge/NewData/OffsetClass.h"
 
 namespace Data
 {
+	//NAF Bridge offset
+	//class Position : public IdentifiableObject, public TagHolder
 	class Position : public IdentifiableObject, public TagHolder
 	{
 	public:
@@ -45,7 +48,8 @@ namespace Data
 			std::shared_ptr<const PositionTree> tree;
 		};
 
-		std::unique_ptr<ControlSystemInfo> GetControlSystemInfo() const {
+		std::unique_ptr<ControlSystemInfo> GetControlSystemInfo() const
+		{
 			std::unique_ptr<ControlSystemInfo> info;
 			switch (posType) {
 			case kAnimation:
@@ -65,13 +69,14 @@ namespace Data
 			return info;
 		}
 
-		std::shared_ptr<const Animation> GetBaseAnimation() const {
+		std::shared_ptr<const Animation> GetBaseAnimation() const
+		{
 			switch (posType) {
-				case kAnimation:
+			case kAnimation:
 				{
 					return GetAnimation(idForType);
 				}
-				case kAnimationGroup:
+			case kAnimationGroup:
 				{
 					if (auto group = GetAnimationGroup(idForType); group != nullptr) {
 						return group->GetBaseAnimation();
@@ -79,7 +84,7 @@ namespace Data
 						return nullptr;
 					}
 				}
-				case kPositionTree:
+			case kPositionTree:
 				{
 					if (auto tree = GetPositionTree(idForType); tree != nullptr) {
 						if (auto rootPos = GetPosition(tree->tree->position); rootPos != nullptr && rootPos->posType != kPositionTree) {
@@ -87,14 +92,50 @@ namespace Data
 						}
 					}
 				}
-				default:
-					return nullptr;
+			default:
+				return nullptr;
 			}
-			
 		}
 
 		static bool Parse(XMLUtil::Mapper& m, Position& out)
 		{
+			//NAF Bridge offset
+			std::string offset_str("");
+
+			if (m(&offset_str, XMLUtil::Mapper::emptyStr, true, false, "", "offset"))
+			{
+				if (!offset_str.empty()) {
+					size_t f = 0;
+					do {
+						f = offset_str.find(':', f);
+						if (f != std::string::npos) {
+							offset_str.erase(f, 1);
+							offset_str.insert(f, ";");
+						} else break;
+					} while (true);
+					out.offset = Scene::offset_from_string(offset_str);
+				}
+			} else {
+				auto r = m.GetRoot();
+				offset_str.clear();
+				r.GetArray([&](XMLUtil::Mapper& r) {
+					std::string o;
+					r(&o, XMLUtil::Mapper::emptyStr, true, false, "", "offset");
+					if (!o.empty()) {
+						if (!offset_str.empty())
+						{
+							offset_str += ';';
+						}
+						offset_str += o;
+					}
+					return r;
+				},
+					"animationOffset", "", false);
+				if (!offset_str.empty())
+					out.offset = Scene::offset_from_string(offset_str);
+			}
+			//NAF Bridge offset end
+
 			out.ParseID(m);
 			out.ParseTags(m);
 			m(&out.hidden, false, true, false, "", "isHidden");
@@ -102,7 +143,7 @@ namespace Data
 			m(&out.stopMorphSet, XMLUtil::Mapper::emptyStr, true, false, "", "stopMorphSet");
 			m(&out.startEquipSet, XMLUtil::Mapper::emptyStr, true, false, "", "startEquipmentSet");
 			m(&out.stopEquipSet, XMLUtil::Mapper::emptyStr, true, false, "", "stopEquipmentSet");
-			
+
 			std::string locs;
 			m(&locs, XMLUtil::Mapper::emptyStr, true, false, "", "location");
 			if (!locs.empty()) {
@@ -136,11 +177,15 @@ namespace Data
 		std::string startMorphSet;
 		std::string stopMorphSet;
 		std::vector<std::string> locations;
+		//std::string offset;  //NAF Bridge offset
+		std::vector<Scene::offset_optional> offset; //NAF Bridge offset
 
 		template <class Archive>
 		void save(Archive& ar, const uint32_t) const
 		{
-			ar(id, hidden, posType, idForType, startEquipSet, stopEquipSet, startMorphSet, stopMorphSet, locations);
+			//NAF Bridge offset
+			//ar(id, hidden, posType, idForType, startEquipSet, stopEquipSet, startMorphSet, stopMorphSet, locations);
+			ar(id, hidden, posType, idForType, startEquipSet, stopEquipSet, startMorphSet, stopMorphSet, locations, offset);
 		}
 
 		template <class Archive>
@@ -153,12 +198,15 @@ namespace Data
 				if (loc.has_value()) {
 					locations.push_back(loc.value());
 				}
+			} else if (ver == 2) { //NAF Bridge just if;
+				ar(locations);
 			} else {
 				ar(locations);
+				ar(offset); //NAF Bridge;
 			}
-			
 		}
 	};
 }
-
-CEREAL_CLASS_VERSION(Data::Position, 2);
+//NAF Bridge offset
+//CEREAL_CLASS_VERSION(Data::Position, 2);
+CEREAL_CLASS_VERSION(Data::Position, 3);
